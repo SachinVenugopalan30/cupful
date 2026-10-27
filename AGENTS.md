@@ -9,7 +9,6 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 ## Status
 
 - **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract).
-- **Open from M0:** tailnet HTTPS path not yet verified by hand (needs a real `TS_AUTHKEY`; see `docs/decisions.md`).
 - **Next:** M2 — AI providers and nutrition pipeline (PLAN.md §14).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
