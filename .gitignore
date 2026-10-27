@@ -1,0 +1,9 @@
+target/
+node_modules/
+web/build/
+web/.svelte-kit/
+.cupful/
+.env
+*.db
+*.db-shm
+*.db-wal
