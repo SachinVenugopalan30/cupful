@@ -1,0 +1,8 @@
+**/target
+**/node_modules
+web/build
+web/.svelte-kit
+.cupful
+.env
+.git
+.crush

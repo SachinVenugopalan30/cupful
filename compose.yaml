@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Cupful behind a Tailscale sidecar: https://<TS_HOSTNAME>.<your-tailnet>.ts.net
+# Copy .env.example to .env and set TS_AUTHKEY first.
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.104.2
+    hostname: ${TS_HOSTNAME:-cupful}
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_HOSTNAME: ${TS_HOSTNAME:-cupful}
+      TS_STATE_DIR: /var/lib/tailscale
+      # Serves HTTPS on 443 and proxies to Cupful on 127.0.0.1:8080. Mount the directory, not the file,
+      # so Tailscale notices edits.
+      TS_SERVE_CONFIG: /config/serve.json
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./tailscale:/config:ro
+    extra_hosts:
+      # Lets Cupful reach an Ollama on the Docker host (Linux needs this; Docker Desktop has it built in).
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+
+  cupful:
+    build: .
+    image: cupful:local
+    # Shares the sidecar's network: only reachable through Tailscale Serve.
+    network_mode: service:tailscale
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CUPFUL_BIND: 127.0.0.1:8080
+    volumes:
+      # Must be local disk: SQLite WAL can corrupt on NFS/SMB.
+      - cupful-data:/data
+    depends_on:
+      - tailscale
+    restart: unless-stopped
+
+volumes:
+  cupful-data:
+  tailscale-state:

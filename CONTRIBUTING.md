@@ -53,7 +53,7 @@ Migrations live in `server/migrations/`. After adding one or changing any `query
 
 ```sh
 cd server
-export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db
+mkdir -p ../.cupful && export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db
 sqlx database create && sqlx migrate run
 cargo sqlx prepare -- --all-targets
 ```

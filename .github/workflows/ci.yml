@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Every commit has Signed-off-by
+        run: |
+          fail=0
+          for c in $(git rev-list ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}); do
+            if ! git show -s --format=%B "$c" | grep -q '^Signed-off-by: '; then
+              echo "::error::commit $c has no Signed-off-by line (use git commit -s; see CONTRIBUTING.md)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build frontend (embedded and served by the tests)
+        working-directory: web
+        run: npm ci && npm run build
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2.9.3
+        with:
+          workspaces: server
+      - uses: taiki-e/install-action@v2.87.32
+        with:
+          tool: sqlx-cli
+      - run: cargo fmt --check
+      - name: SQLx offline metadata is current
+        run: |
+          export DATABASE_URL="sqlite://$RUNNER_TEMP/ci.db"
+          sqlx database create
+          sqlx migrate run --source migrations
+          cargo sqlx prepare --check -- --all-targets
+      - run: cargo clippy --all-targets -- -D warnings
+        env:
+          SQLX_OFFLINE: "true"
+      - run: cargo test
+        env:
+          SQLX_OFFLINE: "true"
+
+  docker:
+    needs: [web, rust]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-qemu-action@v4.4.0
+      - uses: docker/setup-buildx-action@v4.4.1
+      # Startup runs the migrations, including the FTS5 check, so a healthy container proves FTS5 on that arch.
+      - name: Smoke test each architecture
+        run: |
+          for arch in amd64 arm64; do
+            docker buildx build --platform linux/$arch -t cupful:$arch --load .
+            docker run -d --name cupful-$arch --platform linux/$arch -p 8080 cupful:$arch
+            port=$(docker port cupful-$arch 8080 | head -1 | cut -d: -f2)
+            for i in $(seq 1 30); do curl -sf localhost:$port/api/health && break; sleep 1; done
+            curl -sf localhost:$port/api/health || { docker logs cupful-$arch; exit 1; }
+          done
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: startsWith(github.ref, 'refs/tags/v')
+        id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v7.4.0
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

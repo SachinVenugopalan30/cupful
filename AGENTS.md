@@ -44,7 +44,7 @@ SQLX_OFFLINE=true cargo test
 SQLX_OFFLINE=true cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 # after a migration or query! change:
-export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db && sqlx database create && sqlx migrate run && cargo sqlx prepare -- --all-targets
+mkdir -p ../.cupful && export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db && sqlx database create && sqlx migrate run && cargo sqlx prepare -- --all-targets
 
 # frontend (from web/)
 npm run dev        # :5173, proxies /api -> :8080
