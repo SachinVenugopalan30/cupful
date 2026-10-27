@@ -38,3 +38,23 @@ async fn unknown_page_path_serves_spa_index() {
     );
     assert!(String::from_utf8_lossy(&body).contains("<html"));
 }
+
+#[tokio::test]
+async fn malformed_bodies_and_queries_get_json_errors() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let req = axum::http::Request::post("/api/sync")
+        .header("x-cupful", "1")
+        .header("content-type", "application/json")
+        .header("cookie", a.cookie.clone().unwrap())
+        .body(axum::body::Body::from("{not json"))
+        .unwrap();
+    let (status, headers, body) = send(&app, req).await;
+    assert!(status.is_client_error());
+    assert_eq!(headers["content-type"], "application/json");
+    assert!(json(&body)["error"].is_string());
+
+    let (status, body) = a.get("/api/meals").await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(body["error"].is_string(), "{body}");
+}

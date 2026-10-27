@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Profile and profile versions (PLAN.md §5). Online-only REST, not sync.
 
+use crate::error::JsonBody;
 use axum::Json;
 use axum::extract::State;
 use serde::Deserialize;
@@ -82,7 +83,7 @@ fn check(ok: bool, msg: &str) -> Result<()> {
 pub async fn put(
     State(s): State<AppState>,
     user: User,
-    Json(p): Json<ProfileIn>,
+    JsonBody(p): JsonBody<ProfileIn>,
 ) -> Result<Json<Value>> {
     validate_timezone(&p.timezone)?;
     let today = today_in(&p.timezone)?;

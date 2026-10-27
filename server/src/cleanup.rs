@@ -6,7 +6,7 @@ use std::time::Duration;
 use sqlx::SqlitePool;
 
 const DAY_MS: i64 = 86_400_000;
-pub const OP_ID_RETENTION_MS: i64 = 30 * DAY_MS;
+const OP_ID_RETENTION_MS: i64 = 30 * DAY_MS;
 pub const TOMBSTONE_RETENTION_MS: i64 = 180 * DAY_MS;
 
 pub async fn run(db: &SqlitePool, now_ms: i64) -> Result<(), sqlx::Error> {

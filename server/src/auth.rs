@@ -6,6 +6,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+use crate::error::JsonBody;
 use argon2::Argon2;
 use argon2::password_hash::phc::PasswordHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
@@ -246,7 +247,7 @@ pub struct SetupBody {
 pub async fn setup(
     State(s): State<AppState>,
     session: Session,
-    Json(b): Json<SetupBody>,
+    JsonBody(b): JsonBody<SetupBody>,
 ) -> Result<Json<Value>> {
     let id = insert_user(&s.db, &b.username, &b.password, &b.timezone, true, true)
         .await?
@@ -265,7 +266,7 @@ pub async fn login(
     State(s): State<AppState>,
     session: Session,
     ip: ClientIp,
-    Json(b): Json<LoginBody>,
+    JsonBody(b): JsonBody<LoginBody>,
 ) -> Result<Json<Value>> {
     let now = Instant::now();
     let by_name = s

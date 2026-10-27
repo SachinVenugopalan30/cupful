@@ -8,7 +8,9 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ## Status
 
-- **In progress:** M0 (scaffold), then M1 (accounts, profile, budget engine, write contract).
+- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract).
+- **Open from M0:** tailnet HTTPS path not yet verified by hand (needs a real `TS_AUTHKEY`; see `docs/decisions.md`).
+- **Next:** M2 — AI providers and nutrition pipeline (PLAN.md §14).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout
@@ -26,10 +28,12 @@ server/                 Rust crate `cupful`
   src/reads.rs          GET days / meals / budget
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
-  src/lib.rs            AppState, router, error type
+  src/error.rs          API error type; JsonBody/Query extractors that reject with JSON
+  src/lib.rs            AppState, route table (`route_table()`), router
   migrations/           sqlx migrations (never edit a released one)
   .sqlx/                committed offline query metadata
   tests/                integration tests (oneshot against the Router, in-memory SQLite)
+  tests/isolation.rs    user A vs user B for every `Access::User` route
 web/                    SvelteKit app (adapter-static, SPA fallback)
 fixtures/budget_cases.json   shared budget test vectors
 docs/decisions.md       one line per deviation/notable choice
@@ -61,7 +65,8 @@ npm run build
 - Every mutating request needs header `X-Cupful: 1` (CSRF).
 - Every user-owned route needs an isolation test; `tests/isolation.rs` fails if a route is not listed.
 - Budget is computed only on the server (`budget.rs`); f64 throughout, round on serialize.
-- Dates are the user's local date (profile timezone). Times are RFC 3339 UTC strings in the DB.
+- Dates are the user's local date (profile timezone), TEXT `YYYY-MM-DD`. Times are INTEGER unix milliseconds in the DB; RFC 3339 on the wire.
+- New routes go in `routes()` in `lib.rs` with their `Access`. Request bodies use `error::JsonBody`, queries `error::Query`, so errors are always `{"error": ...}`.
 - Keep it small: no new dependency for what a few lines do. Mark deliberate shortcuts with `// ponytail: <ceiling>, <upgrade path>`.
 - Record deviations from `PLAN.md` in `docs/decisions.md` as one line: date, what, why.
 - No telemetry, ever.

@@ -56,3 +56,31 @@ impl From<tower_sessions::session::Error> for Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// `axum::Json` and `axum::extract::Query`, but rejections render as our JSON errors.
+pub struct JsonBody<T>(pub T);
+pub struct Query<T>(pub T);
+
+impl<S: Send + Sync, T: serde::de::DeserializeOwned> axum::extract::FromRequest<S> for JsonBody<T> {
+    type Rejection = Error;
+
+    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self> {
+        axum::Json::from_request(req, state)
+            .await
+            .map(|axum::Json(v)| JsonBody(v))
+            .map_err(|e| Error::Status(e.status(), e.body_text()))
+    }
+}
+
+impl<S: Send + Sync, T: serde::de::DeserializeOwned> axum::extract::FromRequestParts<S>
+    for Query<T>
+{
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut axum::http::request::Parts, state: &S) -> Result<Self> {
+        axum::extract::Query::from_request_parts(parts, state)
+            .await
+            .map(|axum::extract::Query(v)| Query(v))
+            .map_err(|e| Error::Status(e.status(), e.body_text()))
+    }
+}

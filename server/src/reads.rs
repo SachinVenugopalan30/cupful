@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Read endpoints for logged data and the budget (PLAN.md §6).
 
+use crate::error::Query;
 use axum::Json;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
@@ -66,13 +67,18 @@ pub async fn day(
 ) -> Result<Json<Value>> {
     let date = parse_date(&date)?.to_string();
     let row = days_between(&s.db, user.id, &date, &date).await?.pop();
-    Ok(Json(row.map_or_else(
-        || {
-            json!({"date": date, "steps": null, "steps_source": null, "gym_minutes": null,
-                  "gym_source": null, "trained": [], "weight_kg": null})
-        },
-        |r| r.to_json(),
-    )))
+    Ok(Json(
+        row.unwrap_or(DayRow {
+            date,
+            steps: None,
+            steps_source: None,
+            gym_minutes: None,
+            gym_source: None,
+            trained: None,
+            weight_kg: None,
+        })
+        .to_json(),
+    ))
 }
 
 #[derive(Deserialize)]

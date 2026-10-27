@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! `POST /api/sync`: the only write path for logged data (PLAN.md §6).
 
+use crate::error::JsonBody;
 use axum::Json;
 use axum::extract::State;
 use jiff::civil::Date;
@@ -56,7 +57,7 @@ struct Op {
 pub async fn sync(
     State(s): State<AppState>,
     user: User,
-    Json(body): Json<SyncBody>,
+    JsonBody(body): JsonBody<SyncBody>,
 ) -> Result<Json<Value>> {
     if body.ops.len() > MAX_OPS {
         return Err(Error::bad_request(format!(
