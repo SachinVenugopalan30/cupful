@@ -58,7 +58,7 @@ At the start of M0, confirm each of these skills actually loads in the tool doin
 ## 2. Product scope
 
 ### Goals for v0.1
-1. Log meals in natural language, optionally with a photo, and get per-item calories, protein, carbs and fat that the user can review, adjust and save.
+1. Log meals in natural language, optionally with a photo, and get per-item calories, protein, carbs and fat that the user can review, adjust and save. Packaged foods can be logged by scanning their barcode and choosing servings.
 2. Log steps, gym sessions (minutes and body parts trained) and weight for each day, by hand or from an automation that posts to Cupful.
 3. Show a daily calorie budget that moves with that day's activity, with macro targets and progress.
 4. Show trends: intake against budget, weight with a rolling average, and steps.
@@ -74,7 +74,7 @@ At the start of M0, confirm each of these skills actually loads in the tool doin
 - Google Health integration (moved to v0.2, section 15).
 - Public SaaS hosting, billing, or social features.
 - Native mobile apps.
-- Barcode scanning, recipes, meal planning, coaching or chat. Don't build hooks for them now.
+- Recipes, meal planning, coaching or chat. Don't build hooks for them now. (Barcode scanning was moved into scope; see section 8, "Packaged products".)
 - Medical advice. The app shows estimates and targets from standard formulas; it never diagnoses anything.
 
 ---
@@ -177,10 +177,11 @@ Every user-owned row carries `user_id`. Plan for several users per instance (a h
   - Unique on (user_id, date). Sources: `manual`, `shortcut`, `import` (and `google` in v0.2).
 - **`meals`** — id (client-generated UUIDv7, primary key), user_id, date, meal_type (breakfast/lunch/dinner/snack), description (what the user typed), scale (portion multiplier, default 1), assumptions, confidence (low/medium/high), source (ai/manual/repeat/import), provider_id (nullable), updated_at (effective time, section 6), received_at, deleted_at (nullable; tombstone).
 - **`meal_items`** — id (client-generated UUIDv7), meal_id, name, portion_text, grams (nullable), kcal, protein_g, carbs_g, fat_g, food_id (nullable), origin (`food_db` or `ai_estimate`).
-- **`foods`** — id, source (`staple`/`usda`/`user`), source_ref (USDA FDC ID, citation, or user id), name, name_norm, is_prepared (true for entries that already include cooking fat, e.g. "fried"), kcal, protein_g, carbs_g, fat_g per 100 g, default_portion_g (nullable).
+- **`foods`** — id, source (`staple`/`usda`/`user`/`off`), source_ref (USDA FDC ID, citation, user id, or Open Food Facts barcode), barcode (nullable, unique; GTIN digits), brand (nullable), serving_g (nullable; one label serving), serving_text (nullable; e.g. "1 biscuit (12 g)"), fetched_at (nullable; for `off` rows), name, name_norm, is_prepared (true for entries that already include cooking fat, e.g. "fried"), kcal, protein_g, carbs_g, fat_g per 100 g, default_portion_g (nullable).
 - **`food_aliases`** — food_id, alias, alias_norm, user_id (nullable; null = shipped alias, set = a user's own alias).
 - **`foods_fts`** — FTS5 table over food names and aliases.
 - **`user_portions`** — user_id, phrase_norm ("my usual chicken"), food_id, grams.
+- **`user_products`** — user_id, food_id, last_servings (the serving count last logged), last_used_at. A user's saved packaged products, for quick re-logging (section 8).
 - **`ai_providers`** — id, label, kind (`openai_compatible`/`anthropic`/`gemini`), base_url, model, api_key (encrypted, nullable), extra_headers (encrypted JSON, nullable), supports_vision, structured_output_mode, is_default_text, is_default_vision.
 - **`ai_usage`** — user_id, date (the user's local date, not UTC), provider_id, calls. Used for the daily call cap.
 - **`sync_ops`** — op_id, user_id, received_at. Used only to report duplicates; cleaned up after 30 days.
@@ -344,6 +345,17 @@ Table-driven tests from `fixtures/budget_cases.json` must cover each flag, both 
 - **USDA FoodData Central** (Foundation and SR Legacy; public domain), loaded with `cupful import-foods`. Ship `data/aliases.csv` mapping everyday names to USDA entries ("chicken breast" → the right roasted entry), because raw USDA names like "Chicken, broilers or fryers, breast, meat only, cooked, roasted" match poorly on their own.
 - Users can save an item as their own food or alias from the review screen.
 
+### Packaged products (barcode)
+- **Lookup:** `GET /api/products/{barcode}`. The barcode must be 8–14 digits with a valid GTIN check digit. The server looks in `foods` first (any user's earlier scan, or a label someone entered); otherwise it asks **Open Food Facts** (`/api/v2/product/{barcode}` with a `fields` list; check the current API docs and send the `User-Agent` they require, e.g. `Cupful/<version> (+<CUPFUL_SOURCE_URL>)`). Hits are stored as `foods` rows with source `off`, so each product is fetched once per instance. Refetch `off` rows older than 90 days on the next lookup; if that fails, keep the stored copy.
+- **Mapping:** per-100 g kcal, protein, carbohydrates and fat from Open Food Facts' nutriments; kcal from kJ ÷ 4.184 when only energy in kJ is given. The serving size comes from its serving quantity in grams, else no serving (grams only). A product with no usable per-100 g values counts as not found. Run the same plausibility check as section 8 step 2 (0–900 kcal per 100 g).
+- **Not found:** the UI offers "Enter from the label": name, brand, per-100 g (or per-serving plus serving grams) values. Saved as a `foods` row with source `user`, the barcode, and the user as `source_ref`, so the next scan of that barcode on this instance finds it. A user's own label entry wins over an `off` row for that user.
+- **Logging:** the user chooses servings (0.5 steps) or grams. The client computes the item (grams × per-100 g values) and logs it through `/api/sync` like any meal item, with `food_id` set and origin `food_db`. Meal source `manual`.
+- **Saved products:** `GET /api/products` lists the user's `user_products`, most recent first, with each food's values. A sync'd meal item whose food has a barcode upserts the `user_products` row (servings and last-used time). Users can remove a product from their list (`DELETE /api/products/{food_id}`, online only); the shared `foods` row stays.
+- **Offline:** scanning a product already in the saved list works offline (the client caches the list); a new product needs the network.
+- **Privacy and switch:** each lookup tells Open Food Facts which barcode was scanned. On by default; `CUPFUL_PRODUCT_LOOKUP=off` disables the outbound call (label entry still works). Documented in `.env.example`, `docs/self-hosting.md`, and Settings → About.
+- **License:** Open Food Facts data is under the Open Database License (ODbL). Settings → About and the product sheet credit "Product data from Open Food Facts (ODbL)" with a link. Stored `off` rows stay out of any shipped data file.
+- **Hardening:** connect 5 s, total 10 s, no retries beyond one on 5xx; a timeout reads as "lookup failed, enter from the label". Lookups are rate limited per user (60 per hour). `wiremock` tests cover hit, miss, kJ-only, missing serving, implausible values, timeout, refetch fallback, and that `CUPFUL_PRODUCT_LOOKUP=off` makes no request.
+
 ### Golden tests and eval
 - `data/golden/*.json` holds fixed descriptions with the expected foods, match status and grams (±15 %).
 - CI runs the pipeline on **recorded** model outputs for these cases, which keeps it deterministic. It covers matching, ambiguity, the oil rule, `is_prepared`, validation and unit conversion.
@@ -448,7 +460,9 @@ Use each provider's structured-output feature where it exists (check current doc
 1. **Today:**
    - Budget card: eaten against budget, amount left or over, and any flags (provisional, deficit capped, floor applied).
    - Macro bars for protein, carbs and fat against their targets, plus the "how it's worked out" breakdown.
-   - Meal composer: meal type, description, optional photo, Estimate.
+   - Meal composer: meal type, description, optional photo, Estimate, and **Scan barcode**.
+   - Product sheet (after a scan or from the saved list): name, brand, per-serving and per-100 g values, a servings stepper (0.5 steps) with a grams field, Add. "Enter from the label" when not found. Open Food Facts credit.
+   - Saved products: searchable list for one-tap re-logging, with remove.
    - Estimate review: source labels, ambiguity choices, editable grams, portion multiplier.
    - Logged meals grouped by meal type, plus "Eat this again".
    - Every AI error state from section 9.
@@ -534,7 +548,7 @@ One library, one theming path, one way of doing accessibility and empty states.
     - Are secrets kept out of logs?
     - Is the UI accessible and does it work at 360 px?
 - **`docs/decisions.md`:** one line per deviation from this plan or notable choice.
-- **No telemetry.** The only outbound calls go to providers the user configured.
+- **No telemetry.** The only outbound calls go to AI providers the user configured and, unless `CUPFUL_PRODUCT_LOOKUP=off`, Open Food Facts for barcode lookups.
 
 ---
 
@@ -584,21 +598,24 @@ Each milestone ends with:
 - **Food data:** `staples.csv`, the USDA importer, `aliases.csv` and FTS5.
 - **Pipeline:** validation, measures, matching with thresholds and ambiguity, and the oil rule with `is_prepared`.
 - **Endpoint:** `POST /api/estimate`.
+- **Packaged products:** barcode lookup with Open Food Facts and caching, label entry, saved products list (section 8).
 - **Testing:** the golden tests and `cupful eval`.
 
 *Done when:*
 - the golden suite passes on recorded outputs;
 - every adapter's mocked suite passes;
-- `curl` against a local Ollama turns "small cup of rice, 1 chicken breast shallow fried" into staple-matched rice, chicken and cooking oil.
+- `curl` against a local Ollama turns "small cup of rice, 1 chicken breast shallow fried" into staple-matched rice, chicken and cooking oil;
+- `curl /api/products/<a real barcode>` returns per-100 g and serving values, and a second call makes no outbound request.
 
 **M3 — Today screen**
 - Run frontend-design first.
 - **Meal flow:** composer, photo, estimate review with source labels and ambiguity choices, and every AI error state.
 - **Logging:** save, edit and delete through `/api/sync`, logged meals, repeat meals and manual entry.
+- **Barcode:** camera scanning with the browser's `BarcodeDetector` where it exists, else a WebAssembly reader (e.g. `zxing-wasm`) loaded only when Scan is tapped; a typed-barcode field as the last fallback. Product sheet, label entry and saved products.
 - **Budget:** the budget and macro cards with flags.
 - **Settings:** profile and providers.
 
-*Done when:* on a phone over the tailnet, a meal goes from description to saved log with correct totals, and each AI error state can be triggered and reads clearly. Then run frontend-design-impeccable.
+*Done when:* on a phone over the tailnet, a meal goes from description to saved log with correct totals, and each AI error state can be triggered and reads clearly; a packaged product is scanned on both an Android and an iPhone, logged at 1.5 servings with correct totals, and re-logged from the saved list. Then run frontend-design-impeccable.
 
 **M4 — Activity and Trends**
 - Activity section with field sources, the ingest endpoint and tokens, and `docs/shortcuts.md`.
