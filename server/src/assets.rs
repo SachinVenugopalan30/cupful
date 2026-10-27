@@ -11,7 +11,7 @@ struct Web;
 pub async fn serve(uri: Uri) -> Response {
     let path = uri.path().trim_start_matches('/');
     if path == "api" || path.starts_with("api/") {
-        return crate::error::Error::NotFound.into_response();
+        return crate::error::Error::not_found().into_response();
     }
     let (file, path) = match Web::get(path) {
         Some(f) if !path.is_empty() => (f, path),

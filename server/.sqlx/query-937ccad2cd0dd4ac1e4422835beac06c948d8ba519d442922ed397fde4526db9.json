@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE days SET trained = ?, trained_updated_at = ?\n             WHERE user_id = ? AND date = ? AND coalesce(trained_updated_at, 0) < ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "937ccad2cd0dd4ac1e4422835beac06c948d8ba519d442922ed397fde4526db9"
+}

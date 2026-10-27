@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE days SET weight_kg = ?, weight_updated_at = ?\n             WHERE user_id = ? AND date = ? AND coalesce(weight_updated_at, 0) < ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "5a2632c7108071d75288556522ff0d99621ff15dc1271dc65454e1189206faff"
+}

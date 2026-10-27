@@ -1,0 +1,21 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT NOT EXISTS (SELECT 1 FROM users) AS \"v!: bool\"",
+  "describe": {
+    "columns": [
+      {
+        "name": "v!: bool",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ad14478bdf88edc8fb7f07fd5b51e0882e4167972b7edcbf72062cbf4e96b3fe"
+}

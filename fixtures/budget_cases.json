@@ -1,0 +1,675 @@
+[
+ {
+  "name": "male formula, steps and weight training",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 10000,
+   "gym_minutes": 60,
+   "trained": [
+    "Chest",
+    "Arms"
+   ]
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 80.0,
+   "steps": 10000,
+   "met": 5,
+   "bmr": 1750,
+   "base": 2100,
+   "steps_kcal": 342,
+   "gym_kcal": 320,
+   "maintenance": 2762,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 2212,
+   "protein_g": 120.0,
+   "fat_g": 61.4,
+   "carbs_g": 294.8,
+   "flags": []
+  }
+ },
+ {
+  "name": "female formula, no gym",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1985,
+    "height_cm": 165,
+    "start_weight_kg": 68,
+    "goal_kg": 60,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 7000
+   }
+  ],
+  "weight_kg": 65,
+  "day": {
+   "steps": 6000
+  },
+  "expect": {
+   "age": 41,
+   "weight_kg": 65.0,
+   "steps": 6000,
+   "met": 5,
+   "bmr": 1315,
+   "base": 1578,
+   "steps_kcal": 130,
+   "gym_kcal": 0,
+   "maintenance": 1708,
+   "deficit": 275,
+   "floor": 1200,
+   "budget": 1433,
+   "protein_g": 96.0,
+   "fat_g": 39.8,
+   "carbs_g": 172.7,
+   "flags": []
+  }
+ },
+ {
+  "name": "no steps logged uses typical steps and is provisional",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {},
+  "expect": {
+   "age": 36,
+   "weight_kg": 80.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1750,
+   "base": 2100,
+   "steps_kcal": 251,
+   "gym_kcal": 0,
+   "maintenance": 2351,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1801,
+   "protein_g": 120.0,
+   "fat_g": 50.0,
+   "carbs_g": 217.7,
+   "flags": [
+    "provisional"
+   ]
+  }
+ },
+ {
+  "name": "steps under 2500 add nothing",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1985,
+    "height_cm": 165,
+    "start_weight_kg": 68,
+    "goal_kg": 60,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 7000
+   }
+  ],
+  "weight_kg": 65,
+  "day": {
+   "steps": 1800
+  },
+  "expect": {
+   "age": 41,
+   "weight_kg": 65.0,
+   "steps": 1800,
+   "met": 5,
+   "bmr": 1315,
+   "base": 1578,
+   "steps_kcal": 0,
+   "gym_kcal": 0,
+   "maintenance": 1578,
+   "deficit": 275,
+   "floor": 1200,
+   "budget": 1303,
+   "protein_g": 96.0,
+   "fat_g": 36.2,
+   "carbs_g": 148.4,
+   "flags": []
+  }
+ },
+ {
+  "name": "cardio only uses MET 7",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1985,
+    "height_cm": 165,
+    "start_weight_kg": 68,
+    "goal_kg": 60,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 7000
+   }
+  ],
+  "weight_kg": 65,
+  "day": {
+   "steps": 9000,
+   "gym_minutes": 40,
+   "trained": [
+    "Cardio"
+   ]
+  },
+  "expect": {
+   "age": 41,
+   "weight_kg": 65.0,
+   "steps": 9000,
+   "met": 7,
+   "bmr": 1315,
+   "base": 1578,
+   "steps_kcal": 241,
+   "gym_kcal": 260,
+   "maintenance": 2079,
+   "deficit": 275,
+   "floor": 1200,
+   "budget": 1804,
+   "protein_g": 96.0,
+   "fat_g": 50.1,
+   "carbs_g": 242.3,
+   "flags": []
+  }
+ },
+ {
+  "name": "cardio plus legs uses MET 5",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1985,
+    "height_cm": 165,
+    "start_weight_kg": 68,
+    "goal_kg": 60,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 7000
+   }
+  ],
+  "weight_kg": 65,
+  "day": {
+   "steps": 9000,
+   "gym_minutes": 40,
+   "trained": [
+    "Cardio",
+    "Legs"
+   ]
+  },
+  "expect": {
+   "age": 41,
+   "weight_kg": 65.0,
+   "steps": 9000,
+   "met": 5,
+   "bmr": 1315,
+   "base": 1578,
+   "steps_kcal": 241,
+   "gym_kcal": 173,
+   "maintenance": 1992,
+   "deficit": 275,
+   "floor": 1200,
+   "budget": 1717,
+   "protein_g": 96.0,
+   "fat_g": 47.7,
+   "carbs_g": 226.0,
+   "flags": []
+  }
+ },
+ {
+  "name": "no logged weight falls back to start weight",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": null,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 85.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1800,
+   "base": 2160,
+   "steps_kcal": 266,
+   "gym_kcal": 0,
+   "maintenance": 2426,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1876,
+   "protein_g": 120.0,
+   "fat_g": 52.1,
+   "carbs_g": 231.8,
+   "flags": []
+  }
+ },
+ {
+  "name": "aggressive pace is capped at 25% of maintenance",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1990,
+    "height_cm": 170,
+    "start_weight_kg": 75,
+    "goal_kg": 65,
+    "pace_kg_per_week": 1.0,
+    "typical_steps": 10000
+   }
+  ],
+  "weight_kg": null,
+  "day": {
+   "steps": 10000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 75.0,
+   "steps": 10000,
+   "met": 5,
+   "bmr": 1472,
+   "base": 1766,
+   "steps_kcal": 321,
+   "gym_kcal": 0,
+   "maintenance": 2086,
+   "deficit": 522,
+   "floor": 1200,
+   "budget": 1565,
+   "protein_g": 104.0,
+   "fat_g": 43.5,
+   "carbs_g": 189.4,
+   "flags": [
+    "deficit_capped"
+   ]
+  }
+ },
+ {
+  "name": "male floor raises the budget",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1960,
+    "height_cm": 165,
+    "start_weight_kg": 62,
+    "goal_kg": 58,
+    "pace_kg_per_week": 0.3,
+    "typical_steps": 6000
+   }
+  ],
+  "weight_kg": null,
+  "day": {
+   "steps": 6000
+  },
+  "expect": {
+   "age": 66,
+   "weight_kg": 62.0,
+   "steps": 6000,
+   "met": 5,
+   "bmr": 1326,
+   "base": 1592,
+   "steps_kcal": 124,
+   "gym_kcal": 0,
+   "maintenance": 1715,
+   "deficit": 330,
+   "floor": 1500,
+   "budget": 1500,
+   "protein_g": 92.8,
+   "fat_g": 41.7,
+   "carbs_g": 188.5,
+   "flags": [
+    "floor_applied"
+   ]
+  }
+ },
+ {
+  "name": "female floor above maintenance: budget is maintenance",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1940,
+    "height_cm": 148,
+    "start_weight_kg": 40,
+    "goal_kg": null,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 1000
+   }
+  ],
+  "weight_kg": null,
+  "day": {
+   "steps": 1000
+  },
+  "expect": {
+   "age": 86,
+   "weight_kg": 40.0,
+   "steps": 1000,
+   "met": 5,
+   "bmr": 734,
+   "base": 881,
+   "steps_kcal": 0,
+   "gym_kcal": 0,
+   "maintenance": 881,
+   "deficit": 220,
+   "floor": 1200,
+   "budget": 881,
+   "protein_g": 64.0,
+   "fat_g": 24.5,
+   "carbs_g": 101.1,
+   "flags": [
+    "deficit_capped",
+    "floor_applied",
+    "floor_above_maintenance"
+   ]
+  }
+ },
+ {
+  "name": "protein takes most of the budget: macros overcommitted",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1996,
+    "height_cm": 150,
+    "start_weight_kg": 50,
+    "goal_kg": 160,
+    "pace_kg_per_week": 0,
+    "typical_steps": 2000
+   }
+  ],
+  "weight_kg": null,
+  "day": {
+   "steps": 2000
+  },
+  "expect": {
+   "age": 30,
+   "weight_kg": 50.0,
+   "steps": 2000,
+   "met": 5,
+   "bmr": 1127,
+   "base": 1352,
+   "steps_kcal": 0,
+   "gym_kcal": 0,
+   "maintenance": 1352,
+   "deficit": 0,
+   "floor": 1200,
+   "budget": 1352,
+   "protein_g": 256.0,
+   "fat_g": 36.4,
+   "carbs_g": 0.0,
+   "flags": [
+    "macros_overcommitted"
+   ]
+  }
+ },
+ {
+  "name": "no goal uses current weight for protein",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 175,
+    "start_weight_kg": 90,
+    "goal_kg": null,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 88,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 88.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1799,
+   "base": 2159,
+   "steps_kcal": 276,
+   "gym_kcal": 0,
+   "maintenance": 2434,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1884,
+   "protein_g": 140.8,
+   "fat_g": 52.3,
+   "carbs_g": 212.5,
+   "flags": []
+  }
+ },
+ {
+  "name": "age on Dec 31",
+  "date": "2025-12-31",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 35,
+   "weight_kg": 80.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1755,
+   "base": 2106,
+   "steps_kcal": 251,
+   "gym_kcal": 0,
+   "maintenance": 2357,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1807,
+   "protein_g": 120.0,
+   "fat_g": 50.2,
+   "carbs_g": 218.8,
+   "flags": []
+  }
+ },
+ {
+  "name": "age on Jan 1 is a year older",
+  "date": "2026-01-01",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 80.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1750,
+   "base": 2100,
+   "steps_kcal": 251,
+   "gym_kcal": 0,
+   "maintenance": 2351,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1801,
+   "protein_g": 120.0,
+   "fat_g": 50.0,
+   "carbs_g": 217.7,
+   "flags": []
+  }
+ },
+ {
+  "name": "day before a new profile version uses the old one",
+  "date": "2026-03-09",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   },
+   {
+    "effective_from": "2026-03-10",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 80.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1750,
+   "base": 2100,
+   "steps_kcal": 251,
+   "gym_kcal": 0,
+   "maintenance": 2351,
+   "deficit": 550,
+   "floor": 1500,
+   "budget": 1801,
+   "protein_g": 120.0,
+   "fat_g": 50.0,
+   "carbs_g": 217.7,
+   "flags": []
+  }
+ },
+ {
+  "name": "new profile version applies from its effective date",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   },
+   {
+    "effective_from": "2026-03-10",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 8000
+  },
+  "expect": {
+   "age": 36,
+   "weight_kg": 80.0,
+   "steps": 8000,
+   "met": 5,
+   "bmr": 1750,
+   "base": 2100,
+   "steps_kcal": 251,
+   "gym_kcal": 0,
+   "maintenance": 2351,
+   "deficit": 275,
+   "floor": 1500,
+   "budget": 2076,
+   "protein_g": 120.0,
+   "fat_g": 57.7,
+   "carbs_g": 269.2,
+   "flags": []
+  }
+ },
+ {
+  "name": "date before any profile version has no budget",
+  "date": "2024-12-31",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 8000
+  },
+  "expect": null
+ }
+]

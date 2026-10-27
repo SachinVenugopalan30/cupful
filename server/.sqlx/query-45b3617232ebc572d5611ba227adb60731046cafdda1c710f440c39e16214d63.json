@@ -1,0 +1,110 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,\n                pace_kg_per_week, typical_steps\n         FROM profile_versions WHERE user_id = ? ORDER BY effective_from",
+  "describe": {
+    "columns": [
+      {
+        "name": "effective_from",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "effective_from"
+          }
+        }
+      },
+      {
+        "name": "sex",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "sex"
+          }
+        }
+      },
+      {
+        "name": "birth_year",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "birth_year"
+          }
+        }
+      },
+      {
+        "name": "height_cm",
+        "ordinal": 3,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "height_cm"
+          }
+        }
+      },
+      {
+        "name": "start_weight_kg",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "start_weight_kg"
+          }
+        }
+      },
+      {
+        "name": "goal_kg",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "goal_kg"
+          }
+        }
+      },
+      {
+        "name": "pace_kg_per_week",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "pace_kg_per_week"
+          }
+        }
+      },
+      {
+        "name": "typical_steps",
+        "ordinal": 7,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "typical_steps"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "45b3617232ebc572d5611ba227adb60731046cafdda1c710f440c39e16214d63"
+}

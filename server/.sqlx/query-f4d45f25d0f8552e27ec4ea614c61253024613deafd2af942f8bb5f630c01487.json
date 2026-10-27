@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT weight_kg AS \"w!: f64\" FROM days\n         WHERE user_id = ? AND date <= ? AND weight_kg IS NOT NULL ORDER BY date DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "w!: f64",
+        "ordinal": 0,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_kg"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "f4d45f25d0f8552e27ec4ea614c61253024613deafd2af942f8bb5f630c01487"
+}

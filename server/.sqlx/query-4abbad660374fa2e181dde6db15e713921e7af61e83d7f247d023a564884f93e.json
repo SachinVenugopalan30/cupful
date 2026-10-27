@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO sessions (id, user_id, data, expiry_date) VALUES (?, ?, ?, ?)\n             ON CONFLICT (id) DO UPDATE SET user_id = excluded.user_id, data = excluded.data,\n                 expiry_date = excluded.expiry_date\n             WHERE ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "4abbad660374fa2e181dde6db15e713921e7af61e83d7f247d023a564884f93e"
+}

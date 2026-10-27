@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE days SET gym_minutes = ?, gym_source = ?, gym_updated_at = ?\n             WHERE user_id = ? AND date = ? AND coalesce(gym_updated_at, 0) < ?\n               AND NOT (? != 'manual' AND gym_source IS 'manual')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "5b048085f9a8011b5785a6874c681a9620692bf65c1389801ef9df866f0ac79c"
+}

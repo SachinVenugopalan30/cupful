@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,\n             start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)\n         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n         ON CONFLICT (user_id, effective_from) DO UPDATE SET sex = excluded.sex,\n             birth_year = excluded.birth_year, height_cm = excluded.height_cm,\n             start_weight_kg = excluded.start_weight_kg, goal_kg = excluded.goal_kg,\n             pace_kg_per_week = excluded.pace_kg_per_week, typical_steps = excluded.typical_steps",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": []
+  },
+  "hash": "e8fbe0484d6a0ce4a3083b32132c76efa8cb07b6911d0b0e06fae6ab302e672b"
+}

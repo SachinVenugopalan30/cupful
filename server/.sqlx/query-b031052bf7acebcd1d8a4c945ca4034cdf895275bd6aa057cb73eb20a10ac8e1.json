@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO meals (id, user_id, date, meal_type, description, scale, assumptions,\n             confidence, source, provider_id, updated_at, received_at)\n         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n         ON CONFLICT (id) DO UPDATE SET date = excluded.date, meal_type = excluded.meal_type,\n             description = excluded.description, scale = excluded.scale,\n             assumptions = excluded.assumptions, confidence = excluded.confidence,\n             source = excluded.source, provider_id = excluded.provider_id,\n             updated_at = excluded.updated_at, received_at = excluded.received_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 12
+    },
+    "nullable": []
+  },
+  "hash": "b031052bf7acebcd1d8a4c945ca4034cdf895275bd6aa057cb73eb20a10ac8e1"
+}

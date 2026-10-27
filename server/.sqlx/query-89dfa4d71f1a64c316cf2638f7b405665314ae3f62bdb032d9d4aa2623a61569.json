@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT meal_id FROM meal_items WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "meal_id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "meal_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "89dfa4d71f1a64c316cf2638f7b405665314ae3f62bdb032d9d4aa2623a61569"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM meals WHERE deleted_at < ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "7c5512b56c50bcfe2c543bf268a8d948f69fff19cb79193b0425f1b9111ecc23"
+}

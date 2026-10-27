@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date, steps, steps_source, gym_minutes, gym_source, trained, weight_kg\n         FROM days WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "steps",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps"
+          }
+        }
+      },
+      {
+        "name": "steps_source",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps_source"
+          }
+        }
+      },
+      {
+        "name": "gym_minutes",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_minutes"
+          }
+        }
+      },
+      {
+        "name": "gym_source",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_source"
+          }
+        }
+      },
+      {
+        "name": "trained",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "trained"
+          }
+        }
+      },
+      {
+        "name": "weight_kg",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_kg"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "287173628df37acc48b459cca7c7700ffa7301425fb12e6b9b6f9eb08f725008"
+}

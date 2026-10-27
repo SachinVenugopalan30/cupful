@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE days SET steps = ?, steps_source = ?, steps_updated_at = ?\n             WHERE user_id = ? AND date = ? AND coalesce(steps_updated_at, 0) < ?\n               AND NOT (? != 'manual' AND steps_source IS 'manual')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "ae1b19eddd91f346d51aefd7ef714b505d0d9d8cb185caff8020469014fc1ad3"
+}
