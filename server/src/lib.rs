@@ -7,6 +7,7 @@ pub mod cleanup;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod products;
 pub mod profile;
 mod reads;
 pub mod sync;
