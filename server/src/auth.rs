@@ -168,7 +168,7 @@ pub async fn reset_password(
     password: &str,
 ) -> std::result::Result<(), String> {
     let msg = |e: Error| match e {
-        Error::Status(_, m) | Error::Internal(m) => m,
+        Error::Status(_, m) | Error::Coded(_, _, m) | Error::Internal(m) => m,
     };
     validate_password(password).map_err(msg)?;
     let hash = hash_password(password).await.map_err(msg)?;

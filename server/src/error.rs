@@ -8,6 +8,8 @@ use serde_json::json;
 #[derive(Debug)]
 pub enum Error {
     Status(StatusCode, String),
+    /// Like `Status`, plus a stable machine-readable `code` for the UI.
+    Coded(StatusCode, &'static str, String),
     /// Logged; the client only sees "internal error".
     Internal(String),
 }
@@ -31,6 +33,9 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let (status, msg) = match self {
             Error::Status(s, m) => (s, m),
+            Error::Coded(s, code, m) => {
+                return (s, Json(json!({ "error": m, "code": code }))).into_response();
+            }
             Error::Internal(e) => {
                 tracing::error!("{e}");
                 (

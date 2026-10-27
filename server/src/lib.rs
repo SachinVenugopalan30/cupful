@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+pub mod ai;
 mod assets;
 pub mod auth;
 pub mod budget;

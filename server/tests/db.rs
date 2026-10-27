@@ -73,3 +73,33 @@ async fn concurrent_writers_do_not_hit_database_is_locked() {
         .unwrap();
     assert_eq!(count, 200);
 }
+
+#[tokio::test]
+async fn foods_and_aliases_are_searchable_through_triggers() {
+    let pool = cupful::db::memory().await;
+    sqlx::query("INSERT INTO foods (id, source, name, name_norm, kcal, protein_g, carbs_g, fat_g) VALUES (1, 'staple', 'Chicken breast, cooked', 'chicken breast cooked', 165, 31, 0, 3.6)")
+        .execute(&pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO food_aliases (food_id, alias, alias_norm) VALUES (1, 'murgh', 'murgh')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    let hit = |q: &'static str| {
+        let pool = pool.clone();
+        async move {
+            sqlx::query_scalar::<_, i64>("SELECT food_id FROM foods_fts WHERE foods_fts MATCH ?")
+                .bind(q)
+                .fetch_optional(&pool)
+                .await
+                .unwrap()
+        }
+    };
+    assert_eq!(hit("breast").await, Some(1));
+    assert_eq!(hit("murgh").await, Some(1));
+    sqlx::query("DELETE FROM foods WHERE id = 1")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(hit("murgh").await, None);
+}
