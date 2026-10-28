@@ -41,6 +41,13 @@ server/                 Rust crate `cupful`
   tests/isolation.rs    user A vs user B for every `Access::User` route
   tests/products.rs     barcode lookups against wiremock
 web/                    SvelteKit app (adapter-static, SPA fallback)
+  src/lib/api.ts        API client, types for every endpoint, ApiError, errorMessage(e, context)
+  src/lib/sync/         uuidv7, op builders, sendOps (the only logged-data write path), scaleItems
+  src/lib/{format,date,theme}.ts, session.svelte.ts   formatting, dates, theme preference, session/day state
+  src/lib/styles/       tokens.css (design tokens, light-dark()), global.css (shared classes)
+  src/lib/{today,products,settings}/   screen components (props documented in each file's header)
+  e2e/, playwright.config.ts   Playwright against the real server
+docs/design.md          design direction, tokens, component rules
 fixtures/budget_cases.json   shared budget test vectors
 data/staples.csv, data/aliases.csv   shipped food data (embedded, seeded at startup)
 data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
@@ -64,6 +71,8 @@ mkdir -p ../.cupful && export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db && sq
 
 # frontend (from web/)
 npm run dev        # :5173, proxies /api -> :8080
+npm test           # Vitest
+npm run test:e2e   # Playwright (builds web, starts the Rust server); once: npx playwright install chromium
 npm run check
 npm run build
 ```
@@ -82,6 +91,7 @@ npm run build
 - New routes go in `routes()` in `lib.rs` with their `Access`. Request bodies use `error::JsonBody`, queries `error::Query`, so errors are always `{"error": ...}`.
 - Keep it small: no new dependency for what a few lines do. Mark deliberate shortcuts with `// ponytail: <ceiling>, <upgrade path>`.
 - Record deviations from `PLAN.md` in `docs/decisions.md` as one line: date, what, why.
+- Frontend logic gets a Vitest test (`*.test.ts` next to the code). Screens use tokens and `global.css` classes; no CSS framework or UI kit. Logged-data writes go only through `sync.sendOps`. `#lib` imports of TS files keep the `.ts` extension.
 - Outbound HTTP goes only to configured AI providers and (unless `CUPFUL_PRODUCT_LOOKUP=off`) Open Food Facts. Tests point base URLs at `wiremock`; `common::app()` has product lookup off. No telemetry, ever.
 
 ## Keeping this file current

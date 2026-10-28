@@ -75,10 +75,12 @@ cargo sqlx prepare --check -- --all-targets   # needs DATABASE_URL, see above
 
 cd ../web
 npm run check      # svelte-check
+npm test           # Vitest
 npm run build
+npm run test:e2e   # Playwright
 ```
 
-Vitest and Playwright join the list with the first frontend logic (M3).
+Playwright needs Rust (it starts the real server) and Chromium (`npx playwright install chromium`, once).
 
 ## Workflow
 
