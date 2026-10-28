@@ -5,6 +5,7 @@ pub mod auth;
 pub mod budget;
 pub mod cleanup;
 pub mod config;
+pub mod crypto;
 pub mod db;
 pub mod error;
 pub mod products;
