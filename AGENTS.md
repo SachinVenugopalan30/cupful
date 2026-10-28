@@ -8,8 +8,8 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ## Status
 
-- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract).
-- **In progress:** M2 — AI providers, nutrition pipeline and barcode lookup are merged; waiting on the live-Ollama check (PLAN.md §14).
+- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX).
+- **Next:** M3 — Today screen (run frontend-design first; PLAN.md §12, §14).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout

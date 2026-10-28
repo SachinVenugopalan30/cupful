@@ -25,7 +25,9 @@ pub const MAX_KCAL_PER_100G: f64 = 900.0;
 pub const OIL_PER_PORTION_G: f64 = 9.0;
 
 const INSTRUCTION: &str = "You turn a meal description (and photo, if any) into a list of foods. \
-Reply with JSON only, matching the schema. One item per distinct food. For each item give: \
+Reply with JSON only, matching the schema. One item per distinct food: split foods eaten together \
+(\"toast with butter\" is toast and butter), but keep a named dish whole (a burrito, pizza, sandwich \
+or curry is one item). For each item give: \
 `food`, a plain generic name (e.g. \"cooked white rice\", \"chicken breast\"); `amount` and `unit` \
 as the user said them (e.g. 1 \"small cup\", 2 \"slices\", 150 \"g\"); `grams`, your best estimate of \
 the edible weight; `cooking`, the method (\"none\", \"boiled\", \"shallow-fried\", \"deep-fried\", \

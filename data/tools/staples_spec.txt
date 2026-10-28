@@ -260,3 +260,6 @@ Ranch dressing|173592|0|tbsp
 Soy sauce|174277|0|tbsp
 Salsa|174524|0|tbsp
 Barbecue sauce|174523|0|tbsp
+Guacamole|2709307|0|tbsp
+Pepperoni pizza|2708640|1|piece, medium
+Chicken burrito|2708543|1|small/regular
