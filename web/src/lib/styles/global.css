@@ -394,15 +394,6 @@ textarea:focus-visible {
 	}
 }
 
-/* Placeholder for stubbed components (M3 foundation); delete with the last stub. */
-.stub {
-	padding: var(--space-4);
-	border: 2px dashed var(--border-strong);
-	border-radius: var(--radius-lg);
-	color: var(--text-muted);
-	font-size: var(--text-sm);
-}
-
 /* ---- dialog: a bottom sheet on phones, centered on wide screens ---- */
 
 dialog.sheet {
