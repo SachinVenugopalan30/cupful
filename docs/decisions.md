@@ -55,3 +55,7 @@ One line per deviation from `PLAN.md` or notable choice: date — what — why.
 - 2026-10-28 — `#lib/*` imports of `.ts` files carry the extension (`#lib/api.ts`). — Package-import wildcards don't resolve extensions in TypeScript.
 - 2026-10-28 — A 401 from a non-auth API route, and logout, do a full page load of `/login`. — Nothing from one account stays in memory for the next.
 - 2026-10-28 — Playwright runs against the real server on a fresh data dir after first-run setup (not `seed-demo`, which is M4), inside the rust CI job to reuse the debug build. — Real end-to-end without fixtures.
+- 2026-10-28 — Over-committed macros show protein and fat targets and "no target today" for carbs (no meter), never "0 g carbs". — Plan §7.
+- 2026-10-28 — Provider delete is confirmed with the native `confirm()`. — Smallest accessible confirmation.
+- 2026-10-28 — Profile form shows height as whole cm or ft + in to one decimal and converts on unit toggle; stored values can drift under 0.05 kg / 0.5 cm through rounding. — Readable inputs; drift is below any budget effect.
+- 2026-10-28 — New provider form defaults to openai_compatible at `http://host.docker.internal:11434/v1`, local, matching `.env.example`; switching kind replaces URL/local only while they still hold the old kind's defaults. — Sensible start, never clobbers what the admin typed.
