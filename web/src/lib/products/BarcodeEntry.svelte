@@ -62,7 +62,7 @@
 
 <dialog class="sheet" bind:this={dialog} aria-labelledby="product-sheet-title" onclose={() => (view = null)}>
 	{#if view}
-		<header>
+		<header class="sheet-head">
 			<h2 id="product-sheet-title" tabindex="-1" bind:this={heading}>{title}</h2>
 			<button type="button" class="btn btn-quiet close" aria-label="Close" onclick={() => dialog?.close()}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -109,22 +109,10 @@
 		stroke-linecap: round;
 		stroke-linejoin: round;
 	}
-	dialog {
-		overflow-y: auto;
-		overscroll-behavior: contain;
-	}
-	header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
-	}
-	h2 {
-		padding-top: var(--space-2);
-		overflow-wrap: anywhere;
+	.sheet-head {
+		margin-bottom: var(--space-3);
 	}
 	.close {
-		margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+		margin-right: calc(-1 * var(--space-2));
 	}
 </style>

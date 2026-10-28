@@ -89,7 +89,7 @@
 
 <dialog class="sheet review" bind:this={dialog} onclose={onClose} aria-labelledby="review-title-{uid}">
 	<form class="stack" method="dialog" onsubmit={(e) => (e.preventDefault(), save())} novalidate>
-		<header class="head">
+		<header class="sheet-head">
 			<h2 id="review-title-{uid}">{title}</h2>
 			<button type="button" class="btn btn-quiet" onclick={() => dialog.close()}>Cancel</button>
 		</header>
@@ -244,12 +244,6 @@
 	.review form {
 		gap: var(--space-4);
 	}
-	.head {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--space-2);
-	}
 	.items {
 		list-style: none;
 		margin: 0;
@@ -269,7 +263,7 @@
 	}
 	.item.needs {
 		border-color: var(--warning);
-		border-left-width: 4px;
+		box-shadow: inset 0 0 0 1px var(--warning);
 	}
 	.item-head {
 		display: flex;

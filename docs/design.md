@@ -39,11 +39,11 @@ Screens use these and add scoped styles only for layout. No CSS framework, UI ki
 
 - Layout: `.stack`, `.row`. Text: `.num` (rounded tabular numerals), `.muted`, `.small`, `.visually-hidden`.
 - `.card`. Buttons: `.btn` + `.btn-primary` / `.btn-quiet` / `.btn-danger`, `.btn-block`.
-- Forms: `.field` (label + control + `.hint`), native inputs styled globally, `[aria-invalid='true']`, `.segmented` (radio group as a segmented control).
+- Forms: `.field` (label + control + `.hint`), native inputs styled globally (checkboxes and radios are drawn from tokens, not `accent-color`, so they match both themes), `[aria-invalid='true']`, `.segmented` (radio group as a segmented control; the selected option gets `--accent-soft`, an `--accent` outline and bold text).
 - `.list` (rows with dividers), `.chip` + `.chip-db` / `.chip-ai` / `.chip-warning` / `.chip-over`.
 - `.meter` with `style="--value: 0.62; --fill: var(--protein)"`; add `.is-over` past 1.
 - States: `.notice` + `.notice-error` / `.notice-warning` / `.notice-info`, `.empty`, `.skeleton`.
-- `dialog.sheet`: a native `<dialog>` as a bottom sheet on phones, centered on wide screens.
+- `dialog.sheet`: a native `<dialog>` as a bottom sheet on phones, centered on wide screens; it scrolls itself. Its title row is a `<header class="sheet-head">` that stays in view while the sheet scrolls.
 
 ## Component rules
 
