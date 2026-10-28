@@ -177,6 +177,9 @@
 		display: flex;
 		gap: var(--space-2);
 	}
+	.typed .btn {
+		white-space: nowrap;
+	}
 	.error {
 		color: var(--error);
 	}
