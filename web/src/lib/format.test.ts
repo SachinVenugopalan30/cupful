@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import { formatGrams, formatHeight, formatKcal, formatWeight, heightToCm, weightToKg } from './format';
+import { formatGrams, formatHeight, formatKcal, formatWeight, heightToCm, round, weightToKg } from './format';
 
 describe('formatKcal', () => {
 	it('rounds half away from zero, like the server', () => {
@@ -39,5 +39,14 @@ describe('height', () => {
 	});
 	it('converts feet and inches to cm', () => {
 		expect(heightToCm(5, 10)).toBeCloseTo(177.8, 1);
+	});
+});
+
+describe('round', () => {
+	it('keeps NaN so invalid input stays invalid, and never returns -0', () => {
+		expect(round(NaN)).toBeNaN();
+		expect(Object.is(round(-0.04, 1), 0)).toBe(true);
+		expect(round(2.25, 1)).toBe(2.3);
+		expect(round(-2.25, 1)).toBe(-2.3);
 	});
 });

@@ -8,10 +8,11 @@ export type HeightUnit = 'cm' | 'ftin';
 const KG_PER_LB = 0.45359237;
 const CM_PER_IN = 2.54;
 
-/** Half away from zero, at `digits` decimals; never returns -0. */
-function round(x: number, digits = 0): number {
+/** Half away from zero, at `digits` decimals; never returns -0; NaN stays NaN. */
+export function round(x: number, digits = 0): number {
 	const f = 10 ** digits;
-	return Math.sign(x) * Math.round(Math.abs(x) * f) / f || 0;
+	const r = (Math.sign(x) * Math.round(Math.abs(x) * f)) / f;
+	return r === 0 ? 0 : r; // -0 → 0; NaN stays NaN
 }
 
 /** Whole kcal: "1235". */

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
 import type { Budget, BudgetFlag, Meal } from '../api';
-import { breakdown, eaten, flagMessages, leftOver, macroRows } from './budget';
+import { breakdown, flagMessages, leftOver, macroRows } from './budget';
+import { dayTotals } from './meal';
 
 const budget: Budget = {
 	date: '2026-10-28',
@@ -49,13 +50,13 @@ describe('flagMessages', () => {
 
 describe('eaten and left/over', () => {
 	it('sums meal totals', () => {
-		expect(eaten([meal(500, 30, 50, 20), meal(250.4, 10, 20.5, 5)])).toEqual({
+		expect(dayTotals([meal(500, 30, 50, 20), meal(250.4, 10, 20.5, 5)])).toEqual({
 			kcal: 750.4,
 			protein_g: 40,
 			carbs_g: 70.5,
 			fat_g: 25
 		});
-		expect(eaten([])).toEqual({ kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 });
+		expect(dayTotals([])).toEqual({ kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 });
 	});
 	it('reports left, exactly on budget as 0 left, and over', () => {
 		expect(leftOver(1000, 1807)).toEqual({ over: false, kcal: 807 });

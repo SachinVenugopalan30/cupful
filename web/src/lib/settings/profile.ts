@@ -3,7 +3,7 @@
 // Ranges mirror server/src/profile.rs.
 
 import type { Profile, ProfileIn, Sex } from '../api';
-import { heightToCm, weightToKg, type HeightUnit, type WeightUnit } from '../format';
+import { heightToCm, round, weightToKg, type HeightUnit, type WeightUnit } from '../format';
 
 export type ProfileForm = {
 	timezone: string;
@@ -22,7 +22,6 @@ export type ProfileForm = {
 };
 export type ProfileErrors = Partial<Record<keyof ProfileForm | 'height', string>>;
 
-const round = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d;
 const fromKg = (kg: number | null | undefined, u: WeightUnit, d = 1) =>
 	kg == null ? null : round(kg / weightToKg(1, u), d);
 const toKg = (v: number | null, u: WeightUnit) => (v == null ? null : weightToKg(v, u));

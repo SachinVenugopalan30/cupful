@@ -11,7 +11,8 @@
 	import { ApiError, errorMessage, getBudget, getMeals, type Budget, type Macros } from '#lib/api.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { breakdown, eaten, flagMessages, leftOver, macroRows } from './budget.ts';
+	import { breakdown, flagMessages, leftOver, macroRows } from './budget.ts';
+	import { dayTotals } from './meal.ts';
 
 	let { date, refreshKey }: { date: string; refreshKey: number } = $props();
 
@@ -33,7 +34,7 @@
 		});
 		let stale = false;
 		Promise.all([getBudget(date), getMeals(date)]).then(
-			([budget, meals]) => !stale && (s = { kind: 'ready', budget, eaten: eaten(meals) }),
+			([budget, meals]) => !stale && (s = { kind: 'ready', budget, eaten: dayTotals(meals) }),
 			(e) =>
 				!stale &&
 				(s =

@@ -2,7 +2,7 @@
 // Pure logic for packaged products: barcodes, servings ↔ grams, label checks, the logged meal.
 
 import type { MealType, Product } from '../api';
-import { formatGrams } from '../format';
+import { formatGrams, round } from '../format';
 import { itemFromPer100, uuidv7, type MealIn } from '../sync';
 
 /** 8–14 digits whose last digit is the GTIN check digit (same rule as server `products::gtin_ok`). */
@@ -36,7 +36,6 @@ export function normalizeScan(raw: string, format = ''): string | null {
 	return gtinOk(code) ? code : null;
 }
 
-const round = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d;
 
 export const servingsToGrams = (servings: number, servingG: number) => round(servings * servingG, 1);
 export const gramsToServings = (grams: number, servingG: number) => round(grams / servingG, 2);

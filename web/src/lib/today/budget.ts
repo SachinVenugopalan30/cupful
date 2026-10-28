@@ -2,7 +2,7 @@
 // What the budget card shows. The server computes the budget (PLAN.md §7); this only sums what
 // was eaten and puts the server's numbers into words.
 
-import type { Budget, BudgetFlag, Macros, Meal } from '../api';
+import type { Budget, BudgetFlag, Macros } from '../api';
 import { formatWeight, type WeightUnit } from '../format';
 
 const FLAGS: Record<BudgetFlag, string> = {
@@ -16,12 +16,6 @@ const FLAGS: Record<BudgetFlag, string> = {
 };
 
 export const flagMessages = (flags: BudgetFlag[]) => flags.map((f) => FLAGS[f]);
-
-export function eaten(meals: Meal[]): Macros {
-	const sum: Macros = { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
-	for (const { totals } of meals) for (const k of Object.keys(sum) as (keyof Macros)[]) sum[k] += totals[k];
-	return sum;
-}
 
 /** Whole kcal left (or over) of `budget`. Rounded first, so 0.2 over reads "0 left". */
 export function leftOver(eatenKcal: number, budget: number) {
