@@ -10,11 +10,11 @@
 -->
 <script lang="ts">
 	import { ApiError, errorMessage, estimate } from '#lib/api.ts';
+	import { defaultMealType } from '#lib/products/logic.ts';
 	import Review from './Review.svelte';
 	import {
 		MAX_DESCRIPTION,
 		MEAL_TYPES,
-		defaultMealType,
 		draftFromEstimate,
 		manualDraft,
 		reencodePhoto,

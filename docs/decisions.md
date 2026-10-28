@@ -55,3 +55,11 @@ One line per deviation from `PLAN.md` or notable choice: date — what — why.
 - 2026-10-28 — `#lib/*` imports of `.ts` files carry the extension (`#lib/api.ts`). — Package-import wildcards don't resolve extensions in TypeScript.
 - 2026-10-28 — A 401 from a non-auth API route, and logout, do a full page load of `/login`. — Nothing from one account stays in memory for the next.
 - 2026-10-28 — Playwright runs against the real server on a fresh data dir after first-run setup (not `seed-demo`, which is M4), inside the rust CI job to reuse the debug build. — Real end-to-end without fixtures.
+- 2026-10-28 — Over-committed macros show protein and fat targets and "no target today" for carbs (no meter), never "0 g carbs". — Plan §7.
+- 2026-10-28 — Provider delete is confirmed with the native `confirm()`. — Smallest accessible confirmation.
+- 2026-10-28 — Profile form shows height as whole cm or ft + in to one decimal and converts on unit toggle; stored values can drift under 0.05 kg / 0.5 cm through rounding. — Readable inputs; drift is below any budget effect.
+- 2026-10-28 — New provider form defaults to openai_compatible at `http://host.docker.internal:11434/v1`, local, matching `.env.example`; switching kind replaces URL/local only while they still hold the old kind's defaults. — Sensible start, never clobbers what the admin typed.
+- 2026-10-28 — zxing-wasm 3.1.6 (`zxing-wasm/reader`) is the WASM barcode fallback, loaded only when Scan is tapped (36.5 kB JS + 947 kB WASM, lazy). Its `.wasm` is bundled and served by Cupful (`application/wasm`, verified) via `prepareZXingModule({ overrides: { locateFile } })`. — The package fetches from jsDelivr by default: a third-party request (§13).
+- 2026-10-28 — `BarcodeDetector` is used only when `getSupportedFormats()` includes `ean_13`; otherwise the WASM reader. Scanned UPC-E codes are expanded to UPC-A before lookup. — Some desktop Chrome builds lack retail formats; UPC-E fails the GTIN-8 check digit rule the server uses.
+- 2026-10-28 — The product flow is one `<dialog>` that switches views (scan, label, product, saved); removing a saved product uses an inline confirmation. — One focus trap; a confirmation that works well on phones.
+- 2026-10-28 — Default meal type by hour: 05–11 breakfast, 11–15 lunch, 18–22 dinner, otherwise snack. — Shared by Composer and the product sheet.

@@ -5,7 +5,6 @@ import {
 	blankItem,
 	choose,
 	dayTotals,
-	defaultMealType,
 	draftFromEstimate,
 	draftFromMeal,
 	fitWithin,
@@ -70,18 +69,6 @@ const est: Estimate = {
 	warnings: ['Dropped "water": no amount.']
 };
 const ctx = { date: '2026-10-28', meal_type: 'lunch' as const, description: 'fish and rice' };
-
-describe('defaultMealType', () => {
-	it('follows the hour of day', () => {
-		expect(defaultMealType(7)).toBe('breakfast');
-		expect(defaultMealType(10)).toBe('breakfast');
-		expect(defaultMealType(12)).toBe('lunch');
-		expect(defaultMealType(16)).toBe('snack');
-		expect(defaultMealType(19)).toBe('dinner');
-		expect(defaultMealType(23)).toBe('snack');
-		expect(defaultMealType(2)).toBe('snack');
-	});
-});
 
 describe('fitWithin', () => {
 	it('downscales the long side to the limit, keeping the aspect ratio', () => {

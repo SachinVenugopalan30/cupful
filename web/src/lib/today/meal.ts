@@ -18,14 +18,6 @@ export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 export const MULTIPLIERS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 export const MAX_DESCRIPTION = 1000;
 
-/** Breakfast 5–10, lunch 11–14, snack 15–16, dinner 17–21, snack otherwise. */
-export function defaultMealType(hour: number): MealType {
-	if (hour >= 5 && hour < 11) return 'breakfast';
-	if (hour >= 11 && hour < 15) return 'lunch';
-	if (hour >= 17 && hour < 22) return 'dinner';
-	return 'snack';
-}
-
 /** Photo size after downscaling the long side to `max` (never upscaled). */
 export function fitWithin(width: number, height: number, max: number) {
 	const k = Math.min(1, max / Math.max(width, height));

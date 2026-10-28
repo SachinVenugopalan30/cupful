@@ -21,9 +21,7 @@ test('first run: setup, Today, stays logged in, theme, logout and login', async 
 
 	await expect(page).toHaveURL(/\/$/);
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
-	for (const stub of ['BudgetCard', 'BarcodeEntry']) {
-		await expect(page.getByText(`${stub} placeholder`)).toBeVisible();
-	}
+	await expect(page.getByRole('heading', { name: 'Log a meal' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled();
 	await page.getByRole('button', { name: 'Previous day' }).click();
 	await expect(page.getByRole('heading', { name: 'Yesterday' })).toBeVisible();
