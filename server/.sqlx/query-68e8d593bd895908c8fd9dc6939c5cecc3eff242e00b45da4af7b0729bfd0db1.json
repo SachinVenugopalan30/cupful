@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO foods (source, source_ref, name, name_norm, is_prepared, kcal, protein_g,\n                                carbs_g, fat_g, default_portion_g)\n             VALUES ('staple', ?, ?, ?, ?, ?, ?, ?, ?, ?)\n             ON CONFLICT (source, source_ref) WHERE source IN ('staple', 'usda', 'off') DO UPDATE SET\n                name = excluded.name, name_norm = excluded.name_norm,\n                is_prepared = excluded.is_prepared, kcal = excluded.kcal,\n                protein_g = excluded.protein_g, carbs_g = excluded.carbs_g, fat_g = excluded.fat_g,\n                default_portion_g = excluded.default_portion_g\n             RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "68e8d593bd895908c8fd9dc6939c5cecc3eff242e00b45da4af7b0729bfd0db1"
+}

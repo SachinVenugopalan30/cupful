@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use cupful::{AppState, Config};
 
-const USAGE: &str = "usage: cupful [serve | reset-password <username>]";
+const USAGE: &str = "usage: cupful [serve | reset-password <username> | import-foods <fdc.json> | eval --provider <id>]";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -17,6 +17,11 @@ async fn main() -> ExitCode {
     let result = match args.first().map(String::as_str) {
         None | Some("serve") => serve().await,
         Some("reset-password") if args.len() == 2 => reset_password(&args[1]).await,
+        Some("import-foods") if args.len() == 2 => import_foods(&args[1]).await,
+        Some("eval") if args.len() == 3 && args[1] == "--provider" => match args[2].parse() {
+            Ok(id) => eval(id).await,
+            Err(_) => Err(USAGE.to_string()),
+        },
         _ => Err(USAGE.to_string()),
     };
     match result {
@@ -46,6 +51,56 @@ async fn reset_password(username: &str) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     cupful::auth::reset_password(&db, username, password.trim_end_matches(['\r', '\n'])).await?;
     eprintln!("Password reset; {username}'s sessions were ended.");
+    Ok(())
+}
+
+/// Imports a FoodData Central Foundation or SR Legacy JSON file (unzipped).
+async fn import_foods(path: &str) -> Result<(), String> {
+    let db = open_db(&Config::from_env()?).await?;
+    let (imported, skipped) =
+        cupful::nutrition::foods::import_usda(&db, std::path::Path::new(path)).await?;
+    eprintln!("Imported {imported} USDA foods ({skipped} skipped: missing or implausible values).");
+    Ok(())
+}
+
+/// Runs the golden set against a live provider and prints per-item accuracy. Not part of CI.
+async fn eval(provider_id: i64) -> Result<(), String> {
+    use cupful::nutrition::golden;
+    let config = Config::from_env()?;
+    let state = AppState::new(open_db(&config).await?, config);
+    let provider = cupful::ai::by_id(&state, provider_id)
+        .await
+        .map_err(|e| match e {
+            cupful::ai::ProviderError::NotConfigured => format!("no such provider: {provider_id}"),
+            e => format!("provider {provider_id}: {e:?}"),
+        })?;
+    let (mut right, mut total) = (0, 0);
+    for (name, case) in golden::load(std::path::Path::new(golden::DIR))? {
+        // User 0: shared foods only.
+        match cupful::nutrition::estimate(
+            &state.db,
+            0,
+            provider.as_ref(),
+            &case.description,
+            vec![],
+        )
+        .await
+        {
+            Ok(est) => {
+                let (r, t, failures) = golden::check(&case, &est);
+                println!("{name}: {r}/{t}");
+                for f in failures {
+                    println!("  {f}");
+                }
+                (right, total) = (right + r, total + t);
+            }
+            Err(e) => {
+                println!("{name}: error {e:?}");
+                total += case.expected.len();
+            }
+        }
+    }
+    println!("per-item accuracy: {right}/{total}");
     Ok(())
 }
 

@@ -1,0 +1,25 @@
+{
+  "description": "2 rotis, a bowl of dal tadka and some curd",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "roti", "amount": 2, "unit": "roti", "grams": 80, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 240, "protein": 8, "carbs": 44, "fat": 4}},
+        {"food": "dal", "amount": 1, "unit": "bowl", "grams": 0, "cooking": "tadka", "mentions_oil": false,
+         "estimate": {"kcal": 230, "protein": 12, "carbs": 30, "fat": 7}},
+        {"food": "curd", "amount": 1, "unit": "small bowl", "grams": 100, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 60, "protein": 3.5, "carbs": 4.7, "fat": 3.3}}
+      ],
+      "assumptions": "Medium whole wheat rotis without ghee; dal tempered as usual.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Roti (chapati), whole wheat", "match": "matched", "grams": 80},
+    {"food": "Dal (cooked, with tadka)", "match": "matched", "grams": 250},
+    {"food": "Curd (dahi), plain whole milk", "match": "matched", "grams": 100}
+  ]
+}

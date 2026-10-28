@@ -1,0 +1,25 @@
+{
+  "description": "3 idlis with sambar and a bit of that thing from the office",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "idli", "amount": 3, "unit": "idli", "grams": 5000, "cooking": "steamed", "mentions_oil": false,
+         "estimate": {"kcal": 150, "protein": 5, "carbs": 30, "fat": 1}},
+        {"food": "sambar", "amount": 1, "unit": "cup", "grams": 240, "cooking": "tadka", "mentions_oil": false,
+         "estimate": {"kcal": 200, "protein": 10, "carbs": 28, "fat": 6}},
+        {"food": "office snack", "amount": 0, "unit": "some", "grams": -1, "cooking": "unknown", "mentions_oil": false,
+         "estimate": {"kcal": 100, "protein": 2, "carbs": 15, "fat": 4}}
+      ],
+      "assumptions": "The office snack is unknown.",
+      "confidence": "low"
+    }
+  },
+  "expected": [
+    {"food": "Idli", "match": "matched", "grams": 114},
+    {"food": "Sambar", "match": "matched", "grams": 240}
+  ],
+  "expected_warnings": 1
+}

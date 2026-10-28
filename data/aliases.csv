@@ -1,0 +1,269 @@
+alias,food
+rice,"Rice, white, cooked"
+white rice,"Rice, white, cooked"
+cooked rice,"Rice, white, cooked"
+steamed rice,"Rice, white, cooked"
+plain rice,"Rice, white, cooked"
+chawal,"Rice, white, cooked"
+brown rice,"Rice, brown, cooked"
+roti,"Roti (chapati), whole wheat"
+chapati,"Roti (chapati), whole wheat"
+chapathi,"Roti (chapati), whole wheat"
+phulka,"Roti (chapati), whole wheat"
+fulka,"Roti (chapati), whole wheat"
+paratha,"Paratha, whole wheat"
+parantha,"Paratha, whole wheat"
+naan,Naan
+nan,Naan
+idly,Idli
+idli,Idli
+dosa,"Dosa, plain"
+plain dosa,"Dosa, plain"
+dosai,"Dosa, plain"
+masala dosa,Masala dosa
+upma,Upma
+uppittu,Upma
+vada,Vada
+medu vada,Vada
+oats,"Oats, rolled, dry"
+rolled oats,"Oats, rolled, dry"
+oatmeal,"Oatmeal, cooked with water"
+porridge,"Oatmeal, cooked with water"
+bread,"Bread, white"
+white bread,"Bread, white"
+brown bread,"Bread, whole wheat"
+whole wheat bread,"Bread, whole wheat"
+atta,"Wheat flour (atta), whole grain"
+wheat flour,"Wheat flour (atta), whole grain"
+besan,Chickpea flour (besan)
+gram flour,Chickpea flour (besan)
+sooji,"Semolina (sooji), dry"
+suji,"Semolina (sooji), dry"
+rava,"Semolina (sooji), dry"
+semolina,"Semolina (sooji), dry"
+pasta,"Pasta, cooked"
+spaghetti,"Pasta, cooked"
+chicken biryani,Chicken biryani
+veg biryani,Vegetable biryani
+vegetable biryani,Vegetable biryani
+dal,"Dal (cooked, with tadka)"
+daal,"Dal (cooked, with tadka)"
+dhal,"Dal (cooked, with tadka)"
+dal tadka,"Dal (cooked, with tadka)"
+dal fry,"Dal (cooked, with tadka)"
+toor dal,"Toor dal, cooked"
+tuvar dal,"Toor dal, cooked"
+arhar dal,"Toor dal, cooked"
+moong dal,"Moong dal, cooked"
+mung dal,"Moong dal, cooked"
+masoor dal,"Masoor dal, cooked"
+red lentils,"Masoor dal, cooked"
+lentils,"Masoor dal, cooked"
+urad dal,"Urad dal, cooked"
+chana dal,"Chickpeas (chana), boiled"
+chickpeas,"Chickpeas (chana), boiled"
+kabuli chana,"Chickpeas (chana), boiled"
+garbanzo beans,"Chickpeas (chana), boiled"
+chole,Chole (chickpea curry)
+chhole,Chole (chickpea curry)
+chana masala,Chole (chickpea curry)
+rajma,Rajma (kidney bean curry)
+rajma masala,Rajma (kidney bean curry)
+kidney beans,"Kidney beans (rajma), boiled"
+sambar,Sambar
+sambhar,Sambar
+soybeans,"Soybeans, boiled"
+tofu,"Tofu, firm"
+egg,"Egg, whole, raw"
+anda,"Egg, whole, raw"
+boiled egg,"Egg, hard-boiled"
+hard boiled egg,"Egg, hard-boiled"
+fried egg,"Egg, fried"
+scrambled egg,"Egg, scrambled"
+egg bhurji,"Egg, scrambled"
+omelette,Omelette
+omelet,Omelette
+egg white,"Egg white, raw"
+chicken breast,"Chicken breast, cooked (roasted)"
+grilled chicken breast,"Chicken breast, cooked (roasted)"
+fried chicken breast,"Chicken breast, fried"
+chicken thigh,"Chicken thigh, cooked (roasted)"
+chicken keema,"Chicken, minced, cooked"
+minced chicken,"Chicken, minced, cooked"
+ground chicken,"Chicken, minced, cooked"
+chicken curry,Chicken curry
+murgh curry,Chicken curry
+fish curry,Fish curry
+machli curry,Fish curry
+vegetable curry,Vegetable curry
+mixed veg,Vegetable curry
+mutton,"Goat meat (mutton), cooked"
+goat,"Goat meat (mutton), cooked"
+mutton keema,"Lamb, minced, cooked"
+lamb mince,"Lamb, minced, cooked"
+beef mince,"Beef, minced, cooked"
+ground beef,"Beef, minced, cooked"
+salmon,"Salmon, cooked"
+tilapia,"Tilapia, grilled"
+fried fish,"Fish, fried"
+tuna,"Tuna, canned in water"
+prawns,"Shrimp, boiled"
+shrimp,"Shrimp, boiled"
+jhinga,"Shrimp, boiled"
+paneer,Paneer
+milk,"Milk, whole"
+doodh,"Milk, whole"
+whole milk,"Milk, whole"
+toned milk,"Milk, toned (2% fat)"
+skim milk,"Milk, skim"
+curd,"Curd (dahi), plain whole milk"
+dahi,"Curd (dahi), plain whole milk"
+yogurt,"Curd (dahi), plain whole milk"
+yoghurt,"Curd (dahi), plain whole milk"
+plain yogurt,"Curd (dahi), plain whole milk"
+low fat yogurt,"Yogurt, plain low fat"
+buttermilk,Buttermilk (chaas)
+chaas,Buttermilk (chaas)
+chhaas,Buttermilk (chaas)
+mattha,Buttermilk (chaas)
+cheddar,"Cheese, cheddar"
+cheese,"Cheese, cheddar"
+cottage cheese,"Cottage cheese, low fat"
+cream,"Cream, heavy"
+whey protein,Whey protein powder
+protein powder,Whey protein powder
+ghee,Ghee
+desi ghee,Ghee
+butter,Butter
+makhan,Butter
+oil,Cooking oil
+cooking oil,Cooking oil
+vegetable oil,Cooking oil
+refined oil,Cooking oil
+sunflower oil,Sunflower oil
+mustard oil,Mustard oil
+sarson oil,Mustard oil
+coconut oil,Coconut oil
+olive oil,Olive oil
+groundnut oil,Groundnut (peanut) oil
+peanut oil,Groundnut (peanut) oil
+canola oil,Canola oil
+potato,"Potato, boiled"
+aloo,"Potato, boiled"
+boiled potato,"Potato, boiled"
+baked potato,"Potato, baked"
+sweet potato,"Sweet potato, boiled"
+shakarkandi,"Sweet potato, boiled"
+fries,French fries
+french fries,French fries
+spinach,"Spinach (palak), boiled"
+palak,"Spinach (palak), boiled"
+palak paneer,Palak paneer
+cauliflower,"Cauliflower (gobi), boiled"
+gobi,"Cauliflower (gobi), boiled"
+phool gobi,"Cauliflower (gobi), boiled"
+cabbage,"Cabbage, boiled"
+patta gobi,"Cabbage, boiled"
+okra,"Okra (bhindi), boiled"
+bhindi,"Okra (bhindi), boiled"
+lady finger,"Okra (bhindi), boiled"
+eggplant,"Eggplant (baingan), cooked with oil"
+baingan,"Eggplant (baingan), cooked with oil"
+brinjal,"Eggplant (baingan), cooked with oil"
+aubergine,"Eggplant (baingan), cooked with oil"
+peas,"Green peas, boiled"
+matar,"Green peas, boiled"
+green beans,"Green beans, boiled"
+beans,"Green beans, boiled"
+karela,"Bitter gourd (karela), boiled"
+bitter gourd,"Bitter gourd (karela), boiled"
+lauki,"Bottle gourd (lauki), boiled"
+doodhi,"Bottle gourd (lauki), boiled"
+bottle gourd,"Bottle gourd (lauki), boiled"
+pumpkin,"Pumpkin, boiled"
+kaddu,"Pumpkin, boiled"
+broccoli,"Broccoli, boiled"
+corn,"Sweet corn, boiled"
+sweet corn,"Sweet corn, boiled"
+bhutta,"Sweet corn, boiled"
+carrot,"Carrot, raw"
+gajar,"Carrot, raw"
+tomato,"Tomato, raw"
+tamatar,"Tomato, raw"
+onion,"Onion, raw"
+pyaz,"Onion, raw"
+cucumber,"Cucumber, raw"
+kheera,"Cucumber, raw"
+mushroom,"Mushrooms, raw"
+samosa,Samosa
+pakora,Pakora
+pakoda,Pakora
+bhajji,Pakora
+banana,Banana
+kela,Banana
+apple,Apple
+seb,Apple
+mango,Mango
+aam,Mango
+orange,Orange
+santra,Orange
+grapes,Grapes
+angoor,Grapes
+papaya,Papaya
+guava,Guava
+amrood,Guava
+watermelon,Watermelon
+tarbooz,Watermelon
+pomegranate,Pomegranate
+anar,Pomegranate
+pineapple,Pineapple
+dates,"Dates, medjool"
+khajur,"Dates, medjool"
+raisins,Raisins
+kishmish,Raisins
+coconut,"Coconut, fresh"
+nariyal,"Coconut, fresh"
+almonds,Almonds
+badam,Almonds
+cashews,Cashews
+kaju,Cashews
+walnuts,Walnuts
+akhrot,Walnuts
+peanuts,"Peanuts, roasted"
+moongfali,"Peanuts, roasted"
+groundnuts,"Peanuts, roasted"
+peanut butter,Peanut butter
+sugar,Sugar
+cheeni,Sugar
+honey,Honey
+shahad,Honey
+dark chocolate,Dark chocolate
+chai,Tea with milk (chai)
+masala chai,Tea with milk (chai)
+tea,Tea with milk (chai)
+milk tea,Tea with milk (chai)
+coffee,"Coffee, black"
+black coffee,"Coffee, black"
+chicken wings,fdc:173630
+turkey breast,fdc:171496
+bacon,fdc:167914
+steak,fdc:168729
+orange juice,fdc:169098
+apple juice,fdc:173933
+beer,fdc:168746
+red wine,fdc:173190
+mayonnaise,fdc:171009
+soy milk,fdc:172446
+almond milk,fdc:174832
+kiwi,fdc:168153
+blueberries,fdc:171711
+pear,fdc:169118
+lettuce,fdc:169247
+quinoa,fdc:168917
+couscous,fdc:169700
+rye bread,fdc:172684
+bagel,fdc:174899
+croissant,fdc:174987
+mozzarella,fdc:170845
+parmesan,fdc:171247
+hummus,fdc:174289

@@ -1,0 +1,25 @@
+{
+  "description": "2 tbsp ghee on a plate of rice, and 200 ml milk",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "ghee", "amount": 2, "unit": "tbsp", "grams": null, "cooking": "none", "mentions_oil": true,
+         "estimate": {"kcal": 240, "protein": 0, "carbs": 0, "fat": 27}},
+        {"food": "rice", "amount": 1, "unit": "plate", "grams": null, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 390, "protein": 8, "carbs": 85, "fat": 1}},
+        {"food": "milk", "amount": 200, "unit": "ml", "grams": null, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 120, "protein": 6.4, "carbs": 9.6, "fat": 6.4}}
+      ],
+      "assumptions": "Whole milk.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Ghee", "match": "matched", "grams": 27},
+    {"food": "Rice, white, cooked", "match": "matched", "grams": 300},
+    {"food": "Milk, whole", "match": "matched", "grams": 200}
+  ]
+}

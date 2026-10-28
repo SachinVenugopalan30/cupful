@@ -126,14 +126,6 @@ fn check_per_100g(
     Ok(())
 }
 
-// ponytail: lowercase + collapsed spaces; switch to the nutrition pipeline's normalizer once merged.
-fn name_norm(name: &str) -> String {
-    name.to_lowercase()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
 /// Trimmed, non-empty text, or `None`.
 fn text(s: Option<&str>) -> Option<String> {
     s.map(str::trim).filter(|s| !s.is_empty()).map(String::from)
@@ -283,7 +275,7 @@ fn from_off(barcode: &str, body: &Value) -> Option<Food> {
 
 /// Inserts or refreshes the `off` row for the product's barcode.
 async fn store_off(db: &SqlitePool, f: Food, now: i64) -> Result<Food> {
-    let norm = name_norm(&f.name);
+    let norm = crate::nutrition::foods::normalize(&f.name);
     let id = sqlx::query_scalar!(
         "INSERT INTO foods (source, source_ref, name, name_norm, brand, barcode, kcal, protein_g,
              carbs_g, fat_g, serving_g, serving_text, fetched_at)
@@ -444,7 +436,11 @@ pub async fn create(
     JsonBody(body): JsonBody<LabelIn>,
 ) -> Result<Json<Value>> {
     let f = label_food(body).map_err(Error::bad_request)?;
-    let (me, norm, now) = (user.id.to_string(), name_norm(&f.name), now_ms());
+    let (me, norm, now) = (
+        user.id.to_string(),
+        crate::nutrition::foods::normalize(&f.name),
+        now_ms(),
+    );
     let mut tx = s.db.begin_with("BEGIN IMMEDIATE").await?;
     let existing = sqlx::query_scalar!(
         "SELECT id FROM foods

@@ -1,0 +1,122 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT f.id, f.name, f.source, f.is_prepared AS \"is_prepared: bool\", f.kcal, f.protein_g,\n                  f.carbs_g, f.fat_g, f.default_portion_g\n           FROM food_aliases a JOIN foods f ON f.id = a.food_id\n           WHERE a.alias_norm = ? AND (a.user_id IS NULL OR a.user_id = ?)\n             AND (f.user_id IS NULL OR f.user_id = ?)\n           ORDER BY a.user_id IS NULL, a.id LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "source"
+          }
+        }
+      },
+      {
+        "name": "is_prepared: bool",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "is_prepared"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "protein_g",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "protein_g"
+          }
+        }
+      },
+      {
+        "name": "carbs_g",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "carbs_g"
+          }
+        }
+      },
+      {
+        "name": "fat_g",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "fat_g"
+          }
+        }
+      },
+      {
+        "name": "default_portion_g",
+        "ordinal": 8,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "default_portion_g"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "eb50192d218d772dc074faa5347c7d98bfca547ff80000102b97ac1073e6ac5d"
+}
