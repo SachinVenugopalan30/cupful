@@ -1,0 +1,117 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/*
+ * Cupful design tokens. See docs/design.md. Calm blue, airy light theme, matching deep-blue dark.
+ * Every color is `light-dark(light, dark)`; `color-scheme` picks the side:
+ * System follows prefers-color-scheme, `<html data-theme="light|dark">` forces one (Settings).
+ * All text colors meet WCAG AA (4.5:1) on --bg, --surface and --surface-2 in their theme;
+ * chart, meter and border-strong colors meet 3:1 against --surface.
+ */
+:root {
+	color-scheme: light dark;
+
+	/* ---- surfaces and text ---- */
+	--bg: light-dark(#f4f8fc, #0f1d2c);
+	--surface: light-dark(#ffffff, #152639);
+	--surface-2: light-dark(#e9f1f9, #1c3149); /* sunken: meter tracks, inputs, hover */
+	--border: light-dark(#d3e0ed, #2a4361); /* hairlines; decorative */
+	--border-strong: light-dark(#6c839d, #6a86a6); /* input outlines: 3:1 */
+	--text: light-dark(#13263b, #e5eef8);
+	--text-muted: light-dark(#4b5f75, #a5b8cd);
+
+	/* ---- brand ---- */
+	--accent: light-dark(#2b67a3, #84b8ea); /* buttons, links, focus, current tab */
+	--accent-hover: light-dark(#225687, #a3cbf1);
+	--on-accent: light-dark(#ffffff, #0f1d2c);
+	--accent-soft: light-dark(#dceaf8, #1f3b5b); /* selected chips, current day */
+	--focus-ring: light-dark(#2b67a3, #a3cbf1);
+
+	/* ---- meaning ---- */
+	--under: light-dark(#276f55, #74cfa9); /* left in budget, success */
+	--under-soft: light-dark(#ddf2e8, #183d33);
+	--over: light-dark(#b23c34, #f4948b); /* over budget */
+	--over-soft: light-dark(#fbe6e3, #4a2226);
+	--warning: light-dark(#875600, #ebbb63); /* provisional, flags */
+	--warning-soft: light-dark(#fbf0d6, #3d3118);
+	--error: light-dark(#b3261e, #f4948b);
+	--error-soft: light-dark(#fce8e6, #4a2226);
+
+	/* ---- where a number came from (estimate review, meal items) ---- */
+	--src-db: light-dark(#1f6b76, #6ac6cf); /* "Database": matched food or product */
+	--src-db-soft: light-dark(#dcf0f2, #173a40);
+	--src-ai: light-dark(#6047a8, #bba7f2); /* "AI estimate": the model's guess */
+	--src-ai-soft: light-dark(#ebe5fa, #2d2550);
+
+	/* ---- macros and charts (LayerChart reads these via CSS vars) ---- */
+	--protein: light-dark(#2b67a3, #84b8ea);
+	--carbs: light-dark(#1f7a72, #6ccdc2);
+	--fat: light-dark(#93640f, #e3b65e);
+	--chart-intake: var(--accent);
+	--chart-budget: light-dark(#13263b, #e5eef8); /* budget tick */
+	--chart-weight: light-dark(#6047a8, #bba7f2);
+	--chart-average: light-dark(#1f7a72, #6ccdc2); /* rolling averages */
+	--chart-steps: light-dark(#276f55, #74cfa9);
+	--chart-over: var(--over);
+	--chart-grid: var(--border);
+	--chart-axis: var(--text-muted);
+
+	/* ---- type ---- */
+	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+	/* Rounded numerals for the numbers people glance at; falls back to the system face. */
+	--font-numeric: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--text-xs: 0.8125rem; /* 13px: captions, chips */
+	--text-sm: 0.875rem; /* 14px: secondary text */
+	--text-md: 1rem; /* 16px: body, inputs (keeps iOS from zooming) */
+	--text-lg: 1.25rem; /* 20px: section titles */
+	--text-xl: 1.5625rem; /* 25px: page titles, meal totals */
+	--text-2xl: 2rem; /* 32px */
+	--text-hero: 3.25rem; /* 52px: kcal left */
+	--leading-tight: 1.15;
+	--leading: 1.5;
+	--weight-regular: 400;
+	--weight-medium: 550;
+	--weight-bold: 680;
+
+	/* ---- space (4 px grid) ---- */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--space-7: 2.5rem;
+	--space-8: 3rem;
+	--gutter: var(--space-4); /* page side padding on phones */
+	--content-max: 40rem;
+	--touch: 2.75rem; /* 44 px minimum touch target */
+
+	/* ---- shape ---- */
+	--radius-sm: 0.5rem; /* chips, small inputs */
+	--radius-md: 0.75rem; /* buttons, inputs */
+	--radius-lg: 1.125rem; /* cards */
+	--radius-sheet: 1.5rem; /* bottom sheets, dialogs */
+	--radius-pill: 999px;
+	--shadow-color: light-dark(rgb(19 38 59 / 0.1), rgb(0 0 0 / 0.25));
+	--shadow-card: 0 1px 2px var(--shadow-color), 0 6px 20px -8px var(--shadow-color);
+	--shadow-sheet: 0 -8px 32px rgb(5 14 25 / 0.28);
+
+	/* ---- motion ---- */
+	--dur-fast: 120ms;
+	--dur-med: 220ms;
+	--dur-slow: 420ms; /* meter fills */
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--dur-fast: 0ms;
+		--dur-med: 0ms;
+		--dur-slow: 0ms;
+	}
+}
