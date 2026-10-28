@@ -243,3 +243,27 @@ export async function reencodePhoto(file: Blob): Promise<Blob> {
 		canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn't read this photo."))), 'image/jpeg', 0.85)
 	);
 }
+
+const MEAL_SOURCE: Record<Meal['source'], string> = {
+	ai: 'AI estimate',
+	manual: 'By hand',
+	repeat: 'Eaten again',
+	import: 'Imported'
+};
+
+/** A manual meal whose items all come from the food database was logged from a product. */
+export function mealSourceLabel(m: Pick<Meal, 'source' | 'items'>): string {
+	const product = m.source === 'manual' && m.items.length > 0 && m.items.every((i) => i.food_id !== null);
+	return product ? 'Product' : MEAL_SOURCE[m.source];
+}
+
+/** Hand-entered items are stored as `ai_estimate` (the only non-database origin), so the meal decides. */
+export function itemSourceLabel(
+	i: Pick<Meal['items'][number], 'origin'>,
+	m: Pick<Meal, 'source'>
+): { text: string; kind: 'db' | 'ai' | 'plain' } | null {
+	if (i.origin === 'food_db') return { text: 'Database', kind: 'db' };
+	if (m.source === 'ai') return { text: 'AI estimate', kind: 'ai' };
+	if (m.source === 'manual') return { text: 'By hand', kind: 'plain' };
+	return null;
+}

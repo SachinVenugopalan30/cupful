@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { Estimate, EstimateItem, Meal } from '#lib/api.ts';
 import {
 	blankItem,
+	itemSourceLabel,
+	mealSourceLabel,
 	choose,
 	dayTotals,
 	draftFromEstimate,
@@ -229,5 +231,28 @@ describe('repeatMeal', () => {
 		expect(m.items[0].id).not.toBe(saved.items[0].id);
 		expect(m).toMatchObject({ date: '2026-10-28', meal_type: 'dinner', source: 'repeat', scale: 2, provider_id: null });
 		expect(m.items[0]).toMatchObject({ grams: 300, kcal: 390, food_id: 1 });
+	});
+});
+
+describe('source labels', () => {
+	const item = (origin: 'food_db' | 'ai_estimate', food_id: number | null = null) =>
+		({ origin, food_id }) as Meal['items'][number];
+	const meal = (source: Meal['source'], items: Meal['items']) => ({ source, items }) as Meal;
+
+	it('calls a manual meal made only of database foods a product', () => {
+		expect(mealSourceLabel(meal('manual', [item('food_db', 7)]))).toBe('Product');
+		expect(mealSourceLabel(meal('manual', [item('ai_estimate')]))).toBe('By hand');
+		expect(mealSourceLabel(meal('manual', []))).toBe('By hand');
+		expect(mealSourceLabel(meal('ai', [item('food_db', 7)]))).toBe('AI estimate');
+		expect(mealSourceLabel(meal('repeat', [item('food_db', 7)]))).toBe('Eaten again');
+	});
+
+	it('labels items by where their numbers came from', () => {
+		expect(itemSourceLabel(item('food_db', 7), meal('manual', []))).toEqual({ text: 'Database', kind: 'db' });
+		expect(itemSourceLabel(item('ai_estimate'), meal('ai', []))).toEqual({ text: 'AI estimate', kind: 'ai' });
+		expect(itemSourceLabel(item('ai_estimate'), meal('manual', []))).toEqual({ text: 'By hand', kind: 'plain' });
+		// A repeat or import can't tell a model estimate from a hand entry, so it claims neither.
+		expect(itemSourceLabel(item('ai_estimate'), meal('repeat', []))).toBeNull();
+		expect(itemSourceLabel(item('ai_estimate'), meal('import', []))).toBeNull();
 	});
 });

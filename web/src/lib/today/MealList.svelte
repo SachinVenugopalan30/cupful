@@ -12,7 +12,15 @@
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { mealDelete, mealUpsert, sendOps, type Op } from '#lib/sync/index.ts';
 	import Review from './Review.svelte';
-	import { MEAL_TYPES, dayTotals, draftFromMeal, repeatMeal, type Draft } from './meal';
+	import {
+		MEAL_TYPES,
+		dayTotals,
+		draftFromMeal,
+		itemSourceLabel,
+		mealSourceLabel,
+		repeatMeal,
+		type Draft
+	} from './meal';
 
 	let { date, refreshKey, onChanged }: { date: string; refreshKey: number; onChanged: () => void } = $props();
 
@@ -67,12 +75,6 @@
 
 	const label = (t: string) => t[0].toUpperCase() + t.slice(1);
 	const title = (m: Meal) => m.description || m.items.map((i) => i.name).join(', ') || 'Meal';
-	const SOURCE: Record<Meal['source'], string> = {
-		ai: 'AI estimate',
-		manual: 'By hand',
-		repeat: 'Eaten again',
-		import: 'Imported'
-	};
 	const macros = (t: Macros) =>
 		`P ${formatGrams(t.protein_g)} · C ${formatGrams(t.carbs_g)} · F ${formatGrams(t.fat_g)} g`;
 </script>
@@ -112,7 +114,7 @@
 									<span class="what">
 										<span class="title">{title(m)}</span>
 										<span class="row small">
-											<span class="chip">{SOURCE[m.source]}</span>
+											<span class="chip">{mealSourceLabel(m)}</span>
 											{#if m.scale !== 1}<span class="chip chip-warning">×{m.scale}</span>{/if}
 										</span>
 									</span>
@@ -129,9 +131,10 @@
 												<span class="row small muted">
 													{#if i.portion_text}<span>{i.portion_text}</span>{/if}
 													{#if i.grams !== null}<span class="num">{formatGrams(i.grams)} g</span>{/if}
-													<span class="chip {i.origin === 'food_db' ? 'chip-db' : 'chip-ai'}"
-														>{i.origin === 'food_db' ? 'Database' : 'AI estimate'}</span
-													>
+													{#if itemSourceLabel(i, m)}
+														{@const src = itemSourceLabel(i, m)!}
+														<span class="chip {src.kind === 'plain' ? '' : `chip-${src.kind}`}">{src.text}</span>
+													{/if}
 												</span>
 											</span>
 											<span class="sum">
