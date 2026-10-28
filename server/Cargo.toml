@@ -10,6 +10,8 @@ publish = false
 argon2 = "0.6"
 async-trait = "0.1.92"
 axum = "0.8"
+base64 = "0.22"
+chacha20poly1305 = "0.11"
 jiff = { version = "0.2", features = ["serde", "tzdb-bundle-always"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls"] }
 rust-embed = { version = "8", features = ["mime-guess"] }

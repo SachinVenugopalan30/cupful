@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT kind, base_url, model, api_key, extra_headers, supports_vision,\n                structured_output_mode FROM ai_providers WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "kind",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "name": "base_url",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "base_url"
+          }
+        }
+      },
+      {
+        "name": "model",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "model"
+          }
+        }
+      },
+      {
+        "name": "api_key",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "api_key"
+          }
+        }
+      },
+      {
+        "name": "extra_headers",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "extra_headers"
+          }
+        }
+      },
+      {
+        "name": "supports_vision",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "supports_vision"
+          }
+        }
+      },
+      {
+        "name": "structured_output_mode",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "structured_output_mode"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "121d585c8291089a2a5174b807b56c0e2cf23958d225a66ffb77448535bd0284"
+}

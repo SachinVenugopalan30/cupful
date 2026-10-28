@@ -1,0 +1,28 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT COUNT(*) AS n, COALESCE(SUM(kind = ? AND base_url = ? AND model = ?), 0) AS \"same!: i64\"\n         FROM ai_providers",
+  "describe": {
+    "columns": [
+      {
+        "name": "n",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "same!: i64",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "e3316f65cf95338c95e91ec63f331a25b00257eef28dba254fc7250a5258abc0"
+}
