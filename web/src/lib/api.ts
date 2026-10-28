@@ -313,13 +313,16 @@ const MESSAGES: Record<string, string> = {
 };
 
 /**
- * Plain-language text for an error from this module. `context` words the shared `rate_limited`
- * code: AI estimates vs product lookups. Screens decide where the message goes; `no_provider`
- * and `provider_auth` deserve a link to Settings.
+ * Plain-language text for an error from this module. `context` words network failures and the
+ * shared `rate_limited` code (AI estimates vs product lookups). Screens decide where the message
+ * goes; `no_provider` and `provider_auth` deserve a link to Settings.
  */
-export function errorMessage(e: unknown, context: 'estimate' | 'product' = 'estimate'): string {
+export function errorMessage(
+	e: unknown,
+	context: 'general' | 'estimate' | 'product' = 'general'
+): string {
 	if (e instanceof ApiError) {
-		if (e.code === 'rate_limited') {
+		if (e.code === 'rate_limited' && context !== 'general') {
 			return context === 'product'
 				? 'Too many product lookups this hour. Enter it from the label instead.'
 				: 'The AI provider is limiting requests right now. Wait a minute and try again.';
@@ -328,9 +331,11 @@ export function errorMessage(e: unknown, context: 'estimate' | 'product' = 'esti
 		return (e.code && MESSAGES[e.code]) || e.message;
 	}
 	if (e instanceof TypeError) {
-		return context === 'product'
-			? "Can't reach Cupful. Looking up a new product needs a connection."
-			: "Can't reach Cupful. Estimates need a connection; check your network and try again.";
+		return {
+			general: "Can't reach Cupful. Check your connection, then try again.",
+			estimate: "Can't reach Cupful. Estimates need a connection; check it, then try again.",
+			product: "Can't reach Cupful. Looking up a new product needs a connection."
+		}[context];
 	}
 	return e instanceof Error ? e.message : String(e);
 }

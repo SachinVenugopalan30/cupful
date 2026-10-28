@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import { addDays, todayIn } from './date';
+import { addDays, dayLabel, todayIn } from './date';
 
 describe('todayIn', () => {
 	it('is the date in the given timezone', () => {
@@ -19,5 +19,14 @@ describe('addDays', () => {
 	});
 	it('ignores DST changes', () => {
 		expect(addDays('2026-03-08', 1)).toBe('2026-03-09');
+	});
+});
+
+describe('dayLabel', () => {
+	it('names today and yesterday, else a short date', () => {
+		expect(dayLabel('2026-10-28', '2026-10-28')).toBe('Today');
+		expect(dayLabel('2026-10-27', '2026-10-28')).toBe('Yesterday');
+		expect(dayLabel('2026-10-20', '2026-10-28')).toBe('Tue 20 Oct');
+		expect(dayLabel('2025-12-31', '2026-10-28')).toBe('Wed 31 Dec 2025');
 	});
 });

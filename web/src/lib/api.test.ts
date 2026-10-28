@@ -81,7 +81,7 @@ describe('errorMessage', () => {
 			'daily_cap',
 			'provider_auth'
 		]) {
-			const m = errorMessage(new ApiError(502, 'raw', code));
+			const m = errorMessage(new ApiError(502, 'raw', code), 'estimate');
 			expect(m).not.toBe('raw');
 			expect(m.length).toBeGreaterThan(20);
 		}
@@ -105,7 +105,9 @@ describe('errorMessage', () => {
 	});
 
 	it('explains network failures', () => {
-		expect(errorMessage(new TypeError('Failed to fetch'))).toMatch(/connection/i);
+		const e = new TypeError('Failed to fetch');
+		expect(errorMessage(e)).toMatch(/connection/i);
+		expect(errorMessage(e, 'estimate')).toMatch(/Estimates need a connection/);
 	});
 
 	it('falls back to the server message', () => {

@@ -43,6 +43,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run check
+      - run: npm test
       - run: npm run build
 
   rust:
@@ -78,6 +79,12 @@ jobs:
         env:
           SQLX_OFFLINE: "true"
       - run: cargo test
+        env:
+          SQLX_OFFLINE: "true"
+      # E2E needs the Rust server, so it runs here, reusing the debug build.
+      - name: Playwright
+        working-directory: web
+        run: npx playwright install --with-deps chromium && npm run test:e2e
         env:
           SQLX_OFFLINE: "true"
 
