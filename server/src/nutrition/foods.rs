@@ -204,8 +204,9 @@ pub async fn import_usda(
     let mut tx = db.begin().await.map_err(db_err)?;
     let (mut imported, mut skipped) = (0, 0);
     for f in foods.iter().flatten() {
-        let Some([kcal, protein, carbs, fat]) =
-            f.macros().filter(|m| (0.0..=900.0).contains(&m[0]))
+        let Some([kcal, protein, carbs, fat]) = f
+            .macros()
+            .filter(|m| (0.0..=super::MAX_KCAL_PER_100G).contains(&m[0]))
         else {
             skipped += 1;
             continue;

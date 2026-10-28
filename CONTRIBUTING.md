@@ -46,6 +46,8 @@ CLI commands (`cargo run -- <command>`):
 
 - `serve` — run the server (default).
 - `reset-password <username>` — set a new password; prompts on stdin.
+- `import-foods <file.json>` — import USDA FoodData Central Foundation or SR Legacy (the unzipped JSON download). Safe to re-run.
+- `eval --provider <id>` — run the golden estimate cases against a live provider and print per-item accuracy.
 
 ### Database changes
 

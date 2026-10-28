@@ -12,6 +12,7 @@ use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool};
 
 use crate::auth::{RateLimiter, User};
 use crate::error::{Error, JsonBody, Result};
+use crate::nutrition::{MAX_KCAL_PER_100G, r1};
 use crate::time::now_ms;
 use crate::{AppState, Config};
 
@@ -79,10 +80,6 @@ struct Food {
     fetched_at: Option<i64>,
 }
 
-fn r1(x: f64) -> f64 {
-    (x * 10.0).round() / 10.0
-}
-
 impl Food {
     fn json(&self) -> Value {
         let attribution = (self.source == "off").then(|| {
@@ -117,7 +114,7 @@ fn check_per_100g(
     fat: f64,
 ) -> std::result::Result<(), String> {
     let ok = |v: f64, hi: f64| v.is_finite() && (0.0..=hi).contains(&v);
-    if !ok(kcal, 900.0) {
+    if !ok(kcal, MAX_KCAL_PER_100G) {
         return Err("kcal per 100 g must be between 0 and 900".into());
     }
     if !(ok(protein, 100.0) && ok(carbs, 100.0) && ok(fat, 100.0)) {

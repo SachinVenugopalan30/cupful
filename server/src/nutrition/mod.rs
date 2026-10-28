@@ -160,7 +160,7 @@ pub struct Candidate {
     pub fat_g: f64,
 }
 
-fn r1(x: f64) -> f64 {
+pub(crate) fn r1(x: f64) -> f64 {
     (x * 10.0).round() / 10.0
 }
 

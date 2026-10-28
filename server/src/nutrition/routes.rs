@@ -15,8 +15,6 @@ use crate::ai::{self, Image, Purpose};
 use crate::auth::User;
 use crate::error::{Error, JsonBody, Result};
 
-pub const MAX_PHOTO_BYTES: usize = 5 * 1024 * 1024;
-
 /// JPEG, PNG or WebP by magic bytes; the declared content type proves nothing.
 fn image_type(b: &[u8]) -> Option<&'static str> {
     if b.starts_with(&[0xFF, 0xD8, 0xFF]) {
@@ -70,7 +68,7 @@ pub async fn estimate(
     }
     let images = match photo {
         None => vec![],
-        Some(b) if b.len() > MAX_PHOTO_BYTES => {
+        Some(b) if b.len() > crate::ai::MAX_IMAGE_BYTES => {
             return Err(Error::Status(
                 StatusCode::PAYLOAD_TOO_LARGE,
                 "photo is larger than 5 MB".into(),

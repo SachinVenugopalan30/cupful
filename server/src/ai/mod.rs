@@ -225,7 +225,7 @@ pub fn build(cfg: ProviderConfig, http: reqwest::Client, timeouts: Timeouts) -> 
     })
 }
 
-const MAX_IMAGE_BYTES: usize = 5 * 1024 * 1024;
+pub const MAX_IMAGE_BYTES: usize = 5 * 1024 * 1024;
 const MAX_TOKENS: u32 = 1024;
 const RETRIES: u32 = 2;
 /// A longer `Retry-After` than this fails fast as rate limited instead of holding the request.
