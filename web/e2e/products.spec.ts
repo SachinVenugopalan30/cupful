@@ -88,6 +88,7 @@ test('typed barcode, label entry, log 1.5 servings, saved products, re-log, remo
 	expect(logged.source).toBe('manual');
 	expect(logged.totals.kcal).toBe(180);
 	expect(logged.items[0]).toMatchObject({ grams: 45, portion_text: '1.5 servings (45 g)', origin: 'food_db' });
+	await expect(page.getByTestId('meal').filter({ hasText: 'Oat crackers' })).toContainText('180 kcal');
 
 	// Saved products: there, re-log with last servings (1.5)
 	await page.getByRole('button', { name: 'Saved products' }).click();
