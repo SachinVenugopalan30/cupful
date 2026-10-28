@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM user_products WHERE user_id = ? AND food_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "76fdd0f6b91238ce4eb86ec6d75c6269a491f01bf1d34bc960fc03992c36e81b"
+}

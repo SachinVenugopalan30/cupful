@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
+use std::time::Duration;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -12,6 +13,11 @@ pub struct Config {
     pub trusted_proxy: Option<IpAddr>,
     /// AGPL §13: where users of this instance can get its source.
     pub source_url: String,
+    /// Barcode lookups at Open Food Facts. Off: stored products and label entry only.
+    pub product_lookup: bool,
+    pub off_base_url: String,
+    /// Total time for one Open Food Facts request; connecting is capped at 5 s.
+    pub off_timeout: Duration,
 }
 
 impl Default for Config {
@@ -22,6 +28,9 @@ impl Default for Config {
             secure_cookies: true,
             trusted_proxy: None,
             source_url: "https://github.com/SachinVenugopalan30/cupful".into(),
+            product_lookup: true,
+            off_base_url: "https://world.openfoodfacts.org".into(),
+            off_timeout: Duration::from_secs(10),
         }
     }
 }
@@ -47,6 +56,9 @@ impl Config {
         }
         if let Some(v) = var("CUPFUL_SOURCE_URL") {
             c.source_url = v;
+        }
+        if let Some(v) = var("CUPFUL_PRODUCT_LOOKUP") {
+            c.product_lookup = v != "off" && v != "false" && v != "0";
         }
         Ok(c)
     }

@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::extract::{DefaultBodyLimit, State};
-use axum::routing::{MethodRouter, get, post, put};
+use axum::routing::{MethodRouter, delete, get, post, put};
 use axum::{Json, Router, middleware};
 pub use config::Config;
 use serde_json::{Value, json};
@@ -28,12 +28,14 @@ pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
     pub login_limiter: Arc<auth::RateLimiter>,
+    pub products: Arc<products::Lookup>,
 }
 
 impl AppState {
     pub fn new(db: SqlitePool, config: Config) -> Self {
         Self {
             db,
+            products: Arc::new(products::Lookup::new(&config)),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
         }
@@ -69,6 +71,16 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/days/{date}", User, get(reads::day)),
         ("GET", "/api/meals", User, get(reads::meals)),
         ("GET", "/api/budget/{date}", User, get(reads::budget)),
+        ("GET", "/api/products", User, get(products::list)),
+        ("POST", "/api/products", User, post(products::create)),
+        // `{id}` is a barcode for GET and a food id for DELETE (one name per path segment).
+        ("GET", "/api/products/{id}", User, get(products::lookup)),
+        (
+            "DELETE",
+            "/api/products/{id}",
+            User,
+            delete(products::remove),
+        ),
     ]
 }
 

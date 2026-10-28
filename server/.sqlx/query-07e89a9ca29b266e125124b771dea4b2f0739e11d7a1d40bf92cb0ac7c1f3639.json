@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO user_products (user_id, food_id, last_servings, last_used_at)\n         VALUES (?, ?, ?, ?)\n         ON CONFLICT (user_id, food_id) DO UPDATE SET\n             last_servings = coalesce(excluded.last_servings, last_servings),\n             last_used_at = excluded.last_used_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "07e89a9ca29b266e125124b771dea4b2f0739e11d7a1d40bf92cb0ac7c1f3639"
+}
