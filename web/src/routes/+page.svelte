@@ -27,7 +27,7 @@
 <style>
 	.today {
 		display: grid;
-		gap: var(--space-4);
+		gap: var(--space-5);
 		grid-template-areas: 'nav' 'budget' 'log' 'meals';
 		grid-template-columns: minmax(0, 1fr);
 	}

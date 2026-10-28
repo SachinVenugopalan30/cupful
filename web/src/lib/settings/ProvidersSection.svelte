@@ -106,8 +106,8 @@
 							<span class="small muted wrap">{p.base_url}</span>
 							<span class="row">
 								<span class="chip">{p.is_local ? 'Local' : 'Hosted'}</span>
-								{#if p.is_default_text}<span class="chip chip-db">Default for text</span>{/if}
-								{#if p.is_default_vision}<span class="chip chip-ai">Default for photos</span>{/if}
+								{#if p.is_default_text}<span class="chip">Default for text</span>{/if}
+								{#if p.is_default_vision}<span class="chip">Default for photos</span>{/if}
 								{#if p.supports_vision}<span class="chip">Reads photos</span>{/if}
 								<span class="chip">{p.has_key ? 'Key saved' : 'No key'}</span>
 							</span>
