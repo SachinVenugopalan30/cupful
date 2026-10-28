@@ -52,12 +52,19 @@ async fn reset_password(username: &str) -> Result<(), String> {
 async fn serve() -> Result<(), String> {
     let config = Config::from_env()?;
     let db = open_db(&config).await?;
-    cupful::cleanup::spawn(db.clone());
+    let env_key = std::env::var("CUPFUL_SECRET_KEY")
+        .ok()
+        .filter(|v| !v.is_empty());
+    let secrets = cupful::crypto::load(&db, &config.data_dir, env_key.as_deref()).await?;
+    let mut state = AppState::new(db.clone(), config.clone());
+    state.secrets = std::sync::Arc::new(secrets);
+    cupful::ai::settings::seed_from_env(&state, |k| std::env::var(k).ok()).await?;
+    cupful::cleanup::spawn(db);
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
         .map_err(|e| format!("bind {}: {e}", config.bind))?;
     tracing::info!("listening on http://{}", config.bind);
-    let app = cupful::router(AppState::new(db, config));
+    let app = cupful::router(state);
     // ConnectInfo gives the login rate limiter the peer address.
     axum::serve(
         listener,
