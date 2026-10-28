@@ -45,7 +45,7 @@
 			await profile.save(r.value);
 			await loadSession();
 			isNew = false;
-			status = 'Saved. Changes apply from today; past days keep their old targets.';
+			status = 'Profile saved. Your budget uses it from today.';
 		} catch (err) {
 			saveError = errorMessage(err);
 		} finally {
