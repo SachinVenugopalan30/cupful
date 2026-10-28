@@ -27,5 +27,8 @@
 	},
 	"imports": {
 		"#lib/*": "./src/lib/*"
+	},
+	"dependencies": {
+		"zxing-wasm": "^3.1.6"
 	}
 }
