@@ -1,0 +1,22 @@
+{
+  "description": "a plate of pad thai and 6 pieces of salmon sushi roll",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-28",
+    "output": {
+      "items": [
+        {"food": "pad thai", "amount": 1, "unit": "plate", "grams": 300, "cooking": "stir-fried", "mentions_oil": false,
+         "estimate": {"kcal": 480, "protein": 20, "carbs": 60, "fat": 18}},
+        {"food": "salmon sushi roll", "amount": 6, "unit": "piece", "grams": 180, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 185, "protein": 8, "carbs": 30, "fat": 3}}
+      ],
+      "assumptions": "A restaurant plate of pad thai and one six-piece salmon maki roll.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Pad Thai", "match": "matched", "grams": 300},
+    {"food": "Sushi roll, salmon", "match": "matched", "grams": 180}
+  ]
+}

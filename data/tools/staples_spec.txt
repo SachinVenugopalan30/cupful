@@ -1,0 +1,262 @@
+Rice, white, cooked|168878|0|cup
+Rice, brown, cooked|169704|0|cup
+Roti (chapati), plain|171844|0|piece
+Roti (chapati), whole wheat|174075|0|piece
+Paratha, whole wheat|174076|1|piece
+Naan|171845|0|piece
+Idli|2708346|0|
+Dosa, plain|2708347|1|medium
+Masala dosa|2709129|1|medium
+Upma|2709128|1|cup
+Vada|2709130|1|item
+Oats, rolled, dry|2346396|0|
+Oatmeal, cooked with water|2708381|0|cup, cooked
+Bread, white|174924|0|slice
+Bread, whole wheat|172688|0|slice
+Wheat flour (atta), whole grain|168893|0|cup
+Chickpea flour (besan)|174288|0|cup
+Semolina (sooji), dry|168933|0|cup
+Pasta, cooked|169737|0|spaghetti not packed
+Chicken biryani|2706538|1|cup
+Vegetable biryani|2708985|1|cup
+Dal (cooked, with tadka)|2707427|1|cup
+Toor dal, cooked|172437|0|cup
+Moong dal, cooked|174257|0|cup
+Masoor dal, cooked|172421|0|cup
+Urad dal, cooked|172427|0|cup
+Chickpeas (chana), boiled|173757|0|cup
+Chole (chickpea curry)|2707415|1|cup
+Kidney beans (rajma), boiled|173740|0|cup
+Rajma (kidney bean curry)|2707380|1|cup
+Sambar|2707430|1|cup
+Lentil curry|2707431|1|cup
+Soybeans, boiled|174271|0|cup
+Tofu, firm|172475|0|
+Egg, whole, raw|171287|0|1.0 large
+Egg, hard-boiled|173424|0|large
+Egg, fried|173423|1|large
+Egg, scrambled|172187|1|large
+Omelette|172185|1|large
+Egg white, raw|172183|0|large
+Chicken breast, cooked (roasted)|171477|0|breast
+Chicken breast, fried|171078|1|breast
+Chicken thigh, cooked (roasted)|172388|0|thigh without skin
+Chicken, minced, cooked|171117|0|
+Chicken curry|2706437|1|cup
+Fish curry|2706460|1|cup
+Vegetable curry|2710067|1|cup
+Goat meat (mutton), cooked|2705908|0|
+Lamb, minced, cooked|172544|0|3.0 oz
+Beef, minced, cooked|174032|0|
+Salmon, cooked|175168|0|fillet
+Tilapia, grilled|2706320|0|small/regular fillet
+Fish, fried|2706322|1|fillet
+Tuna, canned in water|173709|0|
+Shrimp, boiled|2706363|0|1 cup
+Paneer|2705740|0|-
+Milk, whole|746782|0|cup
+Milk, toned (2% fat)|746778|0|cup
+Milk, skim|746776|0|cup
+Curd (dahi), plain whole milk|2259793|0|cup
+Yogurt, plain low fat|170886|0|cup
+Buttermilk (chaas)|2705393|0|cup
+Cheese, cheddar|173414|0|slice
+Cottage cheese, low fat|328841|0|cup
+Cream, heavy|170859|0|tbsp
+Whey protein powder|173177|0|
+Ghee|171314|0|tbsp
+Butter|173410|0|tbsp
+Cooking oil|172370|0|tbsp
+Sunflower oil|171025|0|tbsp
+Mustard oil|172337|0|tbsp
+Coconut oil|171412|0|tbsp
+Olive oil|171413|0|tbsp
+Groundnut (peanut) oil|171410|0|tbsp
+Canola oil|172336|0|tbsp
+Potato, boiled|170440|0|medium
+Potato, baked|170093|0|potato medium
+Sweet potato, boiled|168484|0|potato
+French fries|2709456|1|1 cup
+Spinach (palak), boiled|168463|0|cup
+Palak paneer|2709631|1|cup
+Cauliflower (gobi), boiled|170397|0|cup
+Cabbage, boiled|169976|0|cup
+Okra (bhindi), boiled|169261|0|cup
+Eggplant (baingan), cooked with oil|2709930|1|cup
+Green peas, boiled|170420|0|cup
+Green beans, boiled|169141|0|cup
+Bitter gourd (karela), boiled|168394|0|cup
+Bottle gourd (lauki), boiled|169233|0|cup
+Pumpkin, boiled|168449|0|cup
+Broccoli, boiled|169967|0|cup
+Sweet corn, boiled|169999|0|cup
+Carrot, raw|170393|0|medium
+Tomato, raw|170457|0|medium
+Onion, raw|170000|0|1.0 medium
+Cucumber, raw|168409|0|0.5 cup
+Mushrooms, raw|2709793|0|cup
+Samosa|2708730|1|regular
+Pakora|2710066|1|
+Banana|173944|0|medium
+Apple|171688|0|medium
+Mango|169910|0|fruit
+Orange|169097|0|fruit
+Grapes|174683|0|cup
+Papaya|169926|0|1" pieces
+Guava|173044|0|fruit
+Watermelon|167765|0|cup
+Pomegranate|169134|0|arils
+Pineapple|169124|0|cup
+Dates, medjool|168191|0|date
+Raisins|168165|0|
+Coconut, fresh|170169|0|piece
+Almonds|170567|0|
+Cashews|170162|0|
+Walnuts|170187|0|oz
+Peanuts, roasted|173806|0|
+Peanut butter|172470|0|tbsp
+Sugar|169655|0|tsp
+Honey|169640|0|tbsp
+Dark chocolate|170272|0|
+Tea with milk (chai)|2710506|0|cup
+Coffee, black|171890|0|cup
+Corn flakes|2708453|0|cup
+Granola|171646|0|cup
+Pancakes|175009|1|pancake
+Waffles|175039|1|waffle
+Bagel, plain|174899|0|bagel
+Croissant|174987|0|croissant, medium
+English muffin|175063|0|muffin
+Toast, white bread|2707599|0|medium or regular slice
+Toast, whole wheat|172689|0|slice
+Bacon, cooked|167914|1|slice
+Pork sausage, cooked|174579|1|link
+Ham, sliced|173864|0|slice
+Maple syrup|169661|0|tbsp
+Quinoa, cooked|168917|0|cup
+Couscous, cooked|169700|0|cup, cooked
+Flour tortilla|167535|0|tortilla
+Corn tortilla|175036|0|tortilla
+Pita bread|174915|0|pita
+Egg noodles, cooked|168919|0|cup
+Rice noodles, cooked|168914|0|cup
+Instant ramen noodles, dry|171177|1|package
+Barley, cooked|170285|0|cup
+Bulgur, cooked|170287|0|cup
+Mashed potatoes|168555|1|cup
+Beef steak (sirloin), cooked|173118|0|oz
+Pork chop, cooked|167827|0|chop
+Pork tenderloin, roasted|168250|0|oz
+Pork ribs, cooked|167854|0|oz
+Turkey breast, roasted|171496|0|oz
+Turkey breast, deli sliced|172941|0|slice
+Hot dog (beef frankfurter)|174614|0|frankfurter
+Cod, cooked|171956|0|fillet
+Sardines, canned in oil|175139|0|can
+Fish sticks|174195|1|stick
+Black beans, cooked|173735|0|cup
+Pinto beans, cooked|175200|0|cup
+Edamame|168411|0|cup
+Tempeh|174272|0|cup
+Hummus|321358|0|tbsp
+Greek yogurt, plain, nonfat|330137|0|container
+Greek yogurt, plain, whole milk|171304|0|container
+Mozzarella|170845|0|oz
+Parmesan, grated|171247|0|tbsp
+Cream cheese|173418|0|tbsp
+Ice cream, vanilla|167575|0|cup
+Sour cream|171257|0|tbsp
+Strawberries|167762|0|cup, whole
+Blueberries|171711|0|cup
+Raspberries|167755|0|cup
+Pear|169118|0|medium
+Peach|169928|0|medium
+Kiwi|168153|0|fruit
+Avocado|171705|0|avocado
+Cherries|171719|0|cup
+Plum|169949|0|fruit
+Cantaloupe|169092|0|cup
+Dried cranberries|171723|0|cup
+Romaine lettuce|169247|0|cup
+Iceberg lettuce|2346388|0|RACC
+Kale, raw|168421|0|cup
+Bell pepper, red|170108|0|medium
+Zucchini|169291|0|medium
+Celery|169988|0|stalk
+Asparagus, cooked|168390|0|spear
+Brussels sprouts, cooked|169971|0|cup
+Garlic|169230|0|clove
+Beets, cooked|169146|0|beet
+Olives|169094|0|olive
+Pickles, dill|168558|0|spear
+Cheese pizza|2708616|1|slice
+Hamburger|2706920|1|sandwich
+Cheeseburger|2706888|1|sandwich
+Turkey sandwich|170706|0|sandwich
+Burrito|2708534|1|small/regular
+Taco|2708514|1|taco
+Quesadilla|2708590|1|full circle
+Enchilada|2708565|1|enchilada
+Nachos with cheese|2708576|1|order
+Empanada|2708709|1|empanada
+Lasagna with meat|2708750|1|piece
+Macaroni and cheese|2708811|1|cup
+Fried rice|2708952|1|cup
+Pad Thai|2708804|1|cup
+Sushi|2708959|0|piece
+Sushi roll, salmon|2708963|0|piece
+Miso soup|2707455|0|cup
+Chicken noodle soup|172909|0|cup
+Beef noodle soup|172906|0|cup
+Caesar salad (no dressing)|2709591|0|cup
+Garden salad (no dressing)|2709822|0|cup
+Falafel|172455|1|patty
+Fried chicken|2705949|1|1 piece
+Chicken nuggets|2706092|1|nugget
+Dumplings (potstickers)|169773|0|piece
+Egg roll|172105|1|roll
+Stir-fried beef and vegetables|2706751|1|cup
+Chili with beans|175207|0|cup
+Beef stew|173330|0|cup
+Grilled cheese sandwich|2705801|1|sandwich
+Gyro|2706962|1|sandwich
+Shepherd's pie|2706594|1|cup
+Paella|2706723|1|cup
+Tabbouleh|2709131|1|cup
+Potato chips|169677|1|chips
+Popcorn, air-popped|167959|0|cup
+Pretzels|167555|0|oz
+Crackers|174982|0|cracker
+Granola bar|167542|0|bar
+Nutrition bar|2708118|0|1 bar
+Chocolate chip cookie|172717|0|cookie
+Glazed donut|172758|1|doughnut
+Muffin|2707829|0|muffin
+Chocolate cake|172697|0|piece
+Brownie|174949|0|brownie
+Milk chocolate|167587|0|1.55 oz
+Jam|169641|0|tbsp
+Chocolate hazelnut spread|168000|0|tbsp
+Orange juice|169098|0|cup
+Apple juice|173933|0|cup
+Cola|174852|0|can
+Beer|168746|0|can
+Red wine|173190|0|glass
+Latte|2710386|0|cup (8 fl oz)
+Cappuccino|2710472|0|cup (8 fl oz)
+Green tea|171917|0|cup
+Fruit smoothie|2705513|0|1 cup
+Sports drink|2710771|0|16.9
+Almond milk, unsweetened|174832|0|cup
+Oat milk, unsweetened|2257046|0|-
+Soy milk, unsweetened|1999630|0|-
+Pistachios|170185|0|oz
+Sunflower seeds|170563|0|oz
+Chia seeds|170554|0|tbsp
+Flaxseed|169414|0|tbsp
+Mayonnaise|171009|0|tbsp
+Ketchup|168556|0|tbsp
+Ranch dressing|173592|0|tbsp
+Soy sauce|174277|0|tbsp
+Salsa|174524|0|tbsp
+Barbecue sauce|174523|0|tbsp

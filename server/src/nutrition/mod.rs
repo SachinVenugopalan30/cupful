@@ -27,7 +27,7 @@ pub const OIL_PER_PORTION_G: f64 = 9.0;
 const INSTRUCTION: &str = "You turn a meal description (and photo, if any) into a list of foods. \
 Reply with JSON only, matching the schema. One item per distinct food. For each item give: \
 `food`, a plain generic name (e.g. \"cooked white rice\", \"chicken breast\"); `amount` and `unit` \
-as the user said them (e.g. 1 \"small cup\", 2 \"roti\", 150 \"g\"); `grams`, your best estimate of \
+as the user said them (e.g. 1 \"small cup\", 2 \"slices\", 150 \"g\"); `grams`, your best estimate of \
 the edible weight; `cooking`, the method (\"none\", \"boiled\", \"shallow-fried\", \"deep-fried\", \
 \"sauteed\", \"tadka\", \"roasted in oil\", \"grilled\", ...); `mentions_oil`, true only if the user \
 mentioned oil, ghee or butter; `estimate`, your kcal, protein, carbs and fat in grams for the whole \
@@ -197,6 +197,27 @@ fn unit_grams(unit: &str, food: &str) -> Option<f64> {
         food,
         &[
             "curry", "dal", "daal", "dhal", "soup", "sambar", "rajma", "chole", "rasam", "kadhi",
+            "stew", "chili", "chilli",
+        ],
+    );
+    let drink = has(
+        food,
+        &[
+            "juice",
+            "milk",
+            "coffee",
+            "tea",
+            "latte",
+            "cappuccino",
+            "smoothie",
+            "shake",
+            "soda",
+            "cola",
+            "beer",
+            "wine",
+            "water",
+            "lassi",
+            "chai",
         ],
     );
     let fat = has(food, &["oil", "ghee", "butter"]);
@@ -210,12 +231,18 @@ fn unit_grams(unit: &str, food: &str) -> Option<f64> {
         "ml" | "milliliter" | "millilitre" => 1.0,
         "l" | "liter" | "litre" => 1000.0,
         "oz" | "ounce" => 28.35,
+        "lb" | "pound" => 453.6,
         "small cup" | "katori" if rice => 150.0,
         "cup" if rice => 200.0,
         "plate" if rice => 300.0,
         "bowl" | "katori" | "cup" if wet => 250.0,
         "tsp" | "teaspoon" if fat => 4.5,
         "tbsp" | "tablespoon" if fat => 13.5,
+        "tsp" | "teaspoon" => 5.0,
+        "tbsp" | "tablespoon" => 15.0,
+        "cup" if drink => 240.0,
+        "glass" | "mug" if drink => 250.0,
+        "can" if drink => 355.0,
         _ if roti && piece => 40.0,
         _ if has(food, &["chicken"]) && has(food, &["breast"]) && piece => 130.0,
         _ => return None,
@@ -542,7 +569,23 @@ mod tests {
         assert_eq!(g("", "chicken breast"), Some(130.0));
         assert_eq!(g("g", "paneer"), Some(1.0));
         assert_eq!(g("bowl", "salad"), None);
-        assert_eq!(g("tsp", "sugar"), None);
+        assert_eq!(g("lb", "steak"), Some(453.6));
+        assert_eq!(g("pounds", "ground beef"), Some(453.6));
+        assert_eq!(g("cup", "orange juice"), Some(240.0));
+        assert_eq!(g("glass", "milk"), Some(250.0));
+        assert_eq!(g("mug", "coffee"), Some(250.0));
+        assert_eq!(g("can", "cola"), Some(355.0));
+        assert_eq!(g("can", "beer"), Some(355.0));
+        assert_eq!(g("bowl", "beef stew"), Some(250.0));
+        assert_eq!(g("bowl", "chili"), Some(250.0));
+        assert_eq!(g("tsp", "sugar"), Some(5.0));
+        assert_eq!(g("tbsp", "ketchup"), Some(15.0));
+        assert_eq!(
+            g("tbsp", "olive oil"),
+            Some(13.5),
+            "fat keeps its own weight"
+        );
+        assert_eq!(g("can", "tuna"), None, "not a drink");
     }
 
     #[test]

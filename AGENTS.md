@@ -43,6 +43,7 @@ server/                 Rust crate `cupful`
 web/                    SvelteKit app (adapter-static, SPA fallback)
 fixtures/budget_cases.json   shared budget test vectors
 data/staples.csv, data/aliases.csv   shipped food data (embedded, seeded at startup)
+data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
 data/golden/            golden estimate cases with recorded model replies
 docs/providers.md       AI provider setup
 docs/decisions.md       one line per deviation/notable choice

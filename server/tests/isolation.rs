@@ -289,9 +289,19 @@ async fn b_never_matches_a_private_foods_aliases_or_portions() {
         );
     }
     assert_eq!(matched(&state.db, ida, "dinner").await, Some(rice));
-    for food in ["zebra cake", "zc", "my cake", "dinner"] {
-        assert_eq!(matched(&state.db, idb, food).await, None, "B: {food}");
+    // B may match shipped foods (e.g. "zebra cake" → a cake staple), never A's private food or A's alias target.
+    for food in ["zebra cake", "zc", "my cake"] {
+        assert_ne!(
+            matched(&state.db, idb, food).await,
+            Some(food_id),
+            "B: {food}"
+        );
     }
+    assert_ne!(
+        matched(&state.db, idb, "dinner").await,
+        Some(rice),
+        "B: dinner"
+    );
     // B can't alias, or save a portion of, A's private food.
     let (status, _) = b
         .post("/api/aliases", json!({"alias": "mine", "food_id": food_id}))

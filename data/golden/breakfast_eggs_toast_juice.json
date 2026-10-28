@@ -1,0 +1,28 @@
+{
+  "description": "2 scrambled eggs, 2 slices of toast with butter and a glass of orange juice",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-28",
+    "output": {
+      "items": [
+        {"food": "scrambled eggs", "amount": 2, "unit": "large egg", "grams": 122, "cooking": "scrambled", "mentions_oil": false,
+         "estimate": {"kcal": 182, "protein": 12, "carbs": 2, "fat": 13}},
+        {"food": "toast", "amount": 2, "unit": "slice", "grams": 50, "cooking": "toasted", "mentions_oil": false,
+         "estimate": {"kcal": 146, "protein": 4, "carbs": 27, "fat": 2}},
+        {"food": "butter", "amount": 1, "unit": "tsp", "grams": null, "cooking": "none", "mentions_oil": true,
+         "estimate": {"kcal": 32, "protein": 0, "carbs": 0, "fat": 4}},
+        {"food": "orange juice", "amount": 1, "unit": "glass", "grams": null, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 112, "protein": 2, "carbs": 26, "fat": 0.5}}
+      ],
+      "assumptions": "Two large eggs scrambled, two slices of white toast, a teaspoon of butter and an 8 oz glass of juice.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Egg, scrambled", "match": "matched", "grams": 122},
+    {"food": "Toast, white bread", "match": "matched", "grams": 50},
+    {"food": "Butter", "match": "matched", "grams": 4.5},
+    {"food": "Orange juice", "match": "matched", "grams": 250}
+  ]
+}

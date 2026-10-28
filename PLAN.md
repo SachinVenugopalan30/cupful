@@ -310,11 +310,13 @@ Table-driven tests from `fixtures/budget_cases.json` must cover each flag, both 
    - The estimate must make sense: `4·protein + 4·carbs + 9·fat` within 20 % (+10 kcal) of the estimated kcal. If it isn't, recompute kcal from the macros.
    - Derive the estimate per 100 g from grams. If it is outside 0–900 kcal per 100 g, the estimate is implausible: drop it, and the item needs either a database match or a manual edit.
 3. **Household measures.** Check `user_portions` first. Otherwise convert units with a table in code:
+   - Weights: g, kg, oz, lb; volumes: ml, l (as grams).
    - Small cup of cooked rice ≈ 150 g, cup ≈ 200 g, plate of rice ≈ 300 g.
-   - Bowl of curry, dal or soup ≈ 250 ml.
-   - Roti ≈ 40 g.
-   - Teaspoon of oil ≈ 4.5 g, tablespoon ≈ 13.5 g.
-   - Chicken breast ≈ 130 g cooked.
+   - Bowl of curry, dal, soup, stew or chili ≈ 250 ml.
+   - Drinks: cup ≈ 240 ml, glass or mug ≈ 250 ml, can ≈ 355 ml.
+   - Teaspoon of oil or butter ≈ 4.5 g, tablespoon ≈ 13.5 g; other foods 5 g and 15 g.
+   - Roti ≈ 40 g; chicken breast ≈ 130 g cooked.
+   - Anything else (a slice, a bagel, a taco) uses the matched food's USDA portion.
    - Prefer explicit grams from the model when they are valid.
 4. **Match.** Normalize the name (lowercase, strip punctuation, singularize simple plurals). Then:
    1. Look for an exact alias in `food_aliases` (the user's own aliases first).
@@ -333,13 +335,17 @@ Table-driven tests from `fixtures/budget_cases.json` must cover each flag, both 
 7. **Repeat meals** re-log a saved meal's items with one tap and no model call.
 
 ### Food database
-- **Staples table (`data/staples.csv`)** — shipped with the app. Around 100 everyday foods, with Indian staples covered first:
-  - **Grains and breads:** cooked white and brown rice, roti/chapati, paratha, idli, dosa, poha, upma, oats, bread.
-  - **Dals and legumes:** toor, moong, masoor and chana dal cooked, rajma and chole cooked.
-  - **Eggs, meat and fish:** egg, chicken breast and thigh cooked, minced chicken, fish curry.
-  - **Dairy:** paneer, milk, curd/yogurt.
-  - **Fats:** ghee and cooking oils.
-  - **Vegetables and fruit:** potato, common sabzis, banana, apple.
+- **Staples table (`data/staples.csv`)** — shipped with the app. A few hundred everyday foods with no cuisine favored over another: what people commonly eat across American, European, Latin American, Middle Eastern, East, Southeast and South Asian cooking.
+  - **Grains, breads and breakfast:** rice, pasta, noodles, quinoa, couscous, oats and cereal, breads, tortillas, pita, roti, bagels, pancakes.
+  - **Legumes:** beans, lentils, chickpeas and dals, tofu, tempeh, hummus.
+  - **Eggs, meat and fish:** eggs every common way, chicken, beef, pork, lamb, turkey, deli meats, common fish and seafood.
+  - **Dairy and alternatives:** milk, yogurt, cheeses, plant milks.
+  - **Fats, sauces and condiments.**
+  - **Vegetables and fruit:** the common ones fresh and cooked.
+  - **Common mixed dishes:** pizza, burgers, sandwiches, burritos and tacos, pasta dishes, curries, stir-fries, fried rice, sushi, soups, salads.
+  - **Snacks, sweets and drinks:** chips, bars, cookies, cake, chocolate, juices, soda, coffee drinks, beer and wine.
+
+  Built by `data/tools/build_staples.py` from `data/tools/staples_spec.txt` (name, FDC id, prepared flag, portion hint), so every number comes from a USDA download. Grow it by adding spec lines and aliases, not by typing values.
 
   Every row carries its source (a USDA FDC ID, or another source whose license allows redistribution). Don't copy values from sources with unclear licenses, including IFCT. The owner reviews this file before release.
 - **USDA FoodData Central** (Foundation and SR Legacy; public domain), loaded with `cupful import-foods`. Ship `data/aliases.csv` mapping everyday names to USDA entries ("chicken breast" → the right roasted entry), because raw USDA names like "Chicken, broilers or fryers, breast, meat only, cooked, roasted" match poorly on their own.

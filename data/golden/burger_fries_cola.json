@@ -1,0 +1,25 @@
+{
+  "description": "cheeseburger and medium fries with a can of coke",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-28",
+    "output": {
+      "items": [
+        {"food": "cheeseburger", "amount": 1, "unit": "sandwich", "grams": 165, "cooking": "grilled", "mentions_oil": false,
+         "estimate": {"kcal": 488, "protein": 26, "carbs": 38, "fat": 25}},
+        {"food": "french fries", "amount": 1, "unit": "medium serving", "grams": 117, "cooking": "deep-fried", "mentions_oil": false,
+         "estimate": {"kcal": 365, "protein": 4, "carbs": 48, "fat": 17}},
+        {"food": "coke", "amount": 1, "unit": "can", "grams": null, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 140, "protein": 0, "carbs": 39, "fat": 0}}
+      ],
+      "assumptions": "A single fast-food cheeseburger, a medium fries and a 12 oz can of regular cola.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Cheeseburger", "match": "matched", "grams": 165},
+    {"food": "French fries", "match": "matched", "grams": 117},
+    {"food": "Cola", "match": "matched", "grams": 355}
+  ]
+}

@@ -80,12 +80,12 @@ async fn matched_items_use_database_values_and_unmatched_use_the_estimate() {
                 json!({"kcal": 999, "protein": 1, "carbs": 1, "fat": 1})
             ),
             raw(
-                "pepperoni pizza",
+                "durian",
                 100.0,
                 json!({"kcal": 300, "protein": 12, "carbs": 33, "fat": 13})
             ),
             raw(
-                "energy bar",
+                "baklava",
                 10.0,
                 json!({"kcal": 250, "protein": 10, "carbs": 30, "fat": 10})
             ),

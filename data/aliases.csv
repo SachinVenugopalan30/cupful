@@ -245,25 +245,281 @@ milk tea,Tea with milk (chai)
 coffee,"Coffee, black"
 black coffee,"Coffee, black"
 chicken wings,fdc:173630
-turkey breast,fdc:171496
-bacon,fdc:167914
-steak,fdc:168729
-orange juice,fdc:169098
-apple juice,fdc:173933
-beer,fdc:168746
-red wine,fdc:173190
-mayonnaise,fdc:171009
-soy milk,fdc:172446
-almond milk,fdc:174832
-kiwi,fdc:168153
-blueberries,fdc:171711
-pear,fdc:169118
-lettuce,fdc:169247
-quinoa,fdc:168917
-couscous,fdc:169700
+turkey breast,"Turkey breast, roasted"
+bacon,"Bacon, cooked"
+steak,"Beef steak (sirloin), cooked"
+orange juice,Orange juice
+apple juice,Apple juice
+beer,Beer
+red wine,Red wine
+mayonnaise,Mayonnaise
+soy milk,"Soy milk, unsweetened"
+almond milk,"Almond milk, unsweetened"
+kiwi,Kiwi
+blueberries,Blueberries
+pear,Pear
+lettuce,Romaine lettuce
+quinoa,"Quinoa, cooked"
+couscous,"Couscous, cooked"
 rye bread,fdc:172684
-bagel,fdc:174899
-croissant,fdc:174987
-mozzarella,fdc:170845
-parmesan,fdc:171247
-hummus,fdc:174289
+bagel,"Bagel, plain"
+croissant,Croissant
+mozzarella,Mozzarella
+parmesan,"Parmesan, grated"
+hummus,Hummus
+cornflakes,Corn flakes
+cereal,Corn flakes
+breakfast cereal,Corn flakes
+granola,Granola
+muesli,Granola
+pancake,Pancakes
+hotcake,Pancakes
+flapjack,Pancakes
+waffle,Waffles
+english muffin,English muffin
+toast,"Toast, white bread"
+white toast,"Toast, white bread"
+whole wheat toast,"Toast, whole wheat"
+brown toast,"Toast, whole wheat"
+wheat toast,"Toast, whole wheat"
+bacon strip,"Bacon, cooked"
+bacon rasher,"Bacon, cooked"
+sausage,"Pork sausage, cooked"
+breakfast sausage,"Pork sausage, cooked"
+pork sausage,"Pork sausage, cooked"
+ham,"Ham, sliced"
+sliced ham,"Ham, sliced"
+maple syrup,Maple syrup
+syrup,Maple syrup
+pancake syrup,Maple syrup
+tortilla,Flour tortilla
+flour tortilla,Flour tortilla
+wrap,Flour tortilla
+corn tortilla,Corn tortilla
+pita,Pita bread
+pitta,Pita bread
+egg noodles,"Egg noodles, cooked"
+noodles,"Egg noodles, cooked"
+rice noodles,"Rice noodles, cooked"
+vermicelli,"Rice noodles, cooked"
+instant noodles,"Instant ramen noodles, dry"
+ramen,"Instant ramen noodles, dry"
+maggi,"Instant ramen noodles, dry"
+cup noodles,"Instant ramen noodles, dry"
+barley,"Barley, cooked"
+bulgur,"Bulgur, cooked"
+bulgur wheat,"Bulgur, cooked"
+mashed potato,Mashed potatoes
+mash,Mashed potatoes
+minced beef,"Beef, minced, cooked"
+hamburger meat,"Beef, minced, cooked"
+beef steak,"Beef steak (sirloin), cooked"
+sirloin,"Beef steak (sirloin), cooked"
+pork chop,"Pork chop, cooked"
+pork,"Pork tenderloin, roasted"
+pork tenderloin,"Pork tenderloin, roasted"
+pork loin,"Pork tenderloin, roasted"
+ribs,"Pork ribs, cooked"
+pork ribs,"Pork ribs, cooked"
+spare ribs,"Pork ribs, cooked"
+turkey,"Turkey breast, roasted"
+roast turkey,"Turkey breast, roasted"
+deli turkey,"Turkey breast, deli sliced"
+sliced turkey,"Turkey breast, deli sliced"
+turkey slices,"Turkey breast, deli sliced"
+hot dog,Hot dog (beef frankfurter)
+frankfurter,Hot dog (beef frankfurter)
+wiener,Hot dog (beef frankfurter)
+cod,"Cod, cooked"
+white fish,"Cod, cooked"
+sardines,"Sardines, canned in oil"
+sardine,"Sardines, canned in oil"
+fish sticks,Fish sticks
+fish fingers,Fish sticks
+black beans,"Black beans, cooked"
+pinto beans,"Pinto beans, cooked"
+refried beans,"Pinto beans, cooked"
+edamame,Edamame
+tempeh,Tempeh
+houmous,Hummus
+greek yogurt,"Greek yogurt, plain, nonfat"
+greek yoghurt,"Greek yogurt, plain, nonfat"
+nonfat greek yogurt,"Greek yogurt, plain, nonfat"
+full fat greek yogurt,"Greek yogurt, plain, whole milk"
+whole milk greek yogurt,"Greek yogurt, plain, whole milk"
+parmesan cheese,"Parmesan, grated"
+cream cheese,Cream cheese
+cheddar cheese,"Cheese, cheddar"
+ice cream,"Ice cream, vanilla"
+vanilla ice cream,"Ice cream, vanilla"
+sour cream,Sour cream
+strawberry,Strawberries
+strawberries,Strawberries
+blueberry,Blueberries
+raspberry,Raspberries
+raspberries,Raspberries
+peach,Peach
+kiwifruit,Kiwi
+avocado,Avocado
+cherry,Cherries
+cherries,Cherries
+plum,Plum
+cantaloupe,Cantaloupe
+melon,Cantaloupe
+muskmelon,Cantaloupe
+dried cranberries,Dried cranberries
+craisins,Dried cranberries
+romaine,Romaine lettuce
+iceberg lettuce,Iceberg lettuce
+iceberg,Iceberg lettuce
+kale,"Kale, raw"
+bell pepper,"Bell pepper, red"
+capsicum,"Bell pepper, red"
+red pepper,"Bell pepper, red"
+zucchini,Zucchini
+courgette,Zucchini
+celery,Celery
+asparagus,"Asparagus, cooked"
+brussels sprouts,"Brussels sprouts, cooked"
+brussel sprouts,"Brussels sprouts, cooked"
+garlic,Garlic
+beets,"Beets, cooked"
+beetroot,"Beets, cooked"
+olives,Olives
+olive,Olives
+pickle,"Pickles, dill"
+pickles,"Pickles, dill"
+gherkin,"Pickles, dill"
+pizza,Cheese pizza
+cheese pizza,Cheese pizza
+margherita pizza,Cheese pizza
+hamburger,Hamburger
+burger,Hamburger
+cheeseburger,Cheeseburger
+sandwich,Turkey sandwich
+turkey sandwich,Turkey sandwich
+sub,Turkey sandwich
+burrito,Burrito
+taco,Taco
+tacos,Taco
+quesadilla,Quesadilla
+enchilada,Enchilada
+enchiladas,Enchilada
+nachos,Nachos with cheese
+empanada,Empanada
+lasagna,Lasagna with meat
+lasagne,Lasagna with meat
+mac and cheese,Macaroni and cheese
+macaroni and cheese,Macaroni and cheese
+mac n cheese,Macaroni and cheese
+fried rice,Fried rice
+pad thai,Pad Thai
+sushi,Sushi
+nigiri,Sushi
+sushi roll,"Sushi roll, salmon"
+maki,"Sushi roll, salmon"
+salmon roll,"Sushi roll, salmon"
+miso soup,Miso soup
+chicken soup,Chicken noodle soup
+chicken noodle soup,Chicken noodle soup
+pho,Beef noodle soup
+beef noodle soup,Beef noodle soup
+caesar salad,Caesar salad (no dressing)
+salad,Garden salad (no dressing)
+green salad,Garden salad (no dressing)
+garden salad,Garden salad (no dressing)
+side salad,Garden salad (no dressing)
+falafel,Falafel
+fried chicken,Fried chicken
+chicken nuggets,Chicken nuggets
+nuggets,Chicken nuggets
+dumplings,Dumplings (potstickers)
+dumpling,Dumplings (potstickers)
+potstickers,Dumplings (potstickers)
+gyoza,Dumplings (potstickers)
+momos,Dumplings (potstickers)
+wontons,Dumplings (potstickers)
+egg roll,Egg roll
+spring roll,Egg roll
+stir fry,Stir-fried beef and vegetables
+beef stir fry,Stir-fried beef and vegetables
+chili,Chili with beans
+chilli,Chili with beans
+chili con carne,Chili with beans
+beef stew,Beef stew
+stew,Beef stew
+grilled cheese,Grilled cheese sandwich
+gyro,Gyro
+doner,Gyro
+shawarma,Gyro
+shepherds pie,Shepherd's pie
+cottage pie,Shepherd's pie
+paella,Paella
+tabbouleh,Tabbouleh
+tabouli,Tabbouleh
+chips,Potato chips
+potato chips,Potato chips
+crisps,Potato chips
+popcorn,"Popcorn, air-popped"
+pretzels,Pretzels
+pretzel,Pretzels
+crackers,Crackers
+cracker,Crackers
+granola bar,Granola bar
+cereal bar,Granola bar
+protein bar,Nutrition bar
+energy bar,Nutrition bar
+clif bar,Nutrition bar
+cookie,Chocolate chip cookie
+cookies,Chocolate chip cookie
+biscuit,Chocolate chip cookie
+donut,Glazed donut
+doughnut,Glazed donut
+muffin,Muffin
+blueberry muffin,Muffin
+cake,Chocolate cake
+chocolate cake,Chocolate cake
+brownie,Brownie
+chocolate,Milk chocolate
+milk chocolate,Milk chocolate
+chocolate bar,Milk chocolate
+jam,Jam
+jelly,Jam
+preserves,Jam
+nutella,Chocolate hazelnut spread
+hazelnut spread,Chocolate hazelnut spread
+oj,Orange juice
+cola,Cola
+coke,Cola
+soda,Cola
+soft drink,Cola
+wine,Red wine
+latte,Latte
+cafe latte,Latte
+cappuccino,Cappuccino
+green tea,Green tea
+smoothie,Fruit smoothie
+sports drink,Sports drink
+gatorade,Sports drink
+powerade,Sports drink
+oat milk,"Oat milk, unsweetened"
+soya milk,"Soy milk, unsweetened"
+pistachios,Pistachios
+pistachio,Pistachios
+sunflower seeds,Sunflower seeds
+chia seeds,Chia seeds
+chia,Chia seeds
+flaxseed,Flaxseed
+flax seeds,Flaxseed
+linseed,Flaxseed
+mayo,Mayonnaise
+ketchup,Ketchup
+catsup,Ketchup
+tomato sauce,Ketchup
+ranch,Ranch dressing
+ranch dressing,Ranch dressing
+salad dressing,Ranch dressing
+soy sauce,Soy sauce
+salsa,Salsa
+bbq sauce,Barbecue sauce
+barbecue sauce,Barbecue sauce

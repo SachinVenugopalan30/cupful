@@ -1,17 +1,17 @@
 {
-  "description": "a slice of pepperoni pizza and an energy bar",
+  "description": "a slice of durian and a piece of baklava",
   "recorded": {
     "provider": "hand-authored",
     "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
     "recorded_at": "2026-10-27",
     "output": {
       "items": [
-        {"food": "pepperoni pizza", "amount": 1, "unit": "slice", "grams": 110, "cooking": "baked", "mentions_oil": false,
-         "estimate": {"kcal": 300, "protein": 12, "carbs": 33, "fat": 13}},
-        {"food": "energy bar", "amount": 1, "unit": "bar", "grams": 10, "cooking": "none", "mentions_oil": false,
+        {"food": "durian", "amount": 1, "unit": "slice", "grams": 110, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 162, "protein": 1.6, "carbs": 30, "fat": 5.8}},
+        {"food": "baklava", "amount": 1, "unit": "piece", "grams": 10, "cooking": "none", "mentions_oil": false,
          "estimate": {"kcal": 250, "protein": 10, "carbs": 30, "fat": 10}}
       ],
-      "assumptions": "A regular slice from a large pizza.",
+      "assumptions": "One slice of fresh durian; one small piece of baklava.",
       "confidence": "medium"
     }
   },
