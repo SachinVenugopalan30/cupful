@@ -1,0 +1,23 @@
+{
+  "description": "small cup of rice, 1 chicken breast shallow fried",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "cooked white rice", "amount": 1, "unit": "small cup", "grams": 150, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 195, "protein": 4, "carbs": 43, "fat": 0.4}},
+        {"food": "chicken breast", "amount": 1, "unit": "piece", "grams": 140, "cooking": "shallow-fried", "mentions_oil": false,
+         "estimate": {"kcal": 260, "protein": 43, "carbs": 0, "fat": 9}}
+      ],
+      "assumptions": "A small cup of plain cooked rice and one boneless chicken breast.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Rice, white, cooked", "match": "matched", "grams": 150},
+    {"food": "Chicken breast, cooked (roasted)", "match": "matched", "grams": 140},
+    {"food": "Cooking oil", "match": "matched", "grams": 9}
+  ]
+}

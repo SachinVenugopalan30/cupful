@@ -7,6 +7,7 @@ pub mod cleanup;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod nutrition;
 pub mod profile;
 mod reads;
 pub mod sync;
@@ -68,6 +69,21 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/days/{date}", User, get(reads::day)),
         ("GET", "/api/meals", User, get(reads::meals)),
         ("GET", "/api/budget/{date}", User, get(reads::budget)),
+        (
+            "POST",
+            "/api/estimate",
+            User,
+            // A 5 MB photo plus the form around it; the handler enforces the 5 MB.
+            post(nutrition::estimate_handler).layer(DefaultBodyLimit::max(6 << 20)),
+        ),
+        ("POST", "/api/foods", User, post(nutrition::create_food)),
+        ("POST", "/api/aliases", User, post(nutrition::create_alias)),
+        (
+            "POST",
+            "/api/portions",
+            User,
+            post(nutrition::create_portion),
+        ),
     ]
 }
 

@@ -15,6 +15,10 @@ const COVERED: &[&str] = &[
     "GET /api/days/{date}",
     "GET /api/meals",
     "GET /api/budget/{date}",
+    "POST /api/estimate",
+    "POST /api/foods",
+    "POST /api/aliases",
+    "POST /api/portions",
 ];
 
 #[test]
@@ -170,4 +174,109 @@ async fn b_day_patches_only_touch_b() {
         ["applied"]
     );
     a_is_untouched(&mut a, &meal_id).await;
+}
+
+// ---- private foods, aliases and portions (§8) ----
+
+struct Reply(serde_json::Value);
+
+#[async_trait::async_trait]
+impl cupful::ai::Provider for Reply {
+    async fn complete_json(
+        &self,
+        _: cupful::ai::JsonRequest,
+    ) -> Result<serde_json::Value, cupful::ai::ProviderError> {
+        Ok(self.0.clone())
+    }
+    fn capabilities(&self) -> cupful::ai::Capabilities {
+        Default::default()
+    }
+}
+
+/// What `user_id`'s estimate of `food` matched (the pipeline `POST /api/estimate` runs), if anything.
+async fn matched(db: &sqlx::SqlitePool, user_id: i64, food: &str) -> Option<i64> {
+    let reply = json!({"items": [{"food": food, "amount": 1, "unit": "", "grams": 100,
+        "cooking": "none", "mentions_oil": false, "estimate": null}]});
+    let est = cupful::nutrition::estimate(db, user_id, &Reply(reply), food, vec![])
+        .await
+        .unwrap();
+    est.items[0].food_id
+}
+
+async fn id_of(state: &cupful::AppState, name: &str) -> i64 {
+    sqlx::query_scalar("SELECT id FROM users WHERE username = ?")
+        .bind(name)
+        .fetch_one(&state.db)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn b_never_matches_a_private_foods_aliases_or_portions() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let mut b = user(&app, &state, "bob").await;
+    let (_, food) = a
+        .post(
+            "/api/foods",
+            json!({"name": "Zebra cake", "kcal": 400, "protein_g": 5, "carbs_g": 60, "fat_g": 15}),
+        )
+        .await;
+    let food_id = food["id"].as_i64().unwrap();
+    let rice: i64 = sqlx::query_scalar("SELECT id FROM foods WHERE name = 'Rice, white, cooked'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let (s1, _) = a
+        .post("/api/aliases", json!({"alias": "zc", "food_id": food_id}))
+        .await;
+    let (s2, _) = a
+        .post("/api/aliases", json!({"alias": "dinner", "food_id": rice}))
+        .await;
+    let (s3, _) = a
+        .post(
+            "/api/portions",
+            json!({"phrase": "my cake", "food_id": food_id, "grams": 80}),
+        )
+        .await;
+    assert_eq!([s1, s2, s3], [StatusCode::OK; 3]);
+    let (ida, idb) = (id_of(&state, "admin").await, id_of(&state, "bob").await);
+    for food in ["zebra cake", "zc", "my cake"] {
+        assert_eq!(
+            matched(&state.db, ida, food).await,
+            Some(food_id),
+            "A: {food}"
+        );
+    }
+    assert_eq!(matched(&state.db, ida, "dinner").await, Some(rice));
+    for food in ["zebra cake", "zc", "my cake", "dinner"] {
+        assert_eq!(matched(&state.db, idb, food).await, None, "B: {food}");
+    }
+    // B can't alias, or save a portion of, A's private food.
+    let (status, _) = b
+        .post("/api/aliases", json!({"alias": "mine", "food_id": food_id}))
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (status, _) = b
+        .post(
+            "/api/portions",
+            json!({"phrase": "mine", "food_id": food_id, "grams": 50}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    // B's own food and alias with A's names don't change what A matches.
+    let (_, bfood) = b
+        .post(
+            "/api/foods",
+            json!({"name": "Zebra cake", "kcal": 100, "protein_g": 1, "carbs_g": 20, "fat_g": 1}),
+        )
+        .await;
+    b.post("/api/aliases", json!({"alias": "zc", "food_id": rice}))
+        .await;
+    assert_eq!(matched(&state.db, ida, "zc").await, Some(food_id));
+    assert_eq!(matched(&state.db, ida, "zebra cake").await, Some(food_id));
+    assert_eq!(
+        matched(&state.db, idb, "zebra cake").await,
+        bfood["id"].as_i64()
+    );
 }

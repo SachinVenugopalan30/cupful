@@ -1,0 +1,22 @@
+{
+  "description": "fish with 2 cups of rice",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "fish", "amount": 1, "unit": "piece", "grams": 120, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 170, "protein": 26, "carbs": 2, "fat": 7}},
+        {"food": "rice", "amount": 2, "unit": "cup", "grams": 0, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 520, "protein": 10, "carbs": 112, "fat": 1}}
+      ],
+      "assumptions": "The fish preparation isn't stated.",
+      "confidence": "low"
+    }
+  },
+  "expected": [
+    {"food": "Fish curry", "match": "ambiguous", "grams": 120},
+    {"food": "Rice, white, cooked", "match": "matched", "grams": 400}
+  ]
+}

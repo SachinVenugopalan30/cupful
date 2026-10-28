@@ -1,0 +1,26 @@
+{
+  "description": "2 eggs fried, 2 slices of brown bread and a bowl of bhindi sabzi",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "fried egg", "amount": 2, "unit": "egg", "grams": 92, "cooking": "pan-fried", "mentions_oil": false,
+         "estimate": {"kcal": 180, "protein": 12.5, "carbs": 1, "fat": 14}},
+        {"food": "brown bread", "amount": 2, "unit": "slice", "grams": 64, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 160, "protein": 8, "carbs": 27, "fat": 2.2}},
+        {"food": "okra", "amount": 1, "unit": "bowl", "grams": 150, "cooking": "sauteed", "mentions_oil": false,
+         "estimate": {"kcal": 120, "protein": 3, "carbs": 10, "fat": 8}}
+      ],
+      "assumptions": "Bhindi sabzi is okra sauteed with onion and spices.",
+      "confidence": "medium"
+    }
+  },
+  "expected": [
+    {"food": "Egg, fried", "match": "matched", "grams": 92},
+    {"food": "Bread, whole wheat", "match": "matched", "grams": 64},
+    {"food": "Okra (bhindi), boiled", "match": "matched", "grams": 150},
+    {"food": "Cooking oil", "match": "matched", "grams": 9}
+  ]
+}

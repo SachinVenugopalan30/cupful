@@ -1,0 +1,21 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT (SELECT count(*) FROM foods) + (SELECT count(*) FROM food_aliases) + (SELECT count(*) FROM foods_fts)",
+  "describe": {
+    "columns": [
+      {
+        "name": "(SELECT count(*) FROM foods) + (SELECT count(*) FROM food_aliases) + (SELECT count(*) FROM foods_fts)",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "17692fbfb6707cab1fca91df0632d7ac78fc7d39a92b3d5a6250de13338b52ce"
+}

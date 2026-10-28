@@ -21,10 +21,11 @@ pub async fn open(path: &Path) -> Result<SqlitePool, sqlx::Error> {
         .journal_mode(SqliteJournalMode::Wal);
     let pool = SqlitePoolOptions::new().connect_with(opts).await?;
     MIGRATOR.run(&pool).await?;
+    crate::nutrition::foods::seed(&pool).await?;
     Ok(pool)
 }
 
-/// Fresh migrated in-memory database. One connection, since each in-memory connection is its own database.
+/// Fresh migrated, seeded in-memory database. One connection, since each in-memory connection is its own database.
 pub async fn memory() -> SqlitePool {
     let opts = options().in_memory(true);
     let pool = SqlitePoolOptions::new()
@@ -33,5 +34,8 @@ pub async fn memory() -> SqlitePool {
         .await
         .expect("open in-memory db");
     MIGRATOR.run(&pool).await.expect("migrate");
+    crate::nutrition::foods::seed(&pool)
+        .await
+        .expect("seed foods");
     pool
 }

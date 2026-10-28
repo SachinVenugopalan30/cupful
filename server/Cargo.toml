@@ -9,7 +9,7 @@ publish = false
 [dependencies]
 argon2 = "0.6"
 async-trait = "0.1.92"
-axum = "0.8"
+axum = { version = "0.8", features = ["multipart"] }
 jiff = { version = "0.2", features = ["serde", "tzdb-bundle-always"] }
 rust-embed = { version = "8", features = ["mime-guess"] }
 serde = { version = "1.0.229", features = ["derive"] }

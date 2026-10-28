@@ -16,6 +16,8 @@ ARG TARGETARCH
 WORKDIR /src
 COPY rust-toolchain.toml ./
 COPY server/ server/
+# Staples and aliases are embedded with include_str!.
+COPY data/ data/
 COPY --from=web /src/web/build web/build
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/server/target \

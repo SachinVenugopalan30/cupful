@@ -77,10 +77,10 @@ async fn concurrent_writers_do_not_hit_database_is_locked() {
 #[tokio::test]
 async fn foods_and_aliases_are_searchable_through_triggers() {
     let pool = cupful::db::memory().await;
-    sqlx::query("INSERT INTO foods (id, source, name, name_norm, kcal, protein_g, carbs_g, fat_g) VALUES (1, 'staple', 'Chicken breast, cooked', 'chicken breast cooked', 165, 31, 0, 3.6)")
+    sqlx::query("INSERT INTO foods (id, source, name, name_norm, kcal, protein_g, carbs_g, fat_g) VALUES (100000, 'staple', 'Quokka fruit', 'quokka fruit', 165, 31, 0, 3.6)")
         .execute(&pool).await.unwrap();
     sqlx::query(
-        "INSERT INTO food_aliases (food_id, alias, alias_norm) VALUES (1, 'murgh', 'murgh')",
+        "INSERT INTO food_aliases (food_id, alias, alias_norm) VALUES (100000, 'wombatberry', 'wombatberry')",
     )
     .execute(&pool)
     .await
@@ -95,11 +95,11 @@ async fn foods_and_aliases_are_searchable_through_triggers() {
                 .unwrap()
         }
     };
-    assert_eq!(hit("breast").await, Some(1));
-    assert_eq!(hit("murgh").await, Some(1));
-    sqlx::query("DELETE FROM foods WHERE id = 1")
+    assert_eq!(hit("quokka").await, Some(100000));
+    assert_eq!(hit("wombatberry").await, Some(100000));
+    sqlx::query("DELETE FROM foods WHERE id = 100000")
         .execute(&pool)
         .await
         .unwrap();
-    assert_eq!(hit("murgh").await, None);
+    assert_eq!(hit("wombatberry").await, None);
 }

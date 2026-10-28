@@ -1,0 +1,22 @@
+{
+  "description": "100 g paneer sauteed in 1 tsp oil",
+  "recorded": {
+    "provider": "hand-authored",
+    "model": "none (written by hand as a realistic reply; re-record with cupful eval)",
+    "recorded_at": "2026-10-27",
+    "output": {
+      "items": [
+        {"food": "paneer", "amount": 100, "unit": "g", "grams": 100, "cooking": "sauteed", "mentions_oil": true,
+         "estimate": {"kcal": 290, "protein": 18, "carbs": 4, "fat": 22}},
+        {"food": "oil", "amount": 1, "unit": "tsp", "grams": 4.5, "cooking": "none", "mentions_oil": true,
+         "estimate": {"kcal": 40, "protein": 0, "carbs": 0, "fat": 4.5}}
+      ],
+      "assumptions": "Plain paneer cubes.",
+      "confidence": "high"
+    }
+  },
+  "expected": [
+    {"food": "Paneer", "match": "matched", "grams": 100},
+    {"food": "Cooking oil", "match": "matched", "grams": 4.5}
+  ]
+}
