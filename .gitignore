@@ -7,3 +7,4 @@ web/.svelte-kit/
 *.db
 *.db-shm
 *.db-wal
+.claude/worktrees/

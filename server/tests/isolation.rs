@@ -19,6 +19,10 @@ const COVERED: &[&str] = &[
     "POST /api/foods",
     "POST /api/aliases",
     "POST /api/portions",
+    "GET /api/products",
+    "POST /api/products",
+    "GET /api/products/{id}",
+    "DELETE /api/products/{id}",
 ];
 
 #[test]
@@ -43,7 +47,9 @@ async fn user_routes_need_a_login() {
         if access != Access::User {
             continue;
         }
-        let uri = path.replace("{date}", "2026-01-01")
+        let uri = path
+            .replace("{date}", "2026-01-01")
+            .replace("{id}", "96385074")
             + if path == "/api/meals" {
                 "?date=2026-01-01"
             } else if path == "/api/days" {
@@ -55,6 +61,40 @@ async fn user_routes_need_a_login() {
         let (status, _) = anon.req(method, &uri, body).await;
         assert_eq!(status, StatusCode::UNAUTHORIZED, "{method} {path}");
     }
+}
+
+#[tokio::test]
+async fn admin_routes_refuse_other_users_and_anonymous() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let (_, p) = a
+        .post(
+            "/api/ai/providers",
+            json!({"label": "x", "kind": "openai_compatible", "base_url": "http://x/v1", "model": "m"}),
+        )
+        .await;
+    let id = p["id"].to_string();
+    let mut bob = user(&app, &state, "bob").await;
+    let mut anon = Client::new(&app);
+    let admin_routes: Vec<_> = cupful::route_table()
+        .into_iter()
+        .filter(|r| r.2 == Access::Admin)
+        .collect();
+    assert!(!admin_routes.is_empty());
+    for (method, path, _) in admin_routes {
+        let uri = path.replace("{id}", &id);
+        let body = (method != "GET" && method != "DELETE").then(|| json!({}));
+        let (status, _) = bob.req(method, &uri, body.clone()).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{method} {path}");
+        let (status, _) = anon.req(method, &uri, body).await;
+        assert_eq!(status, StatusCode::UNAUTHORIZED, "{method} {path}");
+    }
+    let (_, list) = a.get("/api/ai/providers").await;
+    assert_eq!(
+        list["providers"].as_array().unwrap().len(),
+        1,
+        "bob deleted nothing"
+    );
 }
 
 const D: &str = "2026-01-05";
@@ -279,4 +319,65 @@ async fn b_never_matches_a_private_foods_aliases_or_portions() {
         matched(&state.db, idb, "zebra cake").await,
         bfood["id"].as_i64()
     );
+}
+
+fn label(name: &str) -> serde_json::Value {
+    json!({"name": name, "brand": null, "barcode": "96385074", "basis": "100g",
+           "kcal": 400.0, "protein_g": 5.0, "carbs_g": 70.0, "fat_g": 10.0,
+           "serving_g": 20.0, "serving_text": null})
+}
+
+#[tokio::test]
+async fn b_cannot_see_change_or_delete_a_saved_products() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let mut b = user(&app, &state, "bob").await;
+    let (_, p) = a.post("/api/products", label("A's biscuit")).await;
+    let (_, list) = b.get("/api/products").await;
+    assert_eq!(list["products"], json!([]));
+    let (status, _) = b
+        .req("DELETE", &format!("/api/products/{}", p["food_id"]), None)
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    // B's own label entry for the same barcode is a new row; A's entry and list are unchanged.
+    let (_, bobs) = b.post("/api/products", label("B's biscuit")).await;
+    assert_ne!(bobs["food_id"], p["food_id"]);
+    let (_, list) = a.get("/api/products").await;
+    assert_eq!(list["products"].as_array().unwrap().len(), 1);
+    assert_eq!(list["products"][0]["name"], "A's biscuit");
+    let (_, found) = a.get("/api/products/96385074").await;
+    assert_eq!(found["name"], "A's biscuit");
+}
+
+#[tokio::test]
+async fn b_cannot_find_or_log_a_private_food() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let mut b = user(&app, &state, "bob").await;
+    let food_id: i64 = sqlx::query_scalar(
+        "INSERT INTO foods (source, source_ref, user_id, name, name_norm, barcode, kcal, protein_g,
+             carbs_g, fat_g)
+         SELECT 'user', id, id, 'secret', 'secret', '96385074', 100, 1, 1, 1
+         FROM users WHERE username = 'admin' RETURNING id",
+    )
+    .fetch_one(&state.db)
+    .await
+    .unwrap();
+    let (status, _) = b.get("/api/products/96385074").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let d = today("Asia/Kolkata").to_string();
+    let mut it = item(&uuid(), 100.0);
+    it["food_id"] = json!(food_id);
+    let o = || {
+        op(
+            "meal.upsert",
+            &at(0),
+            meal(&uuid(), &d, json!([it.clone()])),
+        )
+    };
+    assert_eq!(b.sync(vec![o()]).await, ["rejected"]);
+    let (_, list) = b.get("/api/products").await;
+    assert_eq!(list["products"], json!([]));
+    assert_eq!(a.sync(vec![o()]).await, ["applied"]);
 }

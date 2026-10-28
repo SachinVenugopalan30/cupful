@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO secret_check (id, value) VALUES (1, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "7fbfd2769944251b4d82c8f45f8ef32dcac7aa4f2a16fc2156f5e62c31858851"
+}

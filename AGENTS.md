@@ -27,12 +27,15 @@ server/                 Rust crate `cupful`
   src/reads.rs          GET days / meals / budget
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
+  src/products.rs       barcode lookup (Open Food Facts), label entry, saved products
+  src/ai/mod.rs         AI provider interface: Provider trait, ProviderError codes, for_user/by_id
   src/error.rs          API error type; JsonBody/Query extractors that reject with JSON
   src/lib.rs            AppState, route table (`route_table()`), router
   migrations/           sqlx migrations (never edit a released one)
   .sqlx/                committed offline query metadata
   tests/                integration tests (oneshot against the Router, in-memory SQLite)
   tests/isolation.rs    user A vs user B for every `Access::User` route
+  tests/products.rs     barcode lookups against wiremock
 web/                    SvelteKit app (adapter-static, SPA fallback)
 fixtures/budget_cases.json   shared budget test vectors
 docs/decisions.md       one line per deviation/notable choice
@@ -68,7 +71,7 @@ npm run build
 - New routes go in `routes()` in `lib.rs` with their `Access`. Request bodies use `error::JsonBody`, queries `error::Query`, so errors are always `{"error": ...}`.
 - Keep it small: no new dependency for what a few lines do. Mark deliberate shortcuts with `// ponytail: <ceiling>, <upgrade path>`.
 - Record deviations from `PLAN.md` in `docs/decisions.md` as one line: date, what, why.
-- No telemetry, ever.
+- Outbound HTTP goes only to configured AI providers and (unless `CUPFUL_PRODUCT_LOOKUP=off`) Open Food Facts. Tests point base URLs at `wiremock`; `common::app()` has product lookup off. No telemetry, ever.
 
 ## Keeping this file current
 

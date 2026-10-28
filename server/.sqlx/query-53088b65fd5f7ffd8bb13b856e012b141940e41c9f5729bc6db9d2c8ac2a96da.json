@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM ai_providers WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "53088b65fd5f7ffd8bb13b856e012b141940e41c9f5729bc6db9d2c8ac2a96da"
+}

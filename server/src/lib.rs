@@ -5,9 +5,11 @@ pub mod auth;
 pub mod budget;
 pub mod cleanup;
 pub mod config;
+pub mod crypto;
 pub mod db;
 pub mod error;
 pub mod nutrition;
+pub mod products;
 pub mod profile;
 mod reads;
 pub mod sync;
@@ -17,7 +19,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::extract::{DefaultBodyLimit, State};
-use axum::routing::{MethodRouter, get, post, put};
+use axum::routing::{MethodRouter, delete, get, post, put};
 use axum::{Json, Router, middleware};
 pub use config::Config;
 use serde_json::{Value, json};
@@ -28,14 +30,25 @@ pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
     pub login_limiter: Arc<auth::RateLimiter>,
+    pub products: Arc<products::Lookup>,
+    /// Encrypts provider secrets. `new` uses a throwaway key; `main` sets the real one.
+    pub secrets: Arc<crypto::Cipher>,
+    pub ai_http: reqwest::Client,
 }
 
 impl AppState {
     pub fn new(db: SqlitePool, config: Config) -> Self {
+        let ai_http = reqwest::Client::builder()
+            .connect_timeout(config.ai_timeouts.connect)
+            .build()
+            .expect("build HTTP client");
         Self {
             db,
+            products: Arc::new(products::Lookup::new(&config)),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
+            secrets: Arc::new(crypto::Cipher::random()),
+            ai_http,
         }
     }
 }
@@ -46,6 +59,8 @@ impl AppState {
 pub enum Access {
     Public,
     User,
+    /// Admin only: 403 for other users. Instance-wide settings, not user-owned data.
+    Admin,
 }
 
 /// Every API route, declared once so tests can enumerate them.
@@ -83,6 +98,41 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
             "/api/portions",
             User,
             post(nutrition::create_portion),
+        ),
+        ("GET", "/api/products", User, get(products::list)),
+        ("POST", "/api/products", User, post(products::create)),
+        // `{id}` is a barcode for GET and a food id for DELETE (one name per path segment).
+        ("GET", "/api/products/{id}", User, get(products::lookup)),
+        (
+            "DELETE",
+            "/api/products/{id}",
+            User,
+            delete(products::remove),
+        ),
+        ("GET", "/api/ai/providers", Admin, get(ai::settings::list)),
+        (
+            "POST",
+            "/api/ai/providers",
+            Admin,
+            post(ai::settings::create),
+        ),
+        (
+            "PUT",
+            "/api/ai/providers/{id}",
+            Admin,
+            put(ai::settings::update),
+        ),
+        (
+            "DELETE",
+            "/api/ai/providers/{id}",
+            Admin,
+            delete(ai::settings::delete),
+        ),
+        (
+            "POST",
+            "/api/ai/providers/{id}/test",
+            Admin,
+            post(ai::settings::test),
         ),
     ]
 }

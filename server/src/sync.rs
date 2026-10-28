@@ -353,6 +353,11 @@ async fn upsert_meal(
         )
         .execute(&mut *tx)
         .await?;
+        if let Some(food_id) = i.food_id
+            && !crate::products::item_logged(&mut tx, user_id, food_id, i.grams, received).await?
+        {
+            return Ok(reject(format!("food {food_id} not found")));
+        }
     }
     tx.commit().await?;
     Ok(Applied)

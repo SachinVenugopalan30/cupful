@@ -62,7 +62,7 @@ Commit the refreshed `server/.sqlx/` directory. CI fails if it's stale.
 
 ## Checks
 
-Run all of these before pushing; CI runs the same set.
+Run all of these before pushing; CI runs the same set. In a fresh checkout or worktree, build the frontend once first (`cd web && npm ci && npm run build`): a server test reads `web/build`.
 
 ```sh
 cd server

@@ -1,0 +1,182 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT f.id, f.source, f.name, f.brand, f.barcode, f.kcal, f.protein_g, f.carbs_g,\n                f.fat_g, f.serving_g, f.serving_text, f.fetched_at, p.last_servings,\n                p.last_used_at\n         FROM user_products p JOIN foods f ON f.id = p.food_id\n         WHERE p.user_id = ? AND (f.user_id IS NULL OR f.user_id = p.user_id)\n         ORDER BY p.last_used_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "source"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "brand",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "brand"
+          }
+        }
+      },
+      {
+        "name": "barcode",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "barcode"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "protein_g",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "protein_g"
+          }
+        }
+      },
+      {
+        "name": "carbs_g",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "carbs_g"
+          }
+        }
+      },
+      {
+        "name": "fat_g",
+        "ordinal": 8,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "fat_g"
+          }
+        }
+      },
+      {
+        "name": "serving_g",
+        "ordinal": 9,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "serving_g"
+          }
+        }
+      },
+      {
+        "name": "serving_text",
+        "ordinal": 10,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "serving_text"
+          }
+        }
+      },
+      {
+        "name": "fetched_at",
+        "ordinal": 11,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "fetched_at"
+          }
+        }
+      },
+      {
+        "name": "last_servings",
+        "ordinal": 12,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "user_products",
+            "name": "last_servings"
+          }
+        }
+      },
+      {
+        "name": "last_used_at",
+        "ordinal": 13,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_products",
+            "name": "last_used_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "b256d39e33d12610d6a6121e3eecc15692d33a39a0ecdd421369fbb9706c58db"
+}

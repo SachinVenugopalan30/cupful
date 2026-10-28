@@ -1,0 +1,158 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, source, name, brand, barcode, kcal, protein_g, carbs_g, fat_g, serving_g,\n                serving_text, fetched_at\n         FROM foods\n         WHERE barcode = ? AND source IN ('user', 'off') AND (user_id IS NULL OR user_id = ?)\n         ORDER BY CASE WHEN source = 'off' THEN 2 WHEN source_ref = ? THEN 0 ELSE 1 END, id DESC\n         LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "source"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "brand",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "brand"
+          }
+        }
+      },
+      {
+        "name": "barcode",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "barcode"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "protein_g",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "protein_g"
+          }
+        }
+      },
+      {
+        "name": "carbs_g",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "carbs_g"
+          }
+        }
+      },
+      {
+        "name": "fat_g",
+        "ordinal": 8,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "fat_g"
+          }
+        }
+      },
+      {
+        "name": "serving_g",
+        "ordinal": 9,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "serving_g"
+          }
+        }
+      },
+      {
+        "name": "serving_text",
+        "ordinal": 10,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "serving_text"
+          }
+        }
+      },
+      {
+        "name": "fetched_at",
+        "ordinal": 11,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "fetched_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "c2ebaddf967d76cb317f16d43746efca10a150a9227acdf92393e0ab8d99fd85"
+}

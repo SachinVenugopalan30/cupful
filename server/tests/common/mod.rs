@@ -8,8 +8,17 @@ use cupful::{AppState, Config};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
+/// Barcode lookups are off so no test reaches the real Open Food Facts; product tests use `app_with`.
 pub async fn app() -> (Router, AppState) {
-    let state = AppState::new(cupful::db::memory().await, Config::default());
+    app_with(Config {
+        product_lookup: false,
+        ..Config::default()
+    })
+    .await
+}
+
+pub async fn app_with(config: Config) -> (Router, AppState) {
+    let state = AppState::new(cupful::db::memory().await, config);
     (cupful::router(state.clone()), state)
 }
 

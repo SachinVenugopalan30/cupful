@@ -1,0 +1,148 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, label, kind, base_url, model,\n                api_key IS NOT NULL AS \"has_key!: bool\",\n                extra_headers IS NOT NULL AS \"has_extra_headers!: bool\",\n                supports_vision AS \"supports_vision: bool\", structured_output_mode,\n                is_local AS \"is_local: bool\", is_default_text AS \"is_default_text: bool\",\n                is_default_vision AS \"is_default_vision: bool\"\n         FROM ai_providers ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "label",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "label"
+          }
+        }
+      },
+      {
+        "name": "kind",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "name": "base_url",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "base_url"
+          }
+        }
+      },
+      {
+        "name": "model",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "model"
+          }
+        }
+      },
+      {
+        "name": "has_key!: bool",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "has_extra_headers!: bool",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "supports_vision: bool",
+        "ordinal": 7,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "supports_vision"
+          }
+        }
+      },
+      {
+        "name": "structured_output_mode",
+        "ordinal": 8,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "structured_output_mode"
+          }
+        }
+      },
+      {
+        "name": "is_local: bool",
+        "ordinal": 9,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "is_local"
+          }
+        }
+      },
+      {
+        "name": "is_default_text: bool",
+        "ordinal": 10,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "is_default_text"
+          }
+        }
+      },
+      {
+        "name": "is_default_vision: bool",
+        "ordinal": 11,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "is_default_vision"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b08fda8918d9f7e2a1b543af0e35a7d51bbc27fecf586de04abe0837c38ba847"
+}

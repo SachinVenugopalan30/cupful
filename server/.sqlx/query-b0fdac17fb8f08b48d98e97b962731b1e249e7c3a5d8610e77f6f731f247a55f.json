@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT barcode, serving_g FROM foods WHERE id = ? AND (user_id IS NULL OR user_id = ?)",
+  "describe": {
+    "columns": [
+      {
+        "name": "barcode",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "barcode"
+          }
+        }
+      },
+      {
+        "name": "serving_g",
+        "ordinal": 1,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "serving_g"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "b0fdac17fb8f08b48d98e97b962731b1e249e7c3a5d8610e77f6f731f247a55f"
+}
