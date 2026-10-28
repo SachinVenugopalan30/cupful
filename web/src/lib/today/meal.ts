@@ -232,3 +232,22 @@ export function sumItems(items: Nums[], scale: number): Macros {
 export function dayTotals(meals: Meal[]): Macros {
 	return sumItems(meals.map((m) => m.totals), 1);
 }
+
+export const PHOTO_MAX_SIDE = 1600;
+
+/**
+ * Re-encodes a photo as JPEG through a canvas, downscaled to PHOTO_MAX_SIDE. Drawing to a canvas
+ * keeps only pixels, so EXIF (GPS location included) is gone; orientation is applied first.
+ */
+export async function reencodePhoto(file: Blob): Promise<Blob> {
+	const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+	const { width, height } = fitWithin(bmp.width, bmp.height, PHOTO_MAX_SIDE);
+	const canvas = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	canvas.getContext('2d')!.drawImage(bmp, 0, 0, width, height);
+	bmp.close();
+	return new Promise((resolve, reject) =>
+		canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn't read this photo."))), 'image/jpeg', 0.85)
+	);
+}
