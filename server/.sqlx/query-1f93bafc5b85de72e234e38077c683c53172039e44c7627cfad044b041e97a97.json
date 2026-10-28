@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE ai_providers SET is_default_text = 0",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "1f93bafc5b85de72e234e38077c683c53172039e44c7627cfad044b041e97a97"
+}

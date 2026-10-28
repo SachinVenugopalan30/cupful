@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ai_usage (user_id, date, provider_id, calls)\n         SELECT ?1, ?2, ?3, 1\n         WHERE (SELECT is_local FROM ai_providers WHERE id = ?3)\n            OR (SELECT COALESCE(SUM(u.calls), 0) FROM ai_usage u\n                JOIN ai_providers p ON p.id = u.provider_id\n                WHERE u.user_id = ?1 AND u.date = ?2 AND p.is_local = 0) < ?4\n         ON CONFLICT (user_id, date, provider_id) DO UPDATE SET calls = calls + 1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "ed1e2842d2b00d94a4e3d89679ecc0ad6159e7c6367ce9d49aa2d5be89a89c63"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE ai_providers SET label = ?, kind = ?, base_url = ?, model = ?,\n                 api_key = CASE WHEN ? THEN ? ELSE api_key END,\n                 extra_headers = CASE WHEN ? THEN ? ELSE extra_headers END,\n                 supports_vision = ?, structured_output_mode = ?, is_local = ?,\n                 is_default_text = ?, is_default_vision = ?\n             WHERE id = ? RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 14
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bda1dc162eb61eaa6a19c18acc3e826b91e33a7dc68f6757359049ca845c75a9"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ai_providers (label, kind, base_url, model, api_key, extra_headers,\n                 supports_vision, structured_output_mode, is_local, is_default_text,\n                 is_default_vision, created_at)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "ai_providers",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 12
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8208d1ef9eb70b8deb81fa4f6fb7a074808243cb71d27b783e7b6ca41e261eab"
+}

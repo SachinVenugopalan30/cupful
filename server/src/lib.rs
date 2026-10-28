@@ -30,15 +30,24 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub login_limiter: Arc<auth::RateLimiter>,
     pub products: Arc<products::Lookup>,
+    /// Encrypts provider secrets. `new` uses a throwaway key; `main` sets the real one.
+    pub secrets: Arc<crypto::Cipher>,
+    pub ai_http: reqwest::Client,
 }
 
 impl AppState {
     pub fn new(db: SqlitePool, config: Config) -> Self {
+        let ai_http = reqwest::Client::builder()
+            .connect_timeout(config.ai_timeouts.connect)
+            .build()
+            .expect("build HTTP client");
         Self {
             db,
             products: Arc::new(products::Lookup::new(&config)),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
+            secrets: Arc::new(crypto::Cipher::random()),
+            ai_http,
         }
     }
 }
@@ -49,6 +58,8 @@ impl AppState {
 pub enum Access {
     Public,
     User,
+    /// Admin only: 403 for other users. Instance-wide settings, not user-owned data.
+    Admin,
 }
 
 /// Every API route, declared once so tests can enumerate them.
@@ -81,6 +92,31 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
             "/api/products/{id}",
             User,
             delete(products::remove),
+        ),
+        ("GET", "/api/ai/providers", Admin, get(ai::settings::list)),
+        (
+            "POST",
+            "/api/ai/providers",
+            Admin,
+            post(ai::settings::create),
+        ),
+        (
+            "PUT",
+            "/api/ai/providers/{id}",
+            Admin,
+            put(ai::settings::update),
+        ),
+        (
+            "DELETE",
+            "/api/ai/providers/{id}",
+            Admin,
+            delete(ai::settings::delete),
+        ),
+        (
+            "POST",
+            "/api/ai/providers/{id}/test",
+            Admin,
+            post(ai::settings::test),
         ),
     ]
 }

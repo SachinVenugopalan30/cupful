@@ -18,6 +18,10 @@ pub struct Config {
     pub off_base_url: String,
     /// Total time for one Open Food Facts request; connecting is capped at 5 s.
     pub off_timeout: Duration,
+    /// Hosted AI calls per user per local day (`CUPFUL_AI_DAILY_CAP`).
+    pub ai_daily_cap: i64,
+    /// Provider HTTP timeouts and retry backoff; not env-configurable, tests shorten them.
+    pub ai_timeouts: crate::ai::Timeouts,
 }
 
 impl Default for Config {
@@ -31,6 +35,8 @@ impl Default for Config {
             product_lookup: true,
             off_base_url: "https://world.openfoodfacts.org".into(),
             off_timeout: Duration::from_secs(10),
+            ai_daily_cap: 200,
+            ai_timeouts: Default::default(),
         }
     }
 }
@@ -59,6 +65,11 @@ impl Config {
         }
         if let Some(v) = var("CUPFUL_PRODUCT_LOOKUP") {
             c.product_lookup = v != "off" && v != "false" && v != "0";
+        }
+        if let Some(v) = var("CUPFUL_AI_DAILY_CAP") {
+            c.ai_daily_cap = v
+                .parse()
+                .map_err(|e| format!("CUPFUL_AI_DAILY_CAP={v}: {e}"))?;
         }
         Ok(c)
     }

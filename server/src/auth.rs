@@ -217,6 +217,21 @@ impl FromRequestParts<AppState> for User {
     }
 }
 
+/// The logged-in admin: 401 when anonymous, 403 for other users.
+pub struct Admin(pub User);
+
+impl FromRequestParts<AppState> for Admin {
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self> {
+        let user = User::from_request_parts(parts, state).await?;
+        if !user.is_admin {
+            return Err(Error::Status(StatusCode::FORBIDDEN, "admins only".into()));
+        }
+        Ok(Admin(user))
+    }
+}
+
 // ---- handlers ----
 
 pub async fn auth_state(State(s): State<AppState>, session: Session) -> Result<Json<Value>> {

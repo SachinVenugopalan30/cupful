@@ -59,6 +59,40 @@ async fn user_routes_need_a_login() {
     }
 }
 
+#[tokio::test]
+async fn admin_routes_refuse_other_users_and_anonymous() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let (_, p) = a
+        .post(
+            "/api/ai/providers",
+            json!({"label": "x", "kind": "openai_compatible", "base_url": "http://x/v1", "model": "m"}),
+        )
+        .await;
+    let id = p["id"].to_string();
+    let mut bob = user(&app, &state, "bob").await;
+    let mut anon = Client::new(&app);
+    let admin_routes: Vec<_> = cupful::route_table()
+        .into_iter()
+        .filter(|r| r.2 == Access::Admin)
+        .collect();
+    assert!(!admin_routes.is_empty());
+    for (method, path, _) in admin_routes {
+        let uri = path.replace("{id}", &id);
+        let body = (method != "GET" && method != "DELETE").then(|| json!({}));
+        let (status, _) = bob.req(method, &uri, body.clone()).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{method} {path}");
+        let (status, _) = anon.req(method, &uri, body).await;
+        assert_eq!(status, StatusCode::UNAUTHORIZED, "{method} {path}");
+    }
+    let (_, list) = a.get("/api/ai/providers").await;
+    assert_eq!(
+        list["providers"].as_array().unwrap().len(),
+        1,
+        "bob deleted nothing"
+    );
+}
+
 const D: &str = "2026-01-05";
 
 /// A has a profile, a meal and a day on `D`; B is a second, logged-in user.
