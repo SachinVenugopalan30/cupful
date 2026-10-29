@@ -16,7 +16,7 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ```
 server/                 Rust crate `cupful`
-  src/main.rs           CLI: serve (default), reset-password, import-foods, eval
+  src/main.rs           CLI: serve (default), reset-password, import-foods, seed-demo, eval
   src/config.rs         env config (CUPFUL_*)
   src/db.rs             pool + SQLite pragmas + migrations
   src/assets.rs         rust-embed of web/build (debug builds read disk)
@@ -24,7 +24,9 @@ server/                 Rust crate `cupful`
   src/profile.rs        profile + profile_versions REST
   src/budget.rs         budget math, pure functions
   src/sync.rs           POST /api/sync write contract
-  src/reads.rs          GET days / meals / budget
+  src/reads.rs          GET days / meals / budget / trends (one `day_budget` shared by budget and trends)
+  src/ingest.rs         ingest tokens REST (hashed at rest) + POST /api/ingest/activity (bearer token, `Access::Token`, no CSRF header)
+  src/demo.rs           `seed-demo`: deterministic demo user and history
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
   src/products.rs       barcode lookup (Open Food Facts), label entry, saved products
@@ -53,6 +55,7 @@ data/staples.csv, data/aliases.csv, data/portions.csv   shipped food data and US
 data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
 data/golden/            golden estimate cases with recorded model replies
 docs/providers.md       AI provider setup
+docs/shortcuts.md       sending steps from iOS Shortcuts / Android with an ingest token
 docs/decisions.md       one line per deviation/notable choice
 ```
 
@@ -62,6 +65,7 @@ docs/decisions.md       one line per deviation/notable choice
 # backend (from server/)
 CUPFUL_SECURE_COOKIES=false cargo run -- serve
 cargo run -- import-foods <FoodData_Central_*_food_json.json>   # Foundation or SR Legacy, unzipped
+cargo run -- seed-demo --days 90 --seed 42 [--force]          # user `demo`, random password printed once; --force replaces only that user
 cargo run -- eval --provider <id>                             # golden set against a live provider
 SQLX_OFFLINE=true cargo test
 SQLX_OFFLINE=true cargo clippy --all-targets -- -D warnings

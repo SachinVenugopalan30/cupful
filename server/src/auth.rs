@@ -324,11 +324,13 @@ pub async fn logout(session: Session) -> Result<Json<Value>> {
 
 // ---- CSRF ----
 
-/// Mutating API requests must carry `X-Cupful: 1`, on top of SameSite=Lax cookies.
+/// Mutating API requests must carry `X-Cupful: 1`, on top of SameSite=Lax cookies. The ingest
+/// route is exempt: it takes a bearer token and never reads a cookie, so there is nothing to forge.
 pub async fn csrf(req: Request, next: Next) -> Response {
     let safe = matches!(*req.method(), Method::GET | Method::HEAD | Method::OPTIONS);
     if !safe
         && req.uri().path().starts_with("/api/")
+        && req.uri().path() != crate::ingest::ACTIVITY_PATH
         && req.headers().get("x-cupful").is_none_or(|v| v != "1")
     {
         return Error::Status(StatusCode::FORBIDDEN, "missing X-Cupful header".into())

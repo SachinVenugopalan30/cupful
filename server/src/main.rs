@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use cupful::{AppState, Config};
 
-const USAGE: &str = "usage: cupful [serve | reset-password <username> | import-foods <fdc.json> | eval --provider <id>]";
+const USAGE: &str = "usage: cupful [serve | reset-password <username> | import-foods <fdc.json> | seed-demo [--days N] [--seed N] [--force] | eval --provider <id>]";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -18,6 +18,7 @@ async fn main() -> ExitCode {
         None | Some("serve") => serve().await,
         Some("reset-password") if args.len() == 2 => reset_password(&args[1]).await,
         Some("import-foods") if args.len() == 2 => import_foods(&args[1]).await,
+        Some("seed-demo") => seed_demo(&args[1..]).await,
         Some("eval") if args.len() == 3 && args[1] == "--provider" => match args[2].parse() {
             Ok(id) => eval(id).await,
             Err(_) => Err(USAGE.to_string()),
@@ -60,6 +61,34 @@ async fn import_foods(path: &str) -> Result<(), String> {
     let (imported, skipped) =
         cupful::nutrition::foods::import_usda(&db, std::path::Path::new(path)).await?;
     eprintln!("Imported {imported} USDA foods ({skipped} skipped: missing or implausible values).");
+    Ok(())
+}
+
+/// `seed-demo [--days N] [--seed N] [--force]`: see `cupful::demo`.
+async fn seed_demo(args: &[String]) -> Result<(), String> {
+    let (mut days, mut seed, mut force) = (90u32, 42u64, false);
+    let mut args = args.iter();
+    while let Some(arg) = args.next() {
+        let mut value = || {
+            args.next()
+                .and_then(|v| v.parse::<u64>().ok())
+                .ok_or_else(|| USAGE.to_string())
+        };
+        match arg.as_str() {
+            "--days" => days = u32::try_from(value()?).map_err(|_| USAGE.to_string())?,
+            "--seed" => seed = value()?,
+            "--force" => force = true,
+            _ => return Err(USAGE.to_string()),
+        }
+    }
+    let config = Config::from_env()?;
+    let db = open_db(&config).await?;
+    // The demo user's timezone is UTC.
+    let today = jiff::Timestamp::now()
+        .to_zoned(jiff::tz::TimeZone::UTC)
+        .date();
+    let password = cupful::demo::seed(&db, today, days, seed, force).await?;
+    println!("Created user \"demo\" with {days} days of data.\nPassword (shown once): {password}");
     Ok(())
 }
 

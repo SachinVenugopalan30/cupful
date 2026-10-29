@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO days (user_id, date, steps, steps_source, steps_updated_at, gym_minutes,\n                 gym_source, gym_updated_at, trained, trained_updated_at, weight_kg, weight_updated_at)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 12
+    },
+    "nullable": []
+  },
+  "hash": "0e824b8efd2e977a843a74a96b6164f49dfdbb3936c9b3bd747be56e7e17dd0f"
+}

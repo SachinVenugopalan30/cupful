@@ -200,4 +200,30 @@ impl Client {
             .map(|r| r["status"].as_str().unwrap().to_string())
             .collect()
     }
+
+    /// Creates an ingest token and returns `(id, token)`.
+    pub async fn token(&mut self, label: &str) -> (i64, String) {
+        let (status, body) = self
+            .post("/api/ingest-tokens", serde_json::json!({ "label": label }))
+            .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        (
+            body["id"].as_i64().unwrap(),
+            body["token"].as_str().unwrap().to_string(),
+        )
+    }
+}
+
+/// `POST /api/ingest/activity` as a Shortcut would: bearer token, no cookie, no CSRF header.
+pub async fn ingest(
+    app: &Router,
+    token: Option<&str>,
+    body: serde_json::Value,
+) -> (StatusCode, serde_json::Value) {
+    let mut b = Request::post("/api/ingest/activity").header("content-type", "application/json");
+    if let Some(t) = token {
+        b = b.header("authorization", format!("Bearer {t}"));
+    }
+    let (status, _, bytes) = send(app, b.body(Body::from(body.to_string())).unwrap()).await;
+    (status, serde_json::from_slice(&bytes).unwrap_or_default())
 }

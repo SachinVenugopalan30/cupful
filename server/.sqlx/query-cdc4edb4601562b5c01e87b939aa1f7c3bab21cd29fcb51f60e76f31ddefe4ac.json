@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE ingest_tokens SET last_used_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "cdc4edb4601562b5c01e87b939aa1f7c3bab21cd29fcb51f60e76f31ddefe4ac"
+}

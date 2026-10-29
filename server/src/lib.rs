@@ -7,7 +7,9 @@ pub mod cleanup;
 pub mod config;
 pub mod crypto;
 pub mod db;
+pub mod demo;
 pub mod error;
+pub mod ingest;
 pub mod nutrition;
 pub mod products;
 pub mod profile;
@@ -30,6 +32,8 @@ pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
     pub login_limiter: Arc<auth::RateLimiter>,
+    /// 60 requests an hour per ingest token.
+    pub ingest_limiter: Arc<auth::RateLimiter>,
     pub products: Arc<products::Lookup>,
     /// Encrypts provider secrets. `new` uses a throwaway key; `main` sets the real one.
     pub secrets: Arc<crypto::Cipher>,
@@ -47,6 +51,7 @@ impl AppState {
             products: Arc::new(products::Lookup::new(&config)),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
+            ingest_limiter: Arc::new(auth::RateLimiter::new(60, Duration::from_secs(3600))),
             secrets: Arc::new(crypto::Cipher::random()),
             ai_http,
         }
@@ -61,6 +66,8 @@ pub enum Access {
     User,
     /// Admin only: 403 for other users. Instance-wide settings, not user-owned data.
     Admin,
+    /// A bearer ingest token instead of a session (Shortcuts); exempt from the CSRF header.
+    Token,
 }
 
 /// Every API route, declared once so tests can enumerate them.
@@ -84,6 +91,21 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/days/{date}", User, get(reads::day)),
         ("GET", "/api/meals", User, get(reads::meals)),
         ("GET", "/api/budget/{date}", User, get(reads::budget)),
+        ("GET", "/api/trends", User, get(reads::trends)),
+        ("GET", "/api/ingest-tokens", User, get(ingest::list)),
+        ("POST", "/api/ingest-tokens", User, post(ingest::create)),
+        (
+            "DELETE",
+            "/api/ingest-tokens/{id}",
+            User,
+            delete(ingest::revoke),
+        ),
+        (
+            "POST",
+            ingest::ACTIVITY_PATH,
+            Token,
+            post(ingest::activity).layer(DefaultBodyLimit::max(4096)),
+        ),
         (
             "POST",
             "/api/estimate",

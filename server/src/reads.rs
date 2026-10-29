@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Read endpoints for logged data and the budget (PLAN.md §6).
 
+use std::collections::HashMap;
+
 use crate::error::Query;
 use axum::Json;
 use axum::extract::{Path, State};
+use jiff::ToSpan;
+use jiff::civil::Date;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
 
 use crate::AppState;
 use crate::auth::User;
-use crate::budget::{self, DayActivity};
+use crate::budget::{self, DayActivity, ProfileVersion};
 use crate::error::{Error, Result};
 use crate::time::parse_date;
 
@@ -87,18 +91,22 @@ pub struct Range {
     to: String,
 }
 
+fn check_span(from: Date, to: Date) -> Result<()> {
+    if !(0..MAX_RANGE_DAYS).contains(&(to - from).get_days()) {
+        return Err(Error::bad_request(format!(
+            "`from` must be on or before `to`, at most {MAX_RANGE_DAYS} days apart"
+        )));
+    }
+    Ok(())
+}
+
 pub async fn days(
     State(s): State<AppState>,
     user: User,
     Query(r): Query<Range>,
 ) -> Result<Json<Value>> {
     let (from, to) = (parse_date(&r.from)?, parse_date(&r.to)?);
-    let span = (to - from).get_days();
-    if !(0..MAX_RANGE_DAYS).contains(&span) {
-        return Err(Error::bad_request(format!(
-            "`from` must be on or before `to`, at most {MAX_RANGE_DAYS} days apart"
-        )));
-    }
+    check_span(from, to)?;
     let rows = days_between(&s.db, user.id, &from.to_string(), &to.to_string()).await?;
     Ok(Json(
         json!({ "days": rows.iter().map(DayRow::to_json).collect::<Vec<_>>() }),
@@ -162,6 +170,79 @@ pub async fn meals(
     Ok(Json(json!({ "meals": out })))
 }
 
+/// The budget for `date` from already-loaded inputs (`weight` = latest weigh-in on or before
+/// it, `row` = that day's activity), or `None` before the first profile version.
+fn day_budget(
+    date: Date,
+    versions: &[ProfileVersion],
+    weight: Option<f64>,
+    row: Option<&DayRow>,
+) -> Option<budget::Budget> {
+    let version = budget::version_on(date, versions)?;
+    let activity = row.map_or_else(DayActivity::default, |r| DayActivity {
+        steps: r.steps,
+        gym_minutes: r.gym_minutes,
+        trained: r.trained(),
+    });
+    Some(budget::compute(date, version, weight, &activity))
+}
+
+/// One entry per date in the range, for the Trends charts.
+pub async fn trends(
+    State(s): State<AppState>,
+    user: User,
+    Query(r): Query<Range>,
+) -> Result<Json<Value>> {
+    let (from, to) = (parse_date(&r.from)?, parse_date(&r.to)?);
+    check_span(from, to)?;
+    let (f, t) = (from.to_string(), to.to_string());
+    let versions = crate::profile::versions(&s.db, user.id).await?;
+    let rows = days_between(&s.db, user.id, &f, &t).await?;
+    let by_date: HashMap<&str, &DayRow> = rows.iter().map(|r| (r.date.as_str(), r)).collect();
+    let eaten: HashMap<String, f64> = sqlx::query!(
+        "SELECT m.date, coalesce(sum(i.kcal), 0.0) AS \"kcal!: f64\"
+         FROM meals m LEFT JOIN meal_items i ON i.meal_id = m.id
+         WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.date BETWEEN ? AND ?
+         GROUP BY m.date",
+        user.id,
+        f,
+        t
+    )
+    .fetch_all(&s.db)
+    .await?
+    .into_iter()
+    .map(|r| (r.date, r.kcal))
+    .collect();
+    // Budgets carry the latest weigh-in forward (§7), starting from before the range.
+    let mut weight = sqlx::query_scalar!(
+        "SELECT weight_kg AS \"w!: f64\" FROM days
+         WHERE user_id = ? AND date < ? AND weight_kg IS NOT NULL ORDER BY date DESC LIMIT 1",
+        user.id,
+        f
+    )
+    .fetch_optional(&s.db)
+    .await?;
+    let days: Vec<Value> = from
+        .series(1.day())
+        .take_while(|d| *d <= to)
+        .map(|date| {
+            let key = date.to_string();
+            let row = by_date.get(key.as_str()).copied();
+            weight = row.and_then(|r| r.weight_kg).or(weight);
+            let budget = day_budget(date, &versions, weight, row);
+            json!({
+                "date": key,
+                "eaten_kcal": eaten.get(&key).map(|k| k.round() as i64),
+                "budget_kcal": budget.map(|b| b.budget.round() as i64),
+                "weight_kg": row.and_then(|r| r.weight_kg),
+                "steps": row.and_then(|r| r.steps),
+                "gym_minutes": row.and_then(|r| r.gym_minutes),
+            })
+        })
+        .collect();
+    Ok(Json(json!({ "days": days })))
+}
+
 /// Recomputed from current data every time (PLAN.md §7 "History").
 pub async fn budget(
     State(s): State<AppState>,
@@ -170,11 +251,6 @@ pub async fn budget(
 ) -> Result<Json<budget::Budget>> {
     let date = parse_date(&date)?;
     let versions = crate::profile::versions(&s.db, user.id).await?;
-    let version = budget::version_on(date, &versions).ok_or_else(|| {
-        Error::conflict(format!(
-            "no profile in effect on {date}; save your profile first"
-        ))
-    })?;
     let d = date.to_string();
     let weight = sqlx::query_scalar!(
         "SELECT weight_kg AS \"w!: f64\" FROM days
@@ -185,10 +261,11 @@ pub async fn budget(
     .fetch_optional(&s.db)
     .await?;
     let day = days_between(&s.db, user.id, &d, &d).await?.pop();
-    let activity = day.map_or_else(DayActivity::default, |r| DayActivity {
-        steps: r.steps,
-        gym_minutes: r.gym_minutes,
-        trained: r.trained(),
-    });
-    Ok(Json(budget::compute(date, version, weight, &activity)))
+    day_budget(date, &versions, weight, day.as_ref())
+        .map(Json)
+        .ok_or_else(|| {
+            Error::conflict(format!(
+                "no profile in effect on {date}; save your profile first"
+            ))
+        })
 }

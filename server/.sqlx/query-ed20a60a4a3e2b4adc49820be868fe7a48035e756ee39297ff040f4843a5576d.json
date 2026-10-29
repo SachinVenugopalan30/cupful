@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO meal_items (id, meal_id, position, name, portion_text, grams, kcal,\n                 protein_g, carbs_g, fat_g, food_id, origin)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'food_db')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "ed20a60a4a3e2b4adc49820be868fe7a48035e756ee39297ff040f4843a5576d"
+}
