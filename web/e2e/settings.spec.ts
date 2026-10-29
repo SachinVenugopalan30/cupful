@@ -24,7 +24,7 @@ async function noSideScroll(page: Page) {
 	expect(overflow).toBeLessThanOrEqual(0);
 }
 
-test('profile in lb/ft-in gives a budget; providers; about', async ({ page }) => {
+test('profile in lb/ft-in gives a budget; providers; about; no Google client', async ({ page }) => {
 	await signIn(page);
 	const budget = page.getByRole('region', { name: 'Budget' });
 
@@ -101,4 +101,9 @@ test('profile in lb/ft-in gives a budget; providers; about', async ({ page }) =>
 	await expect(about.getByText(/Cupful \d+\.\d+\.\d+/)).toBeVisible();
 	await expect(about.getByRole('link', { name: 'Source code' })).toHaveAttribute('href', /^https?:\/\//);
 	await expect(about.getByText('AGPL-3.0-or-later', { exact: false })).toBeVisible();
+
+	// The e2e server has no Google client configured: the feature is invisible and its routes 404.
+	expect(await (await page.request.get('/api/google')).json()).toEqual({ configured: false });
+	expect((await page.request.get('/api/google/connect', { maxRedirects: 0 })).status()).toBe(404);
+	await expect(page.getByRole('heading', { name: 'Google Health' })).toHaveCount(0);
 });
