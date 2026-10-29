@@ -17,7 +17,9 @@ const COVERED: &[&str] = &[
     "GET /api/budget/{date}",
     "POST /api/estimate",
     "POST /api/foods",
+    "GET /api/aliases",
     "POST /api/aliases",
+    "DELETE /api/aliases/{id}",
     "POST /api/portions",
     "GET /api/products",
     "POST /api/products",
@@ -329,6 +331,37 @@ async fn b_never_matches_a_private_foods_aliases_or_portions() {
         matched(&state.db, idb, "zebra cake").await,
         bfood["id"].as_i64()
     );
+}
+
+#[tokio::test]
+async fn b_cannot_list_or_delete_a_aliases() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let mut b = user(&app, &state, "bob").await;
+    let rice: i64 = sqlx::query_scalar("SELECT id FROM foods WHERE name = 'Rice, white, cooked'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let (_, al) = a
+        .post("/api/aliases", json!({"alias": "dinner", "food_id": rice}))
+        .await;
+    let (status, list) = b.get("/api/aliases").await;
+    assert_eq!((status, &list["aliases"]), (StatusCode::OK, &json!([])));
+    let (status, _) = b
+        .req("DELETE", &format!("/api/aliases/{}", al["id"]), None)
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let (_, list) = a.get("/api/aliases").await;
+    assert_eq!(list["aliases"].as_array().unwrap().len(), 1);
+    assert_eq!(list["aliases"][0]["food_name"], "Rice, white, cooked");
+    assert_eq!(list["aliases"][0]["source"], "staple");
+    assert!(list["aliases"][0]["brand"].is_null());
+    let (status, _) = a
+        .req("DELETE", &format!("/api/aliases/{}", al["id"]), None)
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let (_, list) = a.get("/api/aliases").await;
+    assert_eq!(list["aliases"], json!([]));
 }
 
 fn label(name: &str) -> serde_json::Value {

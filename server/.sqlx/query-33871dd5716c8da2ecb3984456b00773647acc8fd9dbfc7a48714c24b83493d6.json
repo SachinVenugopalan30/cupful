@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT a.id, a.alias, a.food_id, f.name AS food_name, f.brand, f.barcode, f.source\n         FROM food_aliases a JOIN foods f ON f.id = a.food_id\n         WHERE a.user_id = ?\n         ORDER BY a.id DESC",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "alias",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "alias"
+          }
+        }
+      },
+      {
+        "name": "food_id",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "food_name",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "brand",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "brand"
+          }
+        }
+      },
+      {
+        "name": "barcode",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "barcode"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "source"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "33871dd5716c8da2ecb3984456b00773647acc8fd9dbfc7a48714c24b83493d6"
+}

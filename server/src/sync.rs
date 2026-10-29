@@ -259,7 +259,7 @@ impl MealIn {
             if i.portion_text.chars().count() > 200 {
                 return Err("portion_text is longer than 200 characters".into());
             }
-            one_of(&i.origin, &["food_db", "ai_estimate"], "origin")?;
+            one_of(&i.origin, &["food_db", "ai_estimate", "manual"], "origin")?;
             if let Some(g) = i.grams {
                 finite_in(g, 0.0, 10_000.0, "grams")?;
             }

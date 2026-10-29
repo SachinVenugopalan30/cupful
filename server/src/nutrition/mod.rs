@@ -7,7 +7,10 @@ pub mod foods;
 pub mod golden;
 mod routes;
 
-pub use routes::{create_alias, create_food, create_portion, estimate as estimate_handler};
+pub use routes::{
+    create_alias, create_food, create_portion, delete_alias, estimate as estimate_handler,
+    list_aliases,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
