@@ -29,6 +29,11 @@ const COVERED: &[&str] = &[
     "POST /api/ingest-tokens",
     "DELETE /api/ingest-tokens/{id}",
     "GET /api/trends",
+    "GET /api/google",
+    "DELETE /api/google",
+    "GET /api/google/connect",
+    "GET /api/google/callback",
+    "POST /api/google/sync",
 ];
 
 #[test]

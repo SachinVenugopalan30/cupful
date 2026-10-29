@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE google_connections SET last_sync_at = ?, last_error = NULL WHERE user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "9ca3a49709fb681b8fd58e476e2ede9a8f432744dab3ac7c73a8e341536d738d"
+}

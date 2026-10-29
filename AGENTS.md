@@ -25,6 +25,7 @@ server/                 Rust crate `cupful`
   src/budget.rs         budget math, pure functions
   src/sync.rs           POST /api/sync write contract
   src/reads.rs          GET days / meals / budget / trends (one `day_budget` shared by budget and trends)
+  src/google.rs         Google Health API v4 steps sync: OAuth (PKCE, state in session), encrypted tokens, /api/google/*, daily task; 404 unless configured
   src/ingest.rs         ingest tokens REST (hashed at rest) + POST /api/ingest/activity (bearer token, `Access::Token`, no CSRF header)
   src/demo.rs           `seed-demo`: deterministic demo user and history
   src/time.rs           user-local "today" helpers
@@ -55,6 +56,7 @@ data/staples.csv, data/aliases.csv, data/portions.csv   shipped food data and US
 data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
 data/golden/            golden estimate cases with recorded model replies
 docs/providers.md       AI provider setup
+docs/google-health.md   Google Cloud setup for the optional Google Health steps sync
 docs/shortcuts.md       sending steps from iOS Shortcuts / Android with an ingest token
 docs/decisions.md       one line per deviation/notable choice
 ```
@@ -96,7 +98,7 @@ npm run build
 - Keep it small: no new dependency for what a few lines do. Mark deliberate shortcuts with `// ponytail: <ceiling>, <upgrade path>`.
 - Record deviations from `PLAN.md` in `docs/decisions.md` as one line: date, what, why.
 - Frontend logic gets a Vitest test (`*.test.ts` next to the code). Screens use tokens and `global.css` classes; no CSS framework or UI kit. Logged-data writes go only through `sync.sendOps`. `#lib` imports of TS files keep the `.ts` extension.
-- Outbound HTTP goes only to configured AI providers and (unless `CUPFUL_PRODUCT_LOOKUP=off`) Open Food Facts. Tests point base URLs at `wiremock`; `common::app()` has product lookup off. No telemetry, ever.
+- Outbound HTTP goes only to configured AI providers, (unless `CUPFUL_PRODUCT_LOOKUP=off`) Open Food Facts, and, only when `CUPFUL_GOOGLE_CLIENT_ID`/`_SECRET` are set and a user connected it, Google (`accounts.google.com`, `oauth2.googleapis.com`, `health.googleapis.com`). Tests point base URLs at `wiremock`; `common::app()` has product lookup off. No telemetry, ever.
 
 ## Keeping this file current
 

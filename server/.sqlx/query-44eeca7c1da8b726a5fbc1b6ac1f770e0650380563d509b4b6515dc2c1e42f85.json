@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE google_connections SET last_error = ?, needs_reconnect = needs_reconnect OR ?\n         WHERE user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "44eeca7c1da8b726a5fbc1b6ac1f770e0650380563d509b4b6515dc2c1e42f85"
+}

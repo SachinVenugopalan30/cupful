@@ -405,6 +405,7 @@ pub enum Source {
     Manual,
     Shortcut,
     Import,
+    Google,
 }
 
 impl Source {
@@ -413,6 +414,7 @@ impl Source {
             Source::Manual => "manual",
             Source::Shortcut => "shortcut",
             Source::Import => "import",
+            Source::Google => "google",
         }
     }
 }

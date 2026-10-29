@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT last_sync_at, last_error, needs_reconnect FROM google_connections WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "last_sync_at",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "last_sync_at"
+          }
+        }
+      },
+      {
+        "name": "last_error",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "last_error"
+          }
+        }
+      },
+      {
+        "name": "needs_reconnect",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "needs_reconnect"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "69f58034245e49ddad9b14bc6b1a47bb80f4fd5ebc0717be527d3576e0f5c718"
+}

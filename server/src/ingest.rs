@@ -30,7 +30,7 @@ fn hash(token: &str) -> String {
     B64URL.encode(Sha256::digest(token.as_bytes()))
 }
 
-fn rfc3339(ms: i64) -> Result<String> {
+pub(crate) fn rfc3339(ms: i64) -> Result<String> {
     jiff::Timestamp::from_millisecond(ms)
         .map(|t| t.to_string())
         .map_err(|e| Error::Internal(e.to_string()))

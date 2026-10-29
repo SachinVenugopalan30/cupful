@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE google_connections SET access_token = ?, access_expires_at = ? WHERE user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "f3a002ed31489500d7f13055415c6ac7c0b74034d10a505b2b3c7f93a41e1c99"
+}

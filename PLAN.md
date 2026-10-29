@@ -67,11 +67,11 @@ At the start of M0, confirm each of these skills actually loads in the tool doin
 7. Be easy for anyone to self-host: one `docker compose up`, private by default over Tailscale.
 
 ### Platform reality for steps
-- **Android:** manual entry, the Shortcut/automation endpoint (section 11), and from v0.2 the Google Health integration.
+- **Android:** manual entry, the Shortcut/automation endpoint (section 11), and, in M4, the Google Health integration (section 15; optional, needs your own Google Cloud OAuth client).
 - **iOS:** a PWA cannot read HealthKit. The supported path is manual entry or an iOS Shortcuts automation that reads step count from Health and posts it to Cupful's ingest endpoint. Document this plainly in the README.
 
 ### Non-goals for v0.1
-- Google Health integration (moved to v0.2, section 15).
+- Hosted or shared Google Health credentials. The integration itself moved into M4 (section 15); each self-hoster brings their own OAuth client.
 - Public SaaS hosting, billing, or social features.
 - Native mobile apps.
 - Recipes, meal planning, coaching or chat. Don't build hooks for them now. (Barcode scanning was moved into scope; see section 8, "Packaged products".)
@@ -174,7 +174,7 @@ Every user-owned row carries `user_id`. Plan for several users per instance (a h
   - gym_minutes, gym_source, gym_updated_at
   - trained (JSON array of body parts), trained_updated_at
   - weight_kg, weight_updated_at
-  - Unique on (user_id, date). Sources: `manual`, `shortcut`, `import` (and `google` in v0.2).
+  - Unique on (user_id, date). Sources: `manual`, `shortcut`, `import` and `google`.
 - **`meals`** — id (client-generated UUIDv7, primary key), user_id, date, meal_type (breakfast/lunch/dinner/snack), description (what the user typed), scale (portion multiplier, default 1), assumptions, confidence (low/medium/high), source (ai/manual/repeat/import), provider_id (nullable), updated_at (effective time, section 6), received_at, deleted_at (nullable; tombstone).
 - **`meal_items`** — id (client-generated UUIDv7), meal_id, name, portion_text, grams (nullable), kcal, protein_g, carbs_g, fat_g, food_id (nullable), origin (`food_db` or `ai_estimate`).
 - **`foods`** — id, source (`staple`/`usda`/`user`/`off`), source_ref (USDA FDC ID, citation, user id, or Open Food Facts barcode), barcode (nullable, unique; GTIN digits), brand (nullable), serving_g (nullable; one label serving), serving_text (nullable; e.g. "1 biscuit (12 g)"), fetched_at (nullable; for `off` rows), name, name_norm, is_prepared (true for entries that already include cooking fat, e.g. "fried"), kcal, protein_g, carbs_g, fat_g per 100 g, default_portion_g (nullable).
@@ -628,6 +628,7 @@ Each milestone ends with:
 **M4 — Activity and Trends**
 - Activity section with field sources, the ingest endpoint and tokens, and `docs/shortcuts.md`.
 - Trends with LayerChart, and `cupful seed-demo`.
+- Google Health (section 15): optional daily steps sync, source `google`, `docs/google-health.md`.
 
 *Done when:* 90 days of demo data render correctly at 360 px and on desktop, in both themes, and a test Shortcut posts steps that appear without overwriting a manual value. Then run frontend-design-impeccable.
 
@@ -670,12 +671,13 @@ Then run frontend-design-impeccable.
 
 ---
 
-## 15. After v0.1 — Google Health integration (v0.2)
+## 15. Google Health integration (built in M4)
 
-Deferred because it depends on an external API that is still migrating, needs a Google Cloud project for every self-hoster, and, while the app is unverified, gets refresh tokens that expire after 7 days. The ingest endpoint and CSV import cover users until then.
+Moved up from v0.2 by the owner. It stays optional: it needs a Google Cloud project for every self-hoster, and while the app is unverified Google expires refresh tokens after 7 days (`docs/google-health.md`). The feature is invisible (routes answer 404) unless `CUPFUL_GOOGLE_CLIENT_ID` and `CUPFUL_GOOGLE_CLIENT_SECRET` are set.
 
-When built:
-- Use only the **Google Health API** with Google OAuth 2.0. The legacy Fitbit Web API is shut down.
+As built (`server/src/google.rs`):
+- Use only the **Google Health API v4** (`https://health.googleapis.com/v4`) with Google OAuth 2.0. The legacy Fitbit Web API is shut down.
+- Scope `googlehealth.activity_and_fitness.readonly`; steps from `dataTypes/steps/dataPoints:dailyRollUp` for the last 14 days in the user's timezone. Gym minutes are not synced (no documented data type maps cleanly onto "gym minutes"); they stay manual or Shortcut.
 - Each self-hoster creates their own Google Cloud project and OAuth client. Never ship a shared client.
 - The redirect URI is the instance's own `https://<name>.<tailnet>.ts.net/...`. It doesn't need to be publicly reachable.
 - Use the authorization-code flow with PKCE and encrypted tokens.
