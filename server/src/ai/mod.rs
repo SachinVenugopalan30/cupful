@@ -100,7 +100,9 @@ impl From<ProviderError> for Error {
             ProviderError::Other(m) => m.clone(),
         };
         if matches!(e, ProviderError::Unparseable(_) | ProviderError::Other(_)) {
-            tracing::warn!("{msg}");
+            // The detail can echo the user's meal: debug only, like raw replies.
+            tracing::warn!(code = e.code(), "AI provider reply unusable");
+            tracing::debug!("{msg}");
         }
         Error::Coded(status, e.code(), msg)
     }
