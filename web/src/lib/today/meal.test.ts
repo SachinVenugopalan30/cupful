@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import type { Estimate, EstimateItem, Meal } from '#lib/api.ts';
+import type { Estimate, EstimateItem, Meal, SavedProduct } from '#lib/api.ts';
 import {
 	blankItem,
 	itemSourceLabel,
@@ -9,12 +9,15 @@ import {
 	dayTotals,
 	draftFromEstimate,
 	draftFromMeal,
+	type DraftItem,
 	fitWithin,
 	itemReady,
 	mealFromDraft,
 	repeatMeal,
 	sumItems,
+	useProduct,
 	withGrams,
+	withKcal,
 	withValue
 } from './meal';
 
@@ -142,7 +145,7 @@ describe('item edits', () => {
 	});
 	it('a blank item needs every number', () => {
 		const b = blankItem();
-		expect(b).toMatchObject({ name: '', grams: null, kcal: null, editable: true, origin: 'ai_estimate' });
+		expect(b).toMatchObject({ name: '', grams: null, kcal: null, editable: true, origin: 'manual' });
 		expect(itemReady({ ...b, name: 'x', kcal: 1, protein_g: 0, carbs_g: 0, fat_g: 0 })).toBe(true);
 		expect(itemReady({ ...b, name: ' ', kcal: 1, protein_g: 0, carbs_g: 0, fat_g: 0 })).toBe(false);
 	});
@@ -235,7 +238,7 @@ describe('repeatMeal', () => {
 });
 
 describe('source labels', () => {
-	const item = (origin: 'food_db' | 'ai_estimate', food_id: number | null = null) =>
+	const item = (origin: Meal['items'][number]['origin'], food_id: number | null = null) =>
 		({ origin, food_id }) as Meal['items'][number];
 	const meal = (source: Meal['source'], items: Meal['items']) => ({ source, items }) as Meal;
 
@@ -251,8 +254,83 @@ describe('source labels', () => {
 		expect(itemSourceLabel(item('food_db', 7), meal('manual', []))).toEqual({ text: 'Database', kind: 'db' });
 		expect(itemSourceLabel(item('ai_estimate'), meal('ai', []))).toEqual({ text: 'AI estimate', kind: 'ai' });
 		expect(itemSourceLabel(item('ai_estimate'), meal('manual', []))).toEqual({ text: 'By hand', kind: 'plain' });
+		// Direct edits: a database food whose numbers were changed, or an item typed in.
+		expect(itemSourceLabel(item('manual', 7), meal('ai', []))).toEqual({ text: 'Edited', kind: 'plain' });
+		expect(itemSourceLabel(item('manual'), meal('ai', []))).toEqual({ text: 'By hand', kind: 'plain' });
+		expect(itemSourceLabel(item('manual'), meal('repeat', []))).toEqual({ text: 'By hand', kind: 'plain' });
 		// A repeat or import can't tell a model estimate from a hand entry, so it claims neither.
 		expect(itemSourceLabel(item('ai_estimate'), meal('repeat', []))).toBeNull();
 		expect(itemSourceLabel(item('ai_estimate'), meal('import', []))).toBeNull();
+	});
+});
+
+describe('editing numbers', () => {
+	const base = (): DraftItem => ({
+		...blankItem(),
+		name: 'Whey',
+		grams: 30,
+		kcal: 120,
+		protein_g: 24,
+		carbs_g: 3,
+		fat_g: 1.5,
+		food_id: 9,
+		origin: 'food_db'
+	});
+
+	it('withKcal scales the macros by the same ratio and keeps grams and food_id', () => {
+		const i = withKcal(base(), 60);
+		expect(i).toMatchObject({ kcal: 60, protein_g: 12, carbs_g: 1.5, fat_g: 0.75, grams: 30, food_id: 9, origin: 'manual' });
+	});
+	it('withKcal sets only kcal when there was none to scale from', () => {
+		expect(withKcal({ ...base(), kcal: 0 }, 50)).toMatchObject({ kcal: 50, protein_g: 24, origin: 'manual' });
+		expect(withKcal({ ...base(), kcal: null }, 50)).toMatchObject({ kcal: 50, protein_g: 24 });
+		expect(withKcal(base(), null)).toMatchObject({ kcal: null, protein_g: 24 });
+	});
+	it('withValue is independent and marks the item manual', () => {
+		expect(withValue(base(), 'protein_g', 10)).toMatchObject({ kcal: 120, protein_g: 10, origin: 'manual', food_id: 9 });
+	});
+	it('withGrams keeps the origin', () => {
+		expect(withGrams(base(), 60)).toMatchObject({ kcal: 240, origin: 'food_db' });
+	});
+	it('blank items are manual', () => {
+		expect(blankItem().origin).toBe('manual');
+	});
+});
+
+describe('useProduct', () => {
+	const powder = {
+		food_id: 42,
+		name: 'Choc protein',
+		serving_g: 31,
+		kcal: 387.1,
+		protein_g: 80,
+		carbs_g: 6.5,
+		fat_g: 4.8
+	} as SavedProduct;
+	const item = (portion_text: string, grams: number | null): DraftItem => ({
+		...blankItem(),
+		name: 'chocolate protein powder',
+		phrase: 'chocolate protein powder',
+		portion_text,
+		grams,
+		kcal: 50,
+		protein_g: 1,
+		carbs_g: 1,
+		fat_g: 1
+	});
+
+	it('uses count x serving when the portion is a count of a non-weight unit', () => {
+		const i = useProduct(item('2 scoops', 20), powder);
+		expect(i).toMatchObject({ name: 'Choc protein', food_id: 42, origin: 'food_db', grams: 62, swapped: true, remember: false });
+		expect(i.kcal).toBeCloseTo(240, 0);
+		expect(i.phrase).toBe('chocolate protein powder');
+		expect(useProduct(item('a scoop', 20), powder).grams).toBe(31);
+		expect(useProduct(item('1/2 scoop', 20), powder).grams).toBe(15.5);
+	});
+	it('keeps the grams for weight units, no serving, or no count', () => {
+		expect(useProduct(item('40 g', 40), powder).grams).toBe(40);
+		expect(useProduct(item('2 oz', 57), powder).grams).toBe(57);
+		expect(useProduct(item('some', 25), powder).grams).toBe(25);
+		expect(useProduct(item('2 scoops', 20), { ...powder, serving_g: null }).grams).toBe(20);
 	});
 });

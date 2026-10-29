@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Pure logic for packaged products: barcodes, servings ↔ grams, label checks, the logged meal.
 
-import type { MealType, Product } from '../api';
+import type { AliasRow, MealType, Product } from '../api';
 import { formatGrams, round } from '../format';
 import { itemFromPer100, uuidv7, type MealIn } from '../sync';
 
@@ -129,6 +129,21 @@ export function filterSaved<T extends { name: string; brand: string | null }>(li
 	const needle = q.trim().toLowerCase();
 	if (!needle) return list;
 	return list.filter((p) => `${p.name} ${p.brand ?? ''}`.toLowerCase().includes(needle));
+}
+
+/**
+ * Phrases for the product sheet: those pointing at this product, and phrases of other products
+ * (barcode set), the ones sharing a word (3+ letters) with its name first.
+ */
+export function sortPhrases(aliases: AliasRow[], productName: string, foodId: number) {
+	const words = (t: string) => new Set(t.toLowerCase().match(/[a-z]{3,}/g));
+	const mine = words(productName);
+	const shares = (a: AliasRow) => [...words(`${a.alias} ${a.food_name}`)].some((w) => mine.has(w));
+	const others = aliases.filter((a) => a.food_id !== foodId && a.barcode !== null);
+	return {
+		mine: aliases.filter((a) => a.food_id === foodId),
+		others: [...others.filter(shares), ...others.filter((a) => !shares(a))]
+	};
 }
 
 // ---- scanning ----

@@ -6,12 +6,14 @@
     title: string           sheet heading
     onClose: () => void     the sheet closed (saved or not); unmount it
     onSaved: () => void     the meal was saved
-  Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft).
+  Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft), then
+  the "always use this" aliases (REST; a failure leaves the meal saved and says so).
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { errorMessage } from '#lib/api.ts';
-	import { formatGrams, formatKcal } from '#lib/format.ts';
+	import { errorMessage, foods, products, type SavedProduct } from '#lib/api.ts';
+	import { filterSaved } from '#lib/products/logic.ts';
+	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
 	import {
 		MEAL_TYPES,
@@ -20,8 +22,10 @@
 		choose,
 		itemReady,
 		mealFromDraft,
+		useProduct,
 		sumItems,
 		withGrams,
+		withKcal,
 		withValue,
 		type Draft,
 		type NumKey
@@ -50,7 +54,32 @@
 		if (g !== null && g > 0) d.items[n] = withGrams(d.items[n], g);
 		else if (d.items[n].editable) d.items[n].grams = null;
 	}
-	const setValue = (n: number, k: NumKey, e: Event) => (d.items[n] = withValue(d.items[n], k, num(e)));
+	const setValue = (n: number, k: NumKey, e: Event) =>
+		(d.items[n] = k === 'kcal' ? withKcal(d.items[n], num(e)) : withValue(d.items[n], k, num(e)));
+
+	// "Edit numbers" disclosures (items that need numbers show them always) and the product picker.
+	let opened = $state<string[]>([]);
+	const toggle = (id: string) => (opened = opened.includes(id) ? opened.filter((x) => x !== id) : [...opened, id]);
+	let picking = $state<string | null>(null);
+	let query = $state('');
+	let saved = $state<SavedProduct[] | null>(null);
+	let savedError = $state('');
+	const matches = $derived(filterSaved(saved ?? [], query));
+
+	function pick(id: string) {
+		query = '';
+		picking = picking === id ? null : id;
+		if (saved === null && !savedError) {
+			products.list().then(
+				(l) => (saved = l),
+				(e) => (savedError = errorMessage(e))
+			);
+		}
+	}
+	function swap(n: number, p: SavedProduct) {
+		d.items[n] = useProduct(d.items[n], p);
+		picking = null;
+	}
 
 	function addItem() {
 		d.items.push(blankItem());
@@ -69,7 +98,16 @@
 				error = `The meal wasn't saved: ${r.error ?? 'the server rejected it'}.`;
 				return;
 			}
+			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
+			const wanted = d.items.filter((i) => i.remember && i.food_id !== null && i.phrase.trim());
+			const results = await Promise.allSettled(wanted.map((i) => foods.alias(i.phrase.trim(), i.food_id!)));
+			const failed = wanted.filter((_, k) => results[k].status === 'rejected');
+			for (const i of wanted) if (!failed.includes(i)) i.remember = false;
 			onSaved();
+			if (failed.length) {
+				error = `The meal is saved, but I couldn't remember ${failed.map((i) => `"${i.phrase}"`).join(', ')}. Save again to retry, or close.`;
+				return;
+			}
 			dialog.close();
 		} catch (e) {
 			error = errorMessage(e);
@@ -140,7 +178,9 @@
 					</div>
 					<p class="row meta small">
 						{#if item.portion_text}<span class="muted">{item.portion_text}</span>{/if}
-						{#if !item.editable || item.options.length}
+						{#if item.origin === 'manual'}
+							<span class="chip">{item.food_id === null ? 'By hand' : 'Edited'}</span>
+						{:else if !item.editable || item.options.length}
 							{#if item.origin === 'food_db'}
 								<span class="chip chip-db">Database</span>
 							{:else}
@@ -183,7 +223,7 @@
 								oninput={(e) => setGrams(n, e)}
 							/>
 						</div>
-						{#if item.editable}
+						{#if item.editable || opened.includes(item.id)}
 							{#each MACROS as [k, l] (k)}
 								<div class="field">
 									<label for="{k}-{item.id}">{l}</label>
@@ -193,7 +233,7 @@
 										inputmode="decimal"
 										min="0"
 										step="any"
-										value={item[k] ?? ''}
+										value={item[k] === null ? '' : round(item[k], 2)}
 										oninput={(e) => setValue(n, k, e)}
 										aria-invalid={item[k] === null}
 									/>
@@ -210,6 +250,61 @@
 							</p>
 						{/if}
 					</div>
+
+					<div class="row actions">
+						{#if !item.editable}
+							<button
+								type="button"
+								class="btn btn-quiet"
+								aria-expanded={opened.includes(item.id)}
+								aria-controls="kcal-{item.id}"
+								onclick={() => toggle(item.id)}>Edit numbers</button
+							>
+						{/if}
+						<button
+							type="button"
+							class="btn btn-quiet"
+							aria-expanded={picking === item.id}
+							aria-controls="picker-{item.id}"
+							onclick={() => pick(item.id)}>Use my product</button
+						>
+					</div>
+
+					{#if picking === item.id}
+						<div class="picker stack" id="picker-{item.id}">
+							{#if savedError}
+								<p class="notice notice-error" role="alert">{savedError}</p>
+							{:else if saved === null}
+								<p class="small muted" role="status">Loading…</p>
+							{:else if saved.length === 0}
+								<p class="small muted">No saved products yet. Scan a barcode to add one.</p>
+							{:else}
+								<div class="field">
+									<label for="search-{item.id}">Search my products</label>
+									<input id="search-{item.id}" type="search" bind:value={query} />
+								</div>
+								<ul class="list">
+									{#each matches as p (p.food_id)}
+										<li>
+											<button type="button" class="btn btn-quiet pick" onclick={() => swap(n, p)}>
+												<span>{p.name}</span>
+												{#if p.brand}<span class="muted small">{p.brand}</span>{/if}
+											</button>
+										</li>
+									{:else}
+										<li class="small muted">No match.</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					{/if}
+
+					{#if item.swapped && item.phrase.trim()}
+						<label class="row">
+							<input type="checkbox" bind:checked={d.items[n].remember} />
+							<span>Always use this for '{item.phrase}'</span>
+						</label>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -333,6 +428,20 @@
 	.kcal {
 		font-size: var(--text-md);
 		font-weight: var(--weight-bold);
+	}
+	.actions {
+		gap: var(--space-1);
+	}
+	.picker {
+		padding: var(--space-3);
+		background: var(--surface-2);
+		border-radius: var(--radius-md);
+	}
+	.pick {
+		flex: 1;
+		justify-content: flex-start;
+		gap: var(--space-2);
+		text-align: left;
 	}
 	.add {
 		align-self: flex-start;

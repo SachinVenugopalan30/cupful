@@ -4,6 +4,7 @@
 	import { errorMessage, type MealType, type Product } from '../api';
 	import { formatGrams, formatKcal } from '../format';
 	import { mealUpsert, sendOps } from '../sync';
+	import PhraseLinks from './PhraseLinks.svelte';
 	import { buildMeal, defaultMealType, gramsToServings, servingsToGrams, stepServings } from './logic';
 
 	let {
@@ -122,6 +123,8 @@
 	{#if error}<p class="notice notice-error" role="alert">{error}</p>{/if}
 
 	<button type="button" class="btn btn-primary btn-block" disabled={!ok || busy} onclick={add}>Add</button>
+
+	<PhraseLinks product={p} />
 
 	{#if p.attribution}
 		<p class="small muted">

@@ -126,7 +126,7 @@ export type Day = {
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type MealSource = 'ai' | 'manual' | 'repeat' | 'import';
 export type Confidence = 'low' | 'medium' | 'high';
-export type Origin = 'food_db' | 'ai_estimate';
+export type Origin = 'food_db' | 'ai_estimate' | 'manual';
 export type Macros = { kcal: number; protein_g: number; carbs_g: number; fat_g: number };
 
 export type MealItem = Macros & {
@@ -190,6 +190,16 @@ export type Food = Macros & {
 };
 export type NewFood = Macros & { name: string; is_prepared?: boolean; default_portion_g?: number | null };
 export type Alias = { id: number; alias: string; food_id: number };
+/** GET /api/aliases: the caller's own phrases, newest first, with the food each points at. */
+export type AliasRow = {
+	id: number;
+	alias: string;
+	food_id: number;
+	food_name: string;
+	brand: string | null;
+	barcode: string | null;
+	source: string;
+};
 export type Portion = { phrase: string; food_id: number; grams: number };
 
 /** A packaged product; values per 100 g. */
@@ -274,6 +284,8 @@ export function estimate(description: string, photo?: Blob): Promise<Estimate> {
 export const foods = {
 	create: (f: NewFood) => api.post<Food>('/api/foods', f),
 	alias: (alias: string, food_id: number) => api.post<Alias>('/api/aliases', { alias, food_id }),
+	aliases: () => api.get<{ aliases: AliasRow[] }>('/api/aliases').then((r) => r.aliases),
+	removeAlias: (id: number) => api.delete<object>(`/api/aliases/${id}`),
 	portion: (phrase: string, food_id: number, grams: number) =>
 		api.post<Portion>('/api/portions', { phrase, food_id, grams })
 };

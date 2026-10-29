@@ -10,9 +10,10 @@ import type {
 	MealItem,
 	MealSource,
 	MealType,
-	Origin
+	Origin,
+	SavedProduct
 } from '#lib/api.ts';
-import { scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
+import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 export const MULTIPLIERS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -40,6 +41,12 @@ export type DraftItem = Nums & {
 	origin: Origin;
 	/** Show inputs for name and numbers (manual items, items the pipeline couldn't fill). */
 	editable: boolean;
+	/** The model's food name as estimated, before any choice or product swap; what "remember" aliases. */
+	phrase: string;
+	/** Swapped in via "Use my product". */
+	swapped: boolean;
+	/** Save an alias from `phrase` to this item's food once the meal is saved. */
+	remember: boolean;
 	/** Ambiguity choices; empty when there's nothing to choose. */
 	options: Option[];
 	chosen: number;
@@ -82,6 +89,9 @@ function fromEstimateItem(e: EstimateItem): DraftItem {
 	return {
 		id: uuidv7(),
 		name: e.name,
+		phrase: e.name,
+		swapped: false,
+		remember: false,
 		portion_text: e.portion_text,
 		grams: e.grams,
 		...pick(e),
@@ -97,6 +107,9 @@ export function blankItem(): DraftItem {
 	return {
 		id: uuidv7(),
 		name: '',
+		phrase: '',
+		swapped: false,
+		remember: false,
 		portion_text: '',
 		grams: null,
 		kcal: null,
@@ -104,7 +117,7 @@ export function blankItem(): DraftItem {
 		carbs_g: null,
 		fat_g: null,
 		food_id: null,
-		origin: 'ai_estimate', // the server's only non-database origin; the meal's source says "manual"
+		origin: 'manual',
 		editable: true,
 		options: [],
 		chosen: 0
@@ -120,7 +133,37 @@ export function withGrams(i: DraftItem, grams: number): DraftItem {
 	return { ...i, grams, ...(i.grams && i.grams > 0 ? scaleNums(i, k) : {}) };
 }
 
-export const withValue = (i: DraftItem, key: NumKey, v: number | null): DraftItem => ({ ...i, [key]: v });
+/** A direct edit: the item no longer matches its database food, so it's marked manual. */
+export const withValue = (i: DraftItem, key: NumKey, v: number | null): DraftItem => ({
+	...i,
+	[key]: v,
+	origin: 'manual'
+});
+
+/** New kcal; the macros follow proportionally when there was kcal to scale from. Grams unchanged. */
+export function withKcal(i: DraftItem, kcal: number | null): DraftItem {
+	const k = kcal !== null && i.kcal !== null && i.kcal > 0 ? kcal / i.kcal : 1;
+	return { ...i, ...scaleNums(i, k), kcal, origin: 'manual' };
+}
+
+const WEIGHT_UNITS = /^(g|gm|gram|grams|kg|kilogram|kilograms|oz|ounce|ounces|lb|lbs|pound|pounds|ml|l|litre|litres|liter|liters)$/i;
+
+/** "2 scoops" -> 2, "a scoop" -> 1, "1/2 cup" -> 0.5; null for a weight/volume ("40 g") or no count. */
+function unitCount(portion: string): number | null {
+	const m = /^\s*(an?|\d+\s*\/\s*\d+|\d*\.?\d+)\s*([a-z][a-z ]*)?$/i.exec(portion);
+	if (!m || WEIGHT_UNITS.test((m[2] ?? '').trim()) || !m[2]) return null;
+	if (/^an?$/i.test(m[1])) return 1;
+	const [a, b] = m[1].split('/');
+	return b ? Number(a) / Number(b) : Number(a);
+}
+
+/** Swap in a saved product: grams = count x its serving for "2 scoops", else the current grams. */
+export function useProduct(i: DraftItem, p: SavedProduct): DraftItem {
+	const count = unitCount(i.portion_text);
+	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
+	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
+	return { ...i, ...nums, editable: false, options: [], chosen: 0, swapped: true, remember: false };
+}
 
 /** Swap in ambiguity option `n`, scaled to the item's current grams. */
 export function choose(i: DraftItem, n: number): DraftItem {
@@ -173,7 +216,15 @@ export function draftFromMeal(m: Meal): Draft {
 		source: m.source,
 		provider_id: m.provider_id,
 		warnings: [],
-		items: scaleItems(m.items, 1 / m.scale).map((i) => ({ ...i, editable: false, options: [], chosen: 0 }))
+		items: scaleItems(m.items, 1 / m.scale).map((i) => ({
+			...i,
+			phrase: '',
+			swapped: false,
+			remember: false,
+			editable: false,
+			options: [],
+			chosen: 0
+		}))
 	};
 }
 
@@ -257,12 +308,13 @@ export function mealSourceLabel(m: Pick<Meal, 'source' | 'items'>): string {
 	return product ? 'Product' : MEAL_SOURCE[m.source];
 }
 
-/** Hand-entered items are stored as `ai_estimate` (the only non-database origin), so the meal decides. */
+/** `manual` items were typed or had their numbers edited; older hand entries are `ai_estimate` in a manual meal. */
 export function itemSourceLabel(
-	i: Pick<Meal['items'][number], 'origin'>,
+	i: Pick<Meal['items'][number], 'origin' | 'food_id'>,
 	m: Pick<Meal, 'source'>
 ): { text: string; kind: 'db' | 'ai' | 'plain' } | null {
 	if (i.origin === 'food_db') return { text: 'Database', kind: 'db' };
+	if (i.origin === 'manual') return { text: i.food_id === null ? 'By hand' : 'Edited', kind: 'plain' };
 	if (m.source === 'ai') return { text: 'AI estimate', kind: 'ai' };
 	if (m.source === 'manual') return { text: 'By hand', kind: 'plain' };
 	return null;

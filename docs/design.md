@@ -56,4 +56,5 @@ Screens use these and add scoped styles only for layout. No CSS framework, UI ki
 - **Empty**: `.empty` with one sentence inviting the next action ("Nothing logged yet. Describe your breakfast above."), optionally one button.
 - **Loading**: `.skeleton` blocks the size of what's coming, with `aria-busy="true"` on the container. No spinners for under a second.
 - **Motion** answers an action (a sheet opening, a meter filling after a save) and uses the duration tokens, so reduced-motion turns it off. No entrance animations.
+- **Disclosures and pickers** (review sheet): a quiet `.btn` with `aria-expanded` reveals extra inputs ("Edit numbers") or an inline panel on `--surface-2` ("Use my product": search field plus a `.list` of buttons) inside the item card; no nested dialogs.
 - **Copy**: sentence case, plain verbs, buttons say what happens ("Save meal", "Scan barcode"), and an action keeps its name through the flow.

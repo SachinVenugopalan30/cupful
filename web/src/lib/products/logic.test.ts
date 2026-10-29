@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import type { Product } from '../api';
+import type { AliasRow, Product } from '../api';
 import {
 	buildMeal,
 	cameraProblem,
 	defaultMealType,
 	filterSaved,
+	sortPhrases,
 	gramsToServings,
 	gtinOk,
 	labelProblem,
@@ -207,5 +208,25 @@ describe('cameraProblem', () => {
 	});
 	it('fine otherwise', () => {
 		expect(cameraProblem({ isSecureContext: true, hasMediaDevices: true })).toBeNull();
+	});
+});
+
+describe('sortPhrases', () => {
+	const row = (id: number, alias: string, food_id: number, food_name: string, barcode: string | null = '1'): AliasRow => ({
+		id, alias, food_id, food_name, brand: null, barcode, source: 'user'
+	});
+	const rows = [
+		row(1, 'oat milk', 5, 'Oat drink'),
+		row(2, 'chocolate whey', 6, 'Other whey'),
+		row(3, 'my whey', 7, 'Mine'),
+		row(4, 'whey scoop', 7, 'Mine'),
+		row(5, 'rice', 8, 'Staple rice', null),
+		row(6, 'protein shake', 9, 'Shake')
+	];
+	it('splits phrases for this product from other products, sharing a word first', () => {
+		const { mine, others } = sortPhrases(rows, 'Whey Protein Chocolate', 7);
+		expect(mine.map((a) => a.id)).toEqual([3, 4]);
+		// shares "whey" (2) and "protein" (6); others keep their order; database foods and short words don't count
+		expect(others.map((a) => a.id)).toEqual([2, 6, 1]);
 	});
 });
