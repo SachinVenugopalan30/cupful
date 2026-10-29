@@ -372,6 +372,28 @@ async fn dates_after_tomorrow_are_rejected() {
 }
 
 #[tokio::test]
+async fn manual_origin_round_trips_and_unknown_origins_are_rejected() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = today(TZ).to_string();
+    let (good, bad) = (uuid(), uuid());
+    let mut i = item(&uuid(), 100.0);
+    i["origin"] = json!("manual");
+    let mut j = item(&uuid(), 100.0);
+    j["origin"] = json!("guess");
+    let res = a
+        .sync(vec![
+            op("meal.upsert", &at(0), meal(&good, &d, json!([i]))),
+            op("meal.upsert", &at(0), meal(&bad, &d, json!([j]))),
+        ])
+        .await;
+    assert_eq!(res, ["applied", "rejected"]);
+    let m = meals(&mut a, &d).await;
+    assert_eq!(m.as_array().unwrap().len(), 1);
+    assert_eq!(m[0]["items"][0]["origin"], "manual");
+}
+
+#[tokio::test]
 async fn invalid_ops_are_rejected_individually() {
     let (app, _) = app().await;
     let mut a = admin(&app).await;

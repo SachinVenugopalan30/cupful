@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE foods SET default_portion_g = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "bea62675b2016a1aaf5c93ca0ad2f87ee88433e175e528a4e4ac69c26e377e6e"
+}

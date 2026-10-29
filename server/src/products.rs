@@ -12,6 +12,7 @@ use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool};
 
 use crate::auth::{RateLimiter, User};
 use crate::error::{Error, JsonBody, Result};
+use crate::nutrition::foods::portion_unit;
 use crate::nutrition::{MAX_KCAL_PER_100G, r1};
 use crate::time::now_ms;
 use crate::{AppState, Config};
@@ -273,6 +274,7 @@ fn from_off(barcode: &str, body: &Value) -> Option<Food> {
 /// Inserts or refreshes the `off` row for the product's barcode.
 async fn store_off(db: &SqlitePool, f: Food, now: i64) -> Result<Food> {
     let norm = crate::nutrition::foods::normalize(&f.name);
+    let mut tx = db.begin().await?;
     let id = sqlx::query_scalar!(
         "INSERT INTO foods (source, source_ref, name, name_norm, brand, barcode, kcal, protein_g,
              carbs_g, fat_g, serving_g, serving_text, fetched_at)
@@ -296,13 +298,55 @@ async fn store_off(db: &SqlitePool, f: Food, now: i64) -> Result<Food> {
         f.serving_text,
         now
     )
-    .fetch_one(db)
+    .fetch_one(&mut *tx)
     .await?;
+    set_portions(&mut tx, id, f.serving_g, f.serving_text.as_deref()).await?;
+    tx.commit().await?;
     Ok(Food {
         id,
         fetched_at: Some(now),
         ..f
     })
+}
+
+/// Makes the serving usable by the estimate pipeline: the food's default portion, a `serving`
+/// portion, and the unit in `serving_text` ("1 scoop (31 g)" -> `scoop` = 31 g).
+async fn set_portions(
+    conn: &mut SqliteConnection,
+    food_id: i64,
+    serving_g: Option<f64>,
+    serving_text: Option<&str>,
+) -> Result<()> {
+    sqlx::query!(
+        "UPDATE foods SET default_portion_g = ? WHERE id = ?",
+        serving_g,
+        food_id
+    )
+    .execute(&mut *conn)
+    .await?;
+    sqlx::query!("DELETE FROM food_portions WHERE food_id = ?", food_id)
+        .execute(&mut *conn)
+        .await?;
+    let Some(g) = serving_g else {
+        return Ok(());
+    };
+    let mut portions = vec![("serving".to_string(), g)];
+    if let Some((unit, amount)) = serving_text.and_then(|t| portion_unit(t, None))
+        && !matches!(unit.as_str(), "g" | "ml")
+    {
+        portions.push((unit, g / amount));
+    }
+    for (unit, grams) in portions {
+        sqlx::query!(
+            "INSERT OR IGNORE INTO food_portions (food_id, unit, grams) VALUES (?, ?, ?)",
+            food_id,
+            unit,
+            grams
+        )
+        .execute(&mut *conn)
+        .await?;
+    }
+    Ok(())
 }
 
 /// Upserts the user's saved product; `servings` is kept when unknown.
@@ -490,6 +534,7 @@ pub async fn create(
             .await?
         }
     };
+    set_portions(&mut tx, id, f.serving_g, f.serving_text.as_deref()).await?;
     save(&mut *tx, user.id, id, None, now).await?;
     tx.commit().await?;
     Ok(Json(Food { id, ..f }.json()))

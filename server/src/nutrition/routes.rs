@@ -3,7 +3,7 @@
 
 use axum::Json;
 use axum::extract::multipart::MultipartRejection;
-use axum::extract::{Multipart, State};
+use axum::extract::{Multipart, Path, State};
 use axum::http::StatusCode;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -204,6 +204,46 @@ pub async fn create_alias(
     Ok(Json(
         json!({"id": id, "alias": alias, "food_id": a.food_id}),
     ))
+}
+
+/// The user's own aliases, newest first. Shipped aliases are never listed.
+pub async fn list_aliases(State(s): State<AppState>, user: User) -> Result<Json<Value>> {
+    let rows = sqlx::query!(
+        "SELECT a.id, a.alias, a.food_id, f.name AS food_name, f.brand, f.barcode, f.source
+         FROM food_aliases a JOIN foods f ON f.id = a.food_id
+         WHERE a.user_id = ?
+         ORDER BY a.id DESC",
+        user.id
+    )
+    .fetch_all(&s.db)
+    .await?;
+    let aliases: Vec<Value> = rows
+        .into_iter()
+        .map(|r| {
+            json!({"id": r.id, "alias": r.alias, "food_id": r.food_id, "food_name": r.food_name,
+                   "brand": r.brand, "barcode": r.barcode, "source": r.source})
+        })
+        .collect();
+    Ok(Json(json!({ "aliases": aliases })))
+}
+
+pub async fn delete_alias(
+    State(s): State<AppState>,
+    user: User,
+    Path(id): Path<i64>,
+) -> Result<Json<Value>> {
+    let n = sqlx::query!(
+        "DELETE FROM food_aliases WHERE id = ? AND user_id = ?",
+        id,
+        user.id
+    )
+    .execute(&s.db)
+    .await?
+    .rows_affected();
+    if n == 0 {
+        return Err(Error::not_found());
+    }
+    Ok(Json(json!({})))
 }
 
 #[derive(Deserialize)]

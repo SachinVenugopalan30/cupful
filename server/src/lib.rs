@@ -92,7 +92,14 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
             post(nutrition::estimate_handler).layer(DefaultBodyLimit::max(6 << 20)),
         ),
         ("POST", "/api/foods", User, post(nutrition::create_food)),
+        ("GET", "/api/aliases", User, get(nutrition::list_aliases)),
         ("POST", "/api/aliases", User, post(nutrition::create_alias)),
+        (
+            "DELETE",
+            "/api/aliases/{id}",
+            User,
+            delete(nutrition::delete_alias),
+        ),
         (
             "POST",
             "/api/portions",

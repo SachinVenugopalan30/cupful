@@ -281,6 +281,94 @@ fn label(barcode: &str, name: &str) -> Value {
            "serving_g": 12.0, "serving_text": "1 biscuit"})
 }
 
+struct Recorded(Value);
+
+#[async_trait::async_trait]
+impl cupful::ai::Provider for Recorded {
+    async fn complete_json(
+        &self,
+        _: cupful::ai::JsonRequest,
+    ) -> Result<Value, cupful::ai::ProviderError> {
+        Ok(self.0.clone())
+    }
+    fn capabilities(&self) -> cupful::ai::Capabilities {
+        Default::default()
+    }
+}
+
+async fn portions(state: &AppState, food_id: i64) -> Vec<(String, f64)> {
+    sqlx::query_as("SELECT unit, grams FROM food_portions WHERE food_id = ? ORDER BY unit")
+        .bind(food_id)
+        .fetch_all(&state.db)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn product_servings_become_portions_the_estimate_uses() {
+    let (_, _, state, mut a) = setup(false).await;
+    let mut body = label("96385074", "Chocolate protein powder");
+    body["kcal"] = json!(400.0);
+    body["serving_g"] = json!(31.0);
+    body["serving_text"] = json!("1 scoop (31 g)");
+    let (_, p) = a.post("/api/products", body.clone()).await;
+    let id = p["food_id"].as_i64().unwrap();
+    assert_eq!(
+        portions(&state, id).await,
+        [("scoop".into(), 31.0), ("serving".into(), 31.0)]
+    );
+    let default: f64 = sqlx::query_scalar("SELECT default_portion_g FROM foods WHERE id = ?")
+        .bind(id)
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(default, 31.0);
+
+    let (status, _) = a
+        .post(
+            "/api/aliases",
+            json!({"alias": "chocolate protein powder", "food_id": id}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let uid: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'admin'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let reply = json!({"items": [{"food": "chocolate protein powder", "amount": 1, "unit": "scoop",
+        "grams": 15, "cooking": "none", "mentions_oil": false, "estimate": null}],
+        "assumptions": null, "confidence": "high"});
+    let est = cupful::nutrition::estimate(&state.db, uid, &Recorded(reply), "a scoop", vec![])
+        .await
+        .unwrap();
+    let it = &est.items[0];
+    assert_eq!((it.food_id, it.grams), (Some(id), 31.0));
+    assert!((it.kcal.unwrap() - 124.0).abs() < 0.5, "{:?}", it.kcal);
+
+    // Re-entering the label replaces the portions; no serving leaves none.
+    body["serving_text"] = json!("2 biscuits (24 g)");
+    body["serving_g"] = json!(24.0);
+    a.post("/api/products", body.clone()).await;
+    assert_eq!(
+        portions(&state, id).await,
+        [("biscuit".into(), 12.0), ("serving".into(), 24.0)]
+    );
+    body["serving_g"] = json!(null);
+    a.post("/api/products", body).await;
+    assert!(portions(&state, id).await.is_empty());
+}
+
+#[tokio::test]
+async fn open_food_facts_servings_become_portions() {
+    let (off, _, state, mut a) = setup(true).await;
+    off_returns(parle(nutriments())).mount(&off).await;
+    let (_, p) = lookup(&mut a, BC).await;
+    assert_eq!(
+        portions(&state, p["food_id"].as_i64().unwrap()).await,
+        [("biscuit".into(), 12.0), ("serving".into(), 12.0)]
+    );
+}
+
 #[tokio::test]
 async fn lookup_off_makes_no_request_but_finds_stored_products() {
     let (off, _, _, mut a) = setup(false).await;

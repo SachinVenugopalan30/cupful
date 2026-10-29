@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO food_portions (food_id, unit, grams) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "3a2c395ecad341d01c7d64b9d72388c93c7ace62b56a08ea79c9b0d93c1b62f0"
+}
