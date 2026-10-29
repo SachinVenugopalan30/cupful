@@ -119,7 +119,7 @@ test('ingest tokens: create shows the token once, revoke asks first (needs token
 	await expect(tokens.getByRole('button', { name: 'Revoke Phone' })).toHaveCount(0);
 });
 
-test('Trends: charts, range switch remembered, empty state, no side scroll (needs /api/trends)', async () => {
+test('Trends: charts, range switch remembered, empty state, no side scroll', async () => {
 	await page.getByRole('link', { name: 'Trends' }).click();
 	await expect(page.getByRole('heading', { name: 'Trends', level: 1 })).toBeVisible();
 
@@ -135,6 +135,9 @@ test('Trends: charts, range switch remembered, empty state, no side scroll (need
 	await expect(page.getByRole('radio', { name: '90 days' })).toBeChecked();
 	await noSideScroll(page);
 
-	// No meals were logged by these specs: the intake chart has its empty state.
-	await expect(page.getByText('No meals logged in this range')).toBeVisible();
+	// Other spec files share the server, so meals may exist: a chart or its empty state, never neither.
+	const intake = page.getByRole('region', { name: 'Intake' });
+	await expect(
+		intake.locator('.plot svg').first().or(intake.getByText('No meals logged in this range'))
+	).toBeVisible();
 });
