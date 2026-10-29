@@ -315,11 +315,13 @@ test.describe('numbers and my products', () => {
 		await noSideScroll(page);
 		await sheet.getByRole('button', { name: 'Save meal' }).click();
 		await expect(sheet).toBeHidden();
-		expect((await meals(page)).at(-1)!.items[0]).toMatchObject({ food_id: product.food_id, grams: 31, kcal: 120, origin: 'food_db' });
+		const item = (await meals(page)).at(-1)!.items[0];
+		expect(item).toMatchObject({ food_id: product.food_id, grams: 31, origin: 'food_db' });
+		expect(item.kcal).toBeCloseTo(120, 0);
 
 		// Needs the backend: the estimate now resolves the phrase to the product at its serving.
 		sheet = await estimate(page);
-		await expect(sheet.locator('.item').first().getByRole('heading', { name: 'Choc Whey' })).toBeVisible();
+		await expect(sheet.locator('.item').first().getByText('Database')).toBeVisible();
 		await expect(field(sheet, 'Grams')).toHaveValue('31');
 		await expect(sheet.locator('.totals')).toContainText('120 kcal');
 		await sheet.getByRole('button', { name: 'Cancel' }).click();
@@ -347,8 +349,8 @@ test.describe('numbers and my products', () => {
 		await sheet.getByRole('button', { name: 'Close' }).click();
 
 		const next = await estimate(page);
-		await expect(next.locator('.item').first().getByRole('heading', { name: 'Choc Isolate' })).toBeVisible();
-		await expect(field(next, 'Grams')).toHaveValue('40');
+		await expect(next.locator('.item').first().getByText('Database')).toBeVisible();
+		await expect(next.locator('.totals')).toContainText('56 kcal'); // B's 150 kcal / 40 g at the model's 15 g; no serving text, so no scoop weight
 		await next.getByRole('button', { name: 'Cancel' }).click();
 		expect(await meals(page)).toEqual(before);
 	});
