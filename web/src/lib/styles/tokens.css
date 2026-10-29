@@ -37,13 +37,13 @@
 
 	/* ---- palette accents: coral, sage, sand (decoration and categories, never meaning) ---- */
 	--coral: light-dark(#cb5a3e, #ee8a70); /* marks, fills: 3:1 on surface */
-	--coral-soft: light-dark(#fbe9e3, #45261f);
+	--coral-soft: light-dark(#fbe9e3, #4a2a33);
 	--coral-text: light-dark(#a8402a, #f5a891);
 	--sage: light-dark(#4f8a6b, #7fc09f);
 	--sage-soft: light-dark(#e3f0e8, #1b3a2c);
 	--sage-text: light-dark(#2f6a4d, #98d3b3);
-	--sand: light-dark(#efe8da, #2d2a24); /* warm neutral surface */
-	--sand-soft: light-dark(#f8f4ec, #25231f);
+	--sand: light-dark(#efe8da, #22344a); /* warm neutral surface */
+	--sand-soft: light-dark(#f8f4ec, #1a2b3d);
 	--gold: light-dark(#9a7710, #e2bd5a); /* sand-gold mark */
 	--gold-soft: light-dark(#f6edd0, #3a3220);
 	--gold-text: light-dark(#6e5410, #ecca80);

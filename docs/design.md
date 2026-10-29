@@ -24,10 +24,10 @@ Cupful is opened many times a day, on a phone, for a few seconds at a time: chec
 | Role | Light / dark mark | Soft | Text |
 |---|---|---|---|
 | Brand blue `--accent` | `#2b67a3` / `#84b8ea` | `--accent-soft` | `--accent` |
-| Coral `--coral` | `#cb5a3e` / `#ee8a70` | `#fbe9e3` / `#45261f` | `--coral-text` `#a8402a` / `#f5a891` |
+| Coral `--coral` | `#cb5a3e` / `#ee8a70` | `#fbe9e3` / `#4a2a33` | `--coral-text` `#a8402a` / `#f5a891` |
 | Sage `--sage` | `#4f8a6b` / `#7fc09f` | `#e3f0e8` / `#1b3a2c` | `--sage-text` `#2f6a4d` / `#98d3b3` |
 | Sand-gold `--gold` | `#9a7710` / `#e2bd5a` | `#f6edd0` / `#3a3220` | `--gold-text` `#6e5410` / `#ecca80` |
-| Sand `--sand`, `--sand-soft` | `#efe8da`, `#f8f4ec` / `#2d2a24`, `#25231f` | page and sunken surfaces (light) | |
+| Sand `--sand`, `--sand-soft` | `#efe8da`, `#f8f4ec` / `#22344a`, `#1a2b3d` | page and sunken surfaces (light) | |
 
 - **Meal types**: `--meal-{breakfast,lunch,dinner,snack}` (+ `-soft`, `-text`) = coral, sage, blue, sand-gold. Used by the Meals group headers (dot + label) and the selected state of the meal-type `.segmented` control.
 - **Macros**: `--protein` blue, `--carbs` sage, `--fat` coral (+ `--*-text` for labels). **Charts** (M4): `--chart-1..4` = blue, coral, sage, gold.
