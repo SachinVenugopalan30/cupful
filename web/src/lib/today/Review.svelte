@@ -263,7 +263,7 @@
 						{/if}
 						<button
 							type="button"
-							class="btn btn-quiet"
+							class="btn btn-coral"
 							aria-expanded={picking === item.id}
 							aria-controls="picker-{item.id}"
 							onclick={() => pick(item.id)}>Use my product</button
@@ -323,9 +323,9 @@
 			<p><span class="small muted">Total{d.scale !== 1 ? ` (×${d.scale})` : ''}</span></p>
 			<p class="num total-kcal">{formatKcal(totals.kcal)} <span class="small">kcal</span></p>
 			<p class="small num muted">
-				Protein {formatGrams(totals.protein_g)} g · Carbs {formatGrams(totals.carbs_g)} g · Fat {formatGrams(
-					totals.fat_g
-				)} g
+				<span class="m-protein">Protein {formatGrams(totals.protein_g)} g</span> ·
+				<span class="m-carbs">Carbs {formatGrams(totals.carbs_g)} g</span> ·
+				<span class="m-fat">Fat {formatGrams(totals.fat_g)} g</span>
 			</p>
 		</div>
 
@@ -432,9 +432,18 @@
 	.actions {
 		gap: var(--space-1);
 	}
+	.m-protein {
+		color: var(--protein-text);
+	}
+	.m-carbs {
+		color: var(--carbs-text);
+	}
+	.m-fat {
+		color: var(--fat-text);
+	}
 	.picker {
 		padding: var(--space-3);
-		background: var(--surface-2);
+		background: var(--coral-soft);
 		border-radius: var(--radius-md);
 	}
 	.pick {
@@ -456,7 +465,7 @@
 	}
 	.totals {
 		padding: var(--space-3) var(--space-4);
-		background: var(--surface-2);
+		background: var(--sand);
 		border-radius: var(--radius-md);
 	}
 	.total-kcal {

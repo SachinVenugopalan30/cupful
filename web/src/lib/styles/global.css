@@ -157,6 +157,16 @@ a:hover {
 	background: var(--accent-soft);
 	color: var(--accent);
 }
+.btn-coral {
+	background: var(--coral-soft);
+	border-color: transparent;
+	color: var(--coral-text);
+}
+.btn-coral:hover {
+	background: var(--coral-soft);
+	border-color: var(--coral);
+	color: var(--coral-text);
+}
 .btn-danger {
 	color: var(--error);
 	border-color: var(--error);
@@ -298,6 +308,22 @@ textarea:focus-visible {
 	color: var(--accent);
 	font-weight: var(--weight-bold);
 	box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* Meal-type radios take their meal color (soft fill, colored text and outline). */
+.segmented label:has(input[value='breakfast']:checked) {
+	background: var(--meal-breakfast-soft);
+	color: var(--meal-breakfast-text);
+	box-shadow: inset 0 0 0 1px var(--meal-breakfast);
+}
+.segmented label:has(input[value='lunch']:checked) {
+	background: var(--meal-lunch-soft);
+	color: var(--meal-lunch-text);
+	box-shadow: inset 0 0 0 1px var(--meal-lunch);
+}
+.segmented label:has(input[value='snack']:checked) {
+	background: var(--meal-snack-soft);
+	color: var(--meal-snack-text);
+	box-shadow: inset 0 0 0 1px var(--meal-snack);
 }
 .segmented label:has(input:focus-visible) {
 	outline: 3px solid var(--focus-ring);
@@ -484,6 +510,9 @@ dialog.sheet::backdrop {
 	margin: calc(-1 * var(--space-5)) calc(-1 * var(--gutter)) 0;
 	padding: var(--space-5) var(--gutter) var(--space-2);
 	background: var(--surface);
+}
+.sheet-coral .sheet-head h2 {
+	color: var(--coral-text);
 }
 .sheet-head h2 {
 	overflow-wrap: anywhere;

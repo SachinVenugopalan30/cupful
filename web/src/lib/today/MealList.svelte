@@ -104,8 +104,8 @@
 		<p class="empty">Nothing logged yet. Describe what you ate above.</p>
 	{:else}
 		{#each groups as g (g.type)}
-			<section class="group" aria-label={label(g.type)}>
-				<h3 class="small muted group-title">{label(g.type)}</h3>
+			<section class="group" aria-label={label(g.type)} style="--m: var(--meal-{g.type}); --m-text: var(--meal-{g.type}-text)">
+				<h3 class="small group-title">{label(g.type)}</h3>
 				<ul class="list-cards">
 					{#each g.meals as m (m.id)}
 						<li class="card meal" data-testid="meal">
@@ -215,9 +215,21 @@
 		gap: var(--space-2);
 	}
 	.group-title {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		color: var(--m-text);
+		font-weight: var(--weight-bold);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		font-size: var(--text-xs);
+	}
+	.group-title::before {
+		content: '';
+		width: 0.625rem;
+		height: 0.625rem;
+		border-radius: var(--radius-pill);
+		background: var(--m);
 	}
 	.list-cards {
 		list-style: none;

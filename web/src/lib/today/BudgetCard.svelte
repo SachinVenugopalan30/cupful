@@ -100,7 +100,7 @@
 			{#each macroRows(b, s.eaten) as m (m.key)}
 				<li class="stack">
 					<div class="macro-head">
-						<span>{m.label}</span>
+						<span class="macro-name" style="--c: var(--{m.key.slice(0, -2)}-text)">{m.label}</span>
 						<span class="num small">
 							{#if m.target === null}
 								{formatGrams(m.eaten)} g · no target today
@@ -177,6 +177,10 @@
 	}
 	.macros > li {
 		gap: var(--space-1);
+	}
+	.macro-name {
+		color: var(--c);
+		font-weight: var(--weight-medium);
 	}
 	.macro-head {
 		display: flex;

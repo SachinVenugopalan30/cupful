@@ -4,13 +4,13 @@ Cupful is opened many times a day, on a phone, for a few seconds at a time: chec
 
 ## Direction
 
-**Calm, not clinical.** A wellness palette of calm blues on an airy, blue-tinted white, with a matching deep-blue dark theme (not black). Nothing shouts; the only strong color is meaning: green-teal for "left", a muted red for "over", amber for "check this". The project owner chose the calm-blue wellness theme.
+**Calm, not clinical.** Brand blue is primary (links, focus, primary buttons); coral, sage and sand-gold sit beside it for categories (meal types, macros, the products area). The light theme sits on a warm sand tint, the dark theme on deep blue (not black). Nothing shouts; the strong colors are meaning: emerald for "left", crimson for "over", amber-orange for "check this". The owner chose the blue wellness theme, then asked for coral, sage and sand to complement it.
 
 **Numbers first.** The numbers people glance at (kcal left, macro grams, totals) use the system's rounded face (`ui-rounded`, SF Pro Rounded on Apple devices, falling back to the system sans) with tabular digits, so totals don't jitter as they change. Everything else is the plain system sans. No web fonts: nothing to download, and the PWA works offline.
 
 **The measuring cup.** The one signature element is the `.meter`: a track with graduation marks every 10 %, like the side of a measuring cup, filling as the day's food is logged. Budget and macro bars use it. Everything around it stays quiet: one card style, hairline borders, a soft blue shadow.
 
-**Sources are labeled.** Every estimated number says where it came from, in words: "Database" (teal) for matched foods and products, "AI estimate" (violet) for the model's guess. Color supports the label; it is never the only signal.
+**Sources are labeled.** Every estimated number says where it came from, in words: "Database" (cyan-teal) for matched foods and products, "AI estimate" (violet) for the model's guess. Color supports the label; it is never the only signal.
 
 ## Theme
 
@@ -19,6 +19,22 @@ Cupful is opened many times a day, on a phone, for a few seconds at a time: chec
 - The choice lives in Settings → Appearance, stored per device in `localStorage` (`cupful-theme`, wrapped in try/catch; `src/lib/theme.ts`). A small inline script in `app.html` applies it before first paint, so there's no flash.
 - All text tokens meet WCAG AA (4.5:1) on `--bg`, `--surface` and `--surface-2` in both themes, including over/warning/error and the source labels on their soft backgrounds; meter, chart and input-border colors meet 3:1 against surfaces.
 
+## Palette
+
+| Role | Light / dark mark | Soft | Text |
+|---|---|---|---|
+| Brand blue `--accent` | `#2b67a3` / `#84b8ea` | `--accent-soft` | `--accent` |
+| Coral `--coral` | `#cb5a3e` / `#ee8a70` | `#fbe9e3` / `#45261f` | `--coral-text` `#a8402a` / `#f5a891` |
+| Sage `--sage` | `#4f8a6b` / `#7fc09f` | `#e3f0e8` / `#1b3a2c` | `--sage-text` `#2f6a4d` / `#98d3b3` |
+| Sand-gold `--gold` | `#9a7710` / `#e2bd5a` | `#f6edd0` / `#3a3220` | `--gold-text` `#6e5410` / `#ecca80` |
+| Sand `--sand`, `--sand-soft` | `#efe8da`, `#f8f4ec` / `#2d2a24`, `#25231f` | page and sunken surfaces (light) | |
+
+- **Meal types**: `--meal-{breakfast,lunch,dinner,snack}` (+ `-soft`, `-text`) = coral, sage, blue, sand-gold. Used by the Meals group headers (dot + label) and the selected state of the meal-type `.segmented` control.
+- **Macros**: `--protein` blue, `--carbs` sage, `--fat` coral (+ `--*-text` for labels). **Charts** (M4): `--chart-1..4` = blue, coral, sage, gold.
+- **Coral** marks the products area: `.btn-coral` ("Scan barcode", "Saved products", "Use my product"), the product sheet title (`.sheet-coral`), the picker panel.
+- **Meaning is separate from decoration**: `--over`/`--error` crimson (deeper and pinker than coral), `--under` emerald (bluer than sage), `--warning` amber-orange (redder than gold). Meaning is always also in words.
+- Rule: blue stays primary; aim for 2-3 accents per screen; accent colors are for categories, never for state.
+
 ## Tokens (`web/src/lib/styles/tokens.css`)
 
 | Group | Tokens |
@@ -26,6 +42,7 @@ Cupful is opened many times a day, on a phone, for a few seconds at a time: chec
 | Surfaces, text | `--bg`, `--surface`, `--surface-2` (sunken), `--border` (decorative), `--border-strong` (inputs, 3:1), `--text`, `--text-muted` |
 | Brand | `--accent`, `--accent-hover`, `--on-accent`, `--accent-soft`, `--focus-ring` |
 | Meaning | `--under`/`--under-soft` (left, success), `--over`/`--over-soft`, `--warning`/`--warning-soft`, `--error`/`--error-soft` |
+| Palette | `--coral`, `--sage`, `--gold` (+ `-soft`, `-text`), `--sand`, `--sand-soft`, `--meal-*`, `--protein-text`/`--carbs-text`/`--fat-text`, `--chart-1..4` |
 | Sources | `--src-db`/`--src-db-soft` ("Database"), `--src-ai`/`--src-ai-soft` ("AI estimate") |
 | Macros, charts | `--protein`, `--carbs`, `--fat`, `--chart-intake`, `--chart-budget`, `--chart-weight`, `--chart-average`, `--chart-steps`, `--chart-over`, `--chart-grid`, `--chart-axis` |
 | Type | `--font-sans`, `--font-numeric`; `--text-xs` 13 · `--text-sm` 14 · `--text-md` 16 · `--text-lg` 20 · `--text-xl` 25 · `--text-2xl` 32 · `--text-hero` 52 px; `--leading-tight`, `--leading`; `--weight-regular/medium/bold` |

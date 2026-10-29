@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
- * Cupful design tokens. See docs/design.md. Calm blue, airy light theme, matching deep-blue dark.
+ * Cupful design tokens. See docs/design.md. Calm blue plus coral, sage and sand; warm sand light theme, deep-blue dark.
  * Every color is `light-dark(light, dark)`; `color-scheme` picks the side:
  * System follows prefers-color-scheme, `<html data-theme="light|dark">` forces one (Settings).
  * All text colors meet WCAG AA (4.5:1) on --bg, --surface and --surface-2 in their theme;
@@ -10,13 +10,13 @@
 	color-scheme: light dark;
 
 	/* ---- surfaces and text ---- */
-	--bg: light-dark(#f4f8fc, #0f1d2c);
+	--bg: light-dark(#f8f4ec, #0f1d2c); /* light: warm sand tint; dark: deep blue */
 	--surface: light-dark(#ffffff, #152639);
-	--surface-2: light-dark(#e9f1f9, #1c3149); /* sunken: meter tracks, inputs, hover */
-	--border: light-dark(#d3e0ed, #2a4361); /* hairlines; decorative */
-	--border-strong: light-dark(#6c839d, #6a86a6); /* input outlines: 3:1 */
+	--surface-2: light-dark(#efe8da, #1c3149); /* sunken: meter tracks, inputs, hover */
+	--border: light-dark(#e2d9c6, #2a4361); /* hairlines; decorative */
+	--border-strong: light-dark(#7a7566, #6a86a6); /* input outlines: 3:1 */
 	--text: light-dark(#13263b, #e5eef8);
-	--text-muted: light-dark(#4b5f75, #a5b8cd);
+	--text-muted: light-dark(#4b5a6b, #a5b8cd);
 
 	/* ---- brand ---- */
 	--accent: light-dark(#2b67a3, #84b8ea); /* buttons, links, focus, current tab */
@@ -26,30 +26,50 @@
 	--focus-ring: light-dark(#2b67a3, #a3cbf1);
 
 	/* ---- meaning ---- */
-	--under: light-dark(#276f55, #74cfa9); /* left in budget, success */
-	--under-soft: light-dark(#ddf2e8, #183d33);
-	--over: light-dark(#b23c34, #f4948b); /* over budget */
-	--over-soft: light-dark(#fbe6e3, #4a2226);
-	--warning: light-dark(#875600, #ebbb63); /* provisional, flags */
-	--warning-soft: light-dark(#fbf0d6, #3d3118);
-	--error: light-dark(#b3261e, #f4948b);
-	--error-soft: light-dark(#fce8e6, #4a2226);
+	--under: light-dark(#17734f, #62d2a8); /* left in budget, success: emerald, bluer than sage */
+	--under-soft: light-dark(#dcf3ea, #12402f);
+	--over: light-dark(#a8232f, #ff8f9a); /* over budget: crimson, deeper than coral */
+	--over-soft: light-dark(#fbe3e5, #4d1f27);
+	--warning: light-dark(#8a4b00, #f2a65a); /* provisional, flags: amber-orange, redder than sand-gold */
+	--warning-soft: light-dark(#fbebd6, #402a14);
+	--error: light-dark(#a8232f, #ff8f9a);
+	--error-soft: light-dark(#fbe3e5, #4d1f27);
+
+	/* ---- palette accents: coral, sage, sand (decoration and categories, never meaning) ---- */
+	--coral: light-dark(#cb5a3e, #ee8a70); /* marks, fills: 3:1 on surface */
+	--coral-soft: light-dark(#fbe9e3, #45261f);
+	--coral-text: light-dark(#a8402a, #f5a891);
+	--sage: light-dark(#4f8a6b, #7fc09f);
+	--sage-soft: light-dark(#e3f0e8, #1b3a2c);
+	--sage-text: light-dark(#2f6a4d, #98d3b3);
+	--sand: light-dark(#efe8da, #2d2a24); /* warm neutral surface */
+	--sand-soft: light-dark(#f8f4ec, #25231f);
+	--gold: light-dark(#9a7710, #e2bd5a); /* sand-gold mark */
+	--gold-soft: light-dark(#f6edd0, #3a3220);
+	--gold-text: light-dark(#6e5410, #ecca80);
 
 	/* ---- where a number came from (estimate review, meal items) ---- */
-	--src-db: light-dark(#1f6b76, #6ac6cf); /* "Database": matched food or product */
-	--src-db-soft: light-dark(#dcf0f2, #173a40);
+	--src-db: light-dark(#1c6a80, #6cc5da); /* "Database": matched food or product */
+	--src-db-soft: light-dark(#dcf0f5, #153a46);
 	--src-ai: light-dark(#6047a8, #bba7f2); /* "AI estimate": the model's guess */
 	--src-ai-soft: light-dark(#ebe5fa, #2d2550);
 
 	/* ---- macros and charts (LayerChart reads these via CSS vars) ---- */
-	--protein: light-dark(#2b67a3, #84b8ea);
-	--carbs: light-dark(#1f7a72, #6ccdc2);
-	--fat: light-dark(#93640f, #e3b65e);
+	--protein: var(--accent);
+	--carbs: var(--sage);
+	--fat: var(--coral);
+	--protein-text: var(--accent);
+	--carbs-text: var(--sage-text);
+	--fat-text: var(--coral-text);
+	--chart-1: var(--accent);
+	--chart-2: var(--coral);
+	--chart-3: var(--sage);
+	--chart-4: var(--gold);
 	--chart-intake: var(--accent);
 	--chart-budget: light-dark(#13263b, #e5eef8); /* budget tick */
 	--chart-weight: light-dark(#6047a8, #bba7f2);
-	--chart-average: light-dark(#1f7a72, #6ccdc2); /* rolling averages */
-	--chart-steps: light-dark(#276f55, #74cfa9);
+	--chart-average: var(--sage); /* rolling averages */
+	--chart-steps: var(--under);
 	--chart-over: var(--over);
 	--chart-grid: var(--border);
 	--chart-axis: var(--text-muted);
@@ -90,7 +110,20 @@
 	--radius-lg: 1.125rem; /* cards */
 	--radius-sheet: 1.5rem; /* bottom sheets, dialogs */
 	--radius-pill: 999px;
-	--shadow-color: light-dark(rgb(19 38 59 / 0.1), rgb(0 0 0 / 0.25));
+	--shadow-color: light-dark(rgb(60 45 20 / 0.1), rgb(0 0 0 / 0.25));
+	/* ---- meal types ---- */
+	--meal-breakfast: var(--coral);
+	--meal-breakfast-soft: var(--coral-soft);
+	--meal-breakfast-text: var(--coral-text);
+	--meal-lunch: var(--sage);
+	--meal-lunch-soft: var(--sage-soft);
+	--meal-lunch-text: var(--sage-text);
+	--meal-dinner: var(--accent);
+	--meal-dinner-soft: var(--accent-soft);
+	--meal-dinner-text: var(--accent);
+	--meal-snack: var(--gold);
+	--meal-snack-soft: var(--gold-soft);
+	--meal-snack-text: var(--gold-text);
 	--shadow-card: 0 1px 2px var(--shadow-color), 0 6px 20px -8px var(--shadow-color);
 	--shadow-sheet: 0 -8px 32px rgb(5 14 25 / 0.28);
 
