@@ -56,13 +56,13 @@ fn reply(kind: Kind, text: &str) -> ResponseTemplate {
 fn native_field(kind: Kind) -> Value {
     match kind {
         Kind::OpenaiCompatible => {
-            json!({"temperature": 0, "max_tokens": 1024, "response_format": {"type": "json_schema"}})
+            json!({"temperature": 0, "max_tokens": 4096, "response_format": {"type": "json_schema"}})
         }
         Kind::Anthropic => {
-            json!({"max_tokens": 1024, "output_config": {"format": {"type": "json_schema"}}})
+            json!({"max_tokens": 4096, "output_config": {"format": {"type": "json_schema"}}})
         }
         Kind::Gemini => json!({"generationConfig": {
-            "temperature": 0, "maxOutputTokens": 1024, "responseMimeType": "application/json",
+            "temperature": 0, "maxOutputTokens": 4096, "responseMimeType": "application/json",
             "responseJsonSchema": {"type": "object"}
         }}),
     }

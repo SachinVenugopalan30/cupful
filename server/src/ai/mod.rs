@@ -99,6 +99,9 @@ impl From<ProviderError> for Error {
             ProviderError::Auth(m) => format!("the AI provider rejected its credentials: {m}"),
             ProviderError::Other(m) => m.clone(),
         };
+        if matches!(e, ProviderError::Unparseable(_) | ProviderError::Other(_)) {
+            tracing::warn!("{msg}");
+        }
         Error::Coded(status, e.code(), msg)
     }
 }
@@ -226,7 +229,8 @@ pub fn build(cfg: ProviderConfig, http: reqwest::Client, timeouts: Timeouts) -> 
 }
 
 pub const MAX_IMAGE_BYTES: usize = 5 * 1024 * 1024;
-const MAX_TOKENS: u32 = 1024;
+// Reasoning models (gpt-oss, o-series) spend part of this thinking before the JSON.
+const MAX_TOKENS: u32 = 4096;
 const RETRIES: u32 = 2;
 /// A longer `Retry-After` than this fails fast as rate limited instead of holding the request.
 const MAX_RETRY_AFTER: Duration = Duration::from_secs(30);
