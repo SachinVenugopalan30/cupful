@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO food_portions (food_id, unit, grams)\n             SELECT id, ?, ? FROM foods WHERE source = 'staple' AND source_ref = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5d43b193dbe4e7d134a8fc4e05c762007bc145dadab1717348143ee8fa1bc287"
+}

@@ -347,3 +347,107 @@ async fn save_routes_validate_input() {
         .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn foods_the_model_left_out_are_flagged() {
+    let db = cupful::db::memory().await;
+    let reply = |items: Value| json!({"items": items, "assumptions": "a", "confidence": "low"});
+    let item = |food: &str, unit: &str| {
+        json!({"food": food, "amount": 1, "unit": unit, "grams": null, "cooking": "none",
+               "mentions_oil": false, "estimate": null})
+    };
+    let est = nutrition::estimate(
+        &db,
+        0,
+        &Recorded(reply(json!([item("oats", "cup"), item("chocolate protein powder", "scoop")]))),
+        "half cup of oats with a splash of lactose free milk and a scoop of chocolate protein powder",
+        vec![],
+    )
+    .await
+    .unwrap();
+    let w = est.warnings.join(" | ");
+    assert!(w.contains("lactose free milk"), "{w}");
+    // Words already covered by an item ("chocolate", "oats") aren't flagged.
+    assert!(!w.contains("chocolate") && !w.contains("oat"), "{w}");
+
+    let est = nutrition::estimate(
+        &db,
+        0,
+        &Recorded(reply(json!([item("oats", "cup"), item("milk", "splash")]))),
+        "oats with a splash of milk",
+        vec![],
+    )
+    .await
+    .unwrap();
+    assert!(est.warnings.is_empty(), "{:?}", est.warnings);
+}
+
+#[tokio::test]
+async fn echoed_counts_and_size_words_do_not_fool_the_pipeline() {
+    let db = cupful::db::memory().await;
+    let item = |food: &str, grams: f64| {
+        json!({"food": food, "amount": 1, "unit": null, "grams": grams, "cooking": "none",
+               "mentions_oil": false, "estimate": null})
+    };
+    let est = run(
+        &db,
+        0,
+        json!({"items": [item("salmon fillet", 1.0), item("medium fries", 117.0), item("chia seeds", 12.0)],
+               "assumptions": "a", "confidence": "low"}),
+    )
+    .await;
+    let v = serde_json::to_value(&est).unwrap();
+    // 1 g of salmon is the count echoed as grams: the food's normal portion (178 g) is used instead.
+    assert_eq!(v["items"][0]["grams"], 178.0);
+    // "medium" is a size, not part of the food.
+    assert_eq!(v["items"][1]["match"], "matched");
+    assert_eq!(v["items"][1]["food_name"], "French fries");
+    // Plausible model grams still stand when nothing measured applies.
+    assert_eq!(v["items"][2]["grams"], 12.0);
+}
+
+#[tokio::test]
+async fn implausible_weights_fall_back_but_real_weights_stand() {
+    let db = cupful::db::memory().await;
+    let item = |food: &str, amount: f64, unit: &str| {
+        json!({"food": food, "amount": amount, "unit": unit, "grams": null, "cooking": "none",
+               "mentions_oil": false, "estimate": null})
+    };
+    let est = run(
+        &db,
+        0,
+        json!({"items": [item("salmon fillet", 1.0, "g"), item("chicken breast", 150.0, "g"), item("orange juice", 1.0, "ml")],
+               "assumptions": "a", "confidence": "low"}),
+    )
+    .await;
+    let v = serde_json::to_value(&est).unwrap();
+    assert_eq!(
+        v["items"][0]["grams"], 178.0,
+        "\"1 g\" of salmon is the count, not a weight"
+    );
+    assert_eq!(
+        v["items"][1]["grams"], 150.0,
+        "150 g of chicken is a real weight"
+    );
+    assert_eq!(
+        v["items"][2]["grams"], 248.0,
+        "\"1 ml\" of juice falls back to a cup"
+    );
+}
+
+#[tokio::test]
+async fn a_weight_put_in_amount_does_not_discard_the_models_grams() {
+    let db = cupful::db::memory().await;
+    // A real 1.2B-model reply for "150g grilled chicken breast with a cup of rice".
+    let est = run(
+        &db,
+        0,
+        json!({"items": [{"food": "grilled chicken breast", "amount": 150, "unit": "cooked white rice",
+                          "grams": 150, "cooking": "grilled", "mentions_oil": false,
+                          "estimate": {"kcal": 650, "protein": 60, "carbs": 180, "fat": 6}}],
+               "assumptions": "a", "confidence": "low"}),
+    )
+    .await;
+    let v = serde_json::to_value(&est).unwrap();
+    assert_eq!(v["items"][0]["grams"], 150.0, "{v}");
+}

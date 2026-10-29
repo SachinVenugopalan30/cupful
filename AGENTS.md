@@ -49,7 +49,7 @@ web/                    SvelteKit app (adapter-static, SPA fallback)
   e2e/, playwright.config.ts   Playwright against the real server
 docs/design.md          design direction, tokens, component rules
 fixtures/budget_cases.json   shared budget test vectors
-data/staples.csv, data/aliases.csv   shipped food data (embedded, seeded at startup)
+data/staples.csv, data/aliases.csv, data/portions.csv   shipped food data and USDA portion weights (embedded, seeded at startup)
 data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
 data/golden/            golden estimate cases with recorded model replies
 docs/providers.md       AI provider setup

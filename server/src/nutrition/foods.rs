@@ -9,6 +9,7 @@ use sqlx::SqlitePool;
 
 static STAPLES: &str = include_str!("../../../data/staples.csv");
 static ALIASES: &str = include_str!("../../../data/aliases.csv");
+static PORTIONS: &str = include_str!("../../../data/portions.csv");
 
 /// Classification thresholds on the token-overlap score (0..=1). Tuned with the golden tests.
 pub const MATCHED_MIN: f64 = 0.6;
@@ -18,6 +19,80 @@ pub const MARGIN: f64 = 0.15;
 pub const MAX_CANDIDATES: usize = 3;
 /// FTS rows fetched (bm25 order) before scoring.
 const FTS_LIMIT: i64 = 50;
+
+fn canon(s: &str) -> &str {
+    match s {
+        "tablespoon" | "tbs" | "tbl" => "tbsp",
+        "teaspoon" => "tsp",
+        "ounce" => "oz",
+        "fluid ounce" | "fl" => "fl oz",
+        "gram" | "gm" => "g",
+        other => other,
+    }
+}
+
+fn number(w: &str) -> Option<f64> {
+    match w.split_once('/') {
+        Some((a, b)) => Some(a.parse::<f64>().ok()? / b.parse::<f64>().ok()?),
+        None => w.parse().ok(),
+    }
+}
+
+/// Lookup keys for a household unit as the model or a user wrote it: the whole phrase, then its
+/// first word ("large egg" → "large egg", "large"); a slice also tries USDA's "piece".
+pub fn unit_keys(unit: &str) -> Vec<String> {
+    let norm = normalize(unit);
+    let words: Vec<&str> = norm
+        .split(' ')
+        .filter(|w| !w.is_empty() && number(w).is_none())
+        .collect();
+    let Some(first) = words.first() else {
+        return vec![];
+    };
+    let mut keys = vec![
+        canon(&words.join(" ")).to_string(),
+        canon(first).to_string(),
+    ];
+    if keys[1] == "slice" {
+        keys.push("piece".into());
+    }
+    keys.dedup();
+    keys
+}
+
+/// A USDA portion's unit and amount: ("cup", 0.5) from "cups, chopped" with amount 0.5, or
+/// ("piece", 1) from "1 piece, medium pizza". None for portions that aren't a household unit.
+pub fn portion_unit(text: &str, amount: Option<f64>) -> Option<(String, f64)> {
+    let t = text.to_lowercase();
+    let skip = [
+        "quantity not specified",
+        "racc",
+        "nlea",
+        "surface inch",
+        "cubic inch",
+    ];
+    if skip.iter().any(|s| t.contains(s)) {
+        return None;
+    }
+    let mut words = t.split_whitespace().peekable();
+    let leading = words.peek().and_then(|w| number(w));
+    if leading.is_some() {
+        words.next();
+    }
+    let rest = words.collect::<Vec<_>>().join(" ");
+    let head = rest.split([',', '(']).next()?.trim();
+    // "medium or regular slice" is a slice; "medium whole" is a medium (tomato).
+    const NOUNS: [&str; 8] = [
+        "slice", "piece", "cup", "bar", "link", "patty", "fillet", "wedge",
+    ];
+    let keys = unit_keys(head);
+    let unit = match head.rsplit(' ').next() {
+        Some(last) if head.contains(' ') && NOUNS.contains(&last) => last.to_string(),
+        _ => keys.get(1).or(keys.first()).cloned()?,
+    };
+    let amount = amount.or(leading).filter(|a| *a > 0.0).unwrap_or(1.0);
+    Some((unit, amount))
+}
 
 /// Lowercase, punctuation to spaces, simple plurals singularized.
 pub fn normalize(s: &str) -> String {
@@ -102,6 +177,36 @@ pub async fn seed(db: &SqlitePool) -> Result<(), sqlx::Error> {
         .fetch_one(&mut *tx)
         .await?;
         by_name.insert(name.clone(), id);
+    }
+    // fdc_id,amount,unit,grams
+    sqlx::query!(
+        "DELETE FROM food_portions WHERE food_id IN (SELECT id FROM foods WHERE source = 'staple')"
+    )
+    .execute(&mut *tx)
+    .await?;
+    let mut portions = csv(PORTIONS).into_iter().skip(1).collect::<Vec<_>>();
+    // Within a food and unit the first row wins: plain before modified, then medium/regular sizes.
+    portions.sort_by_key(|r| {
+        let t = r[2].to_lowercase();
+        (
+            t.contains(','),
+            !(t.contains("medium") || t.contains("regular")),
+        )
+    });
+    for r in portions {
+        let Some((unit, amount)) = portion_unit(&r[2], r[1].parse().ok()) else {
+            continue;
+        };
+        let grams = r[3].parse::<f64>().expect("portions.csv: grams") / amount;
+        sqlx::query!(
+            "INSERT OR IGNORE INTO food_portions (food_id, unit, grams)
+             SELECT id, ?, ? FROM foods WHERE source = 'staple' AND source_ref = ?",
+            unit,
+            grams,
+            r[0]
+        )
+        .execute(&mut *tx)
+        .await?;
     }
     sqlx::query!("DELETE FROM food_aliases WHERE user_id IS NULL")
         .execute(&mut *tx)
@@ -411,6 +516,88 @@ pub async fn visible(db: &SqlitePool, user_id: i64, id: i64) -> Result<Option<Fo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn usda_portion_text_becomes_a_unit_and_amount() {
+        let u = |t: &str, a: Option<f64>| portion_unit(t, a);
+        assert_eq!(u("cup", Some(1.0)), Some(("cup".into(), 1.0)));
+        assert_eq!(u("scoop", Some(3.0)), Some(("scoop".into(), 3.0)));
+        assert_eq!(u("cups, chopped", Some(0.5)), Some(("cup".into(), 0.5)));
+        assert_eq!(
+            u("1 piece, medium pizza", None),
+            Some(("piece".into(), 1.0))
+        );
+        assert_eq!(u("2 tablespoons", None), Some(("tbsp".into(), 2.0)));
+        assert_eq!(u("1/2 cup", None), Some(("cup".into(), 0.5)));
+        assert_eq!(u("fl oz", Some(1.0)), Some(("fl oz".into(), 1.0)));
+        assert_eq!(
+            u("medium (2-1/4\" to 3\" dia)", Some(1.0)),
+            Some(("medium".into(), 1.0))
+        );
+        assert_eq!(
+            u("1 medium or regular slice", None),
+            Some(("slice".into(), 1.0))
+        );
+        assert_eq!(
+            u("1 large or thick slice", None),
+            Some(("slice".into(), 1.0))
+        );
+        assert_eq!(
+            u("medium whole (2-3/5\" dia)", Some(1.0)),
+            Some(("medium".into(), 1.0))
+        );
+        assert_eq!(u("Quantity not specified", None), None);
+        assert_eq!(u("1 surface inch", None), None);
+        assert_eq!(u("", Some(1.0)), None);
+    }
+
+    #[test]
+    fn units_have_canonical_lookup_keys() {
+        assert_eq!(unit_keys("Tablespoons"), ["tbsp"]);
+        assert_eq!(unit_keys("1 scoop"), ["scoop"]);
+        assert_eq!(unit_keys("large egg"), ["large egg", "large"]);
+        assert_eq!(unit_keys("slice"), ["slice", "piece"]);
+        assert_eq!(unit_keys("fl oz"), ["fl oz"]);
+        assert!(unit_keys("").is_empty());
+    }
+
+    #[tokio::test]
+    async fn staples_get_usda_grams_per_unit() {
+        let db = db().await;
+        let grams = |name: &'static str, unit: &'static str| {
+            let db = db.clone();
+            async move {
+                sqlx::query_scalar!(
+                    "SELECT p.grams FROM food_portions p JOIN foods f ON f.id = p.food_id
+                     WHERE f.source = 'staple' AND f.name = ? AND p.unit = ?",
+                    name,
+                    unit
+                )
+                .fetch_optional(&db)
+                .await
+                .unwrap()
+            }
+        };
+        let scoop = grams("Whey protein powder", "scoop").await.unwrap();
+        assert!((scoop - 86.0 / 3.0).abs() < 0.01, "{scoop}");
+        assert_eq!(
+            grams("Oats, rolled, dry", "cup").await,
+            Some(81.0),
+            "first plain cup wins"
+        );
+        assert_eq!(grams("Espresso", "fl oz").await, Some(29.6));
+        assert_eq!(
+            grams("Toast, white bread", "slice").await,
+            Some(25.0),
+            "a regular slice, not snack-size"
+        );
+        seed(&db).await.unwrap();
+        assert_eq!(
+            grams("Oats, rolled, dry", "cup").await,
+            Some(81.0),
+            "reseeding is idempotent"
+        );
+    }
 
     #[test]
     fn normalize_lowercases_strips_punctuation_and_singularizes() {

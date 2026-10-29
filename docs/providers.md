@@ -73,3 +73,7 @@ Provider keys and extra headers are encrypted (XChaCha20-Poly1305) with an insta
 At startup Cupful checks that the key opens the secrets already saved. With the wrong key, or with the key gone (for example `CUPFUL_SECRET_KEY` removed after keys were saved with it), it refuses to start and says so; it never creates a new key over existing secrets.
 
 **Losing the key** loses only the provider keys and headers. To recover, clear them and enter them again: stop Cupful, run (with the `sqlite3` tool on the host, against `cupful.db` in the data volume; the image has no shell) `sqlite3 cupful.db "UPDATE ai_providers SET api_key = NULL, extra_headers = NULL; DELETE FROM secret_check;"`, start it with the new key (or none, to generate one), and re-enter the keys in Settings. Meals, days and everything else are untouched.
+
+## Choosing a model
+
+Bigger models estimate better. In testing, a 1.2B model left foods out ("a splash of milk"), merged two foods into one item and wrote counts as weights; Cupful works around much of that (measured USDA portions beat the model's grams, and the review warns about foods the description names but the estimate missed), but a 7B+ instruction model is a better default. To see exactly what a model replied, run the server with `RUST_LOG=cupful=debug`.

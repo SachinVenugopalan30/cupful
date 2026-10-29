@@ -27,7 +27,8 @@ pub const OIL_PER_PORTION_G: f64 = 9.0;
 const INSTRUCTION: &str = "You turn a meal description (and photo, if any) into a list of foods. \
 Reply with JSON only, matching the schema. One item per distinct food: split foods eaten together \
 (\"toast with butter\" is toast and butter), but keep a named dish whole (a burrito, pizza, sandwich \
-or curry is one item). For each item give: \
+or curry is one item). List every food and drink mentioned, even small amounts (a splash of \
+milk, a teaspoon of sugar). For each item give: \
 `food`, a plain generic name (e.g. \"cooked white rice\", \"chicken breast\"); `amount` and `unit` \
 as the user said them (e.g. 1 \"small cup\", 2 \"slices\", 150 \"g\"); `grams`, your best estimate of \
 the edible weight; `cooking`, the method (\"none\", \"boiled\", \"shallow-fried\", \"deep-fried\", \
@@ -220,6 +221,7 @@ fn unit_grams(unit: &str, food: &str) -> Option<f64> {
             "water",
             "lassi",
             "chai",
+            "espresso",
         ],
     );
     let fat = has(food, &["oil", "ghee", "butter"]);
@@ -240,15 +242,124 @@ fn unit_grams(unit: &str, food: &str) -> Option<f64> {
         "bowl" | "katori" | "cup" if wet => 250.0,
         "tsp" | "teaspoon" if fat => 4.5,
         "tbsp" | "tablespoon" if fat => 13.5,
-        "tsp" | "teaspoon" => 5.0,
-        "tbsp" | "tablespoon" => 15.0,
         "cup" if drink => 240.0,
         "glass" | "mug" if drink => 250.0,
         "can" if drink => 355.0,
+        "shot" | "splash" if drink => 30.0,
         _ if roti && piece => 40.0,
         _ if has(food, &["chicken"]) && has(food, &["breast"]) && piece => 130.0,
         _ => return None,
     })
+}
+
+/// The food name without size words, for matching: "medium fries" is fries.
+fn without_sizes(food: &str) -> String {
+    const SIZES: [&str; 6] = ["small", "medium", "large", "regular", "big", "extra"];
+    let kept: Vec<&str> = food.split(' ').filter(|w| !SIZES.contains(w)).collect();
+    if kept.is_empty() {
+        food.to_string()
+    } else {
+        kept.join(" ")
+    }
+}
+
+fn is_weight(unit: &str) -> bool {
+    matches!(
+        unit,
+        "g" | "gm"
+            | "gram"
+            | "gr"
+            | "kg"
+            | "kilogram"
+            | "ml"
+            | "milliliter"
+            | "millilitre"
+            | "l"
+            | "liter"
+            | "litre"
+            | "oz"
+            | "ounce"
+            | "lb"
+            | "pound"
+    )
+}
+
+/// A level spoon of anything, when neither the measures table nor USDA has the food's own spoon.
+fn spoon_grams(unit: &str) -> Option<f64> {
+    match unit {
+        "tsp" | "teaspoon" => Some(5.0),
+        "tbsp" | "tablespoon" => Some(15.0),
+        _ => None,
+    }
+}
+
+/// USDA grams for one `unit` of the matched food ("scoop" of whey → 28.7 g).
+async fn food_portion(
+    db: &SqlitePool,
+    food_id: i64,
+    unit: &str,
+) -> std::result::Result<Option<f64>, sqlx::Error> {
+    for key in foods::unit_keys(unit) {
+        let g = sqlx::query_scalar!(
+            "SELECT grams FROM food_portions WHERE food_id = ? AND unit = ?",
+            food_id,
+            key
+        )
+        .fetch_optional(db)
+        .await?;
+        if g.is_some() {
+            return Ok(g);
+        }
+    }
+    Ok(None)
+}
+
+/// Foods the description names (by a known alias) that no item covers: small models drop items
+/// ("a splash of milk"). An alias counts as covered when its food was matched or any of its words is
+/// in an item's name, so this errs toward saying nothing.
+async fn missed(
+    db: &SqlitePool,
+    user_id: i64,
+    description: &str,
+    items: &[Item],
+) -> std::result::Result<Option<String>, sqlx::Error> {
+    let desc = format!(" {} ", normalize(description));
+    let names: Vec<String> = items.iter().map(|i| normalize(&i.name)).collect();
+    let covered = |w: &str| names.iter().any(|n| n.split(' ').any(|x| x == w));
+    let matched: Vec<i64> = items.iter().filter_map(|i| i.food_id).collect();
+    let mut found: Vec<String> = vec![];
+    for a in sqlx::query!(
+        "SELECT alias_norm, food_id FROM food_aliases
+         WHERE (user_id IS NULL OR user_id = ?) AND instr(?, ' ' || alias_norm || ' ') > 0",
+        user_id,
+        desc
+    )
+    .fetch_all(db)
+    .await?
+    {
+        if !matched.contains(&a.food_id) && !a.alias_norm.split(' ').any(covered) {
+            found.push(a.alias_norm);
+        }
+    }
+    found.sort_unstable();
+    found.dedup();
+    // "milk" inside "lactose free milk" is the same mention.
+    let outer: Vec<&String> = found
+        .iter()
+        .filter(|a| {
+            !found
+                .iter()
+                .any(|b| b != *a && format!(" {b} ").contains(&format!(" {a} ")))
+        })
+        .collect();
+    Ok((!outer.is_empty()).then(|| {
+        let list = outer
+            .iter()
+            .map(|a| a.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("The estimate may have missed: {list}. Add it below if you had it.")
+    }))
 }
 
 /// Cooking methods that use added oil (the oil rule, §8 step 5).
@@ -335,6 +446,7 @@ pub async fn estimate(
             schema: schema(),
         })
         .await?;
+    tracing::debug!(reply = %raw, "model reply");
     let reply: Reply =
         serde_json::from_value(raw).map_err(|e| ProviderError::Unparseable(e.to_string()))?;
     if reply.items.len() > MAX_ITEMS {
@@ -364,18 +476,36 @@ pub async fn estimate(
         .await?;
         let matched = match &portion {
             Some((f, _)) => Match::Matched(f.clone()),
-            None => foods::find(db, user_id, &food_norm).await?,
+            None => foods::find(db, user_id, &without_sizes(&food_norm)).await?,
         };
-        let model_grams = valid_grams(raw.grams);
-        let default_portion = match &matched {
-            Match::Matched(f) => f.default_portion_g,
-            _ => None,
+        let (default_portion, usda_unit) = match &matched {
+            Match::Matched(f) => (f.default_portion_g, food_portion(db, f.id, unit).await?),
+            _ => (None, None),
         };
+        // Within 10x of the food's normal portion, for one portion or for `amount` of them (models
+        // sometimes put the weight in `amount`); else it's likely the count echoed as a weight
+        // ("1 g" of salmon).
+        let portions = if is_weight(&unit_norm) { 1.0 } else { amount };
+        let plausible = |g: &f64| {
+            default_portion.is_none_or(|d| {
+                [d, d * portions]
+                    .iter()
+                    .any(|p| (p / 10.0..=p * 10.0).contains(g))
+            })
+        };
+        let model_grams = valid_grams(raw.grams).filter(plausible);
+        // Measured portions beat the model's guess: small models misjudge weights badly
+        // (a scoop of protein powder as 15 g), while "1 scoop" in USDA's data is measured.
+        let measured = unit_grams(&unit_norm, &food_norm)
+            .or(usda_unit)
+            .or_else(|| spoon_grams(&unit_norm))
+            .map(|g| g * amount)
+            .filter(plausible);
         let grams = portion
             .as_ref()
             .map(|p| p.1 * amount)
+            .or(measured)
             .or(model_grams)
-            .or_else(|| unit_grams(&unit_norm, &food_norm).map(|g| g * amount))
             .or_else(|| default_portion.map(|g| g * amount))
             .filter(|g| *g <= MAX_ITEM_GRAMS);
         let Some(grams) = grams else {
@@ -479,6 +609,7 @@ pub async fn estimate(
             });
         }
     }
+    warnings.extend(missed(db, user_id, description, &items).await?);
     Ok(Estimate {
         items,
         assumptions: reply.assumptions,
@@ -580,14 +711,23 @@ mod tests {
         assert_eq!(g("can", "beer"), Some(355.0));
         assert_eq!(g("bowl", "beef stew"), Some(250.0));
         assert_eq!(g("bowl", "chili"), Some(250.0));
-        assert_eq!(g("tsp", "sugar"), Some(5.0));
-        assert_eq!(g("tbsp", "ketchup"), Some(15.0));
+        assert_eq!(spoon_grams("tsp"), Some(5.0));
+        assert_eq!(spoon_grams("tbsp"), Some(15.0));
+        assert_eq!(spoon_grams("cup"), None);
         assert_eq!(
             g("tbsp", "olive oil"),
             Some(13.5),
             "fat keeps its own weight"
         );
         assert_eq!(g("can", "tuna"), None, "not a drink");
+        assert_eq!(g("shot", "espresso"), Some(30.0));
+        assert_eq!(g("splash", "lactose free milk"), Some(30.0));
+        assert_eq!(g("shot", "vodka"), None, "not in the drink list");
+        assert_eq!(
+            g("tsp", "chia seeds"),
+            None,
+            "generic spoons come after USDA portions"
+        );
     }
 
     #[test]

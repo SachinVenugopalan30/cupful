@@ -7,9 +7,12 @@ https://fdc.nal.usda.gov/download-datasets, then:
 
     python3 data/tools/build_staples.py data/tools/staples_spec.txt data/staples.csv FOUNDATION.json SR_LEGACY.json SURVEY.json
 
+Also writes portions.csv next to the output: every USDA portion of each staple (fdc_id, amount,
+unit text, grams), which the server turns into grams per unit (a scoop, a cup, a slice).
+
 Every number comes from USDA; nothing is typed by hand. Add aliases for new rows in data/aliases.csv.
 """
-import csv, json, sys
+import csv, json, os, sys
 spec, out, *paths = sys.argv[1:]
 idx = {}
 for p in paths:
@@ -38,6 +41,8 @@ def portions(f):
         yield text, p['gramWeight']
 
 w = csv.writer(open(out, 'w', newline=''), lineterminator='\n')
+pw = csv.writer(open(os.path.join(os.path.dirname(out), 'portions.csv'), 'w', newline=''), lineterminator='\n')
+pw.writerow(['fdc_id', 'amount', 'unit', 'grams'])
 w.writerow(['name', 'is_prepared', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'default_portion_g', 'portion_text', 'fdc_id', 'fdc_description'])
 for line in open(spec):
     name, fdc, prep, hint = line.rstrip('\n').split('|')
@@ -53,4 +58,9 @@ for line in open(spec):
     elif pick is None:
         pick = next(((t, g) for t, g in ps if 'Quantity not specified' not in t), (ps[0] if ps else ('', '')))
     print(f'{name:40} | {pick[0]} = {pick[1]}  || {[t for t, _ in ps][:6]}', file=sys.stderr)
+    for p in f.get('foodPortions', []):
+        unit = (p.get('measureUnit') or {}).get('name', '')
+        unit = '' if unit in ('undetermined', 'RACC') else unit
+        text = p.get('portionDescription') or ', '.join(x for x in [unit, p.get('modifier') or ''] if x)
+        pw.writerow([fdc, p.get('amount', ''), text, p['gramWeight']])
     w.writerow([name, prep, *[round(float(v), 2) for v in vals], round(float(pick[1]), 1) if pick[1] != '' else '', pick[0], fdc, f['description']])

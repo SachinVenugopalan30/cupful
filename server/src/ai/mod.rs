@@ -381,9 +381,12 @@ fn scrub_tokens(s: &str) -> String {
     const PREFIXES: [&str; 6] = ["sk-", "sk_", "AIza", "xai-", "gsk_", "hf_"];
     let looks_like_key = |t: &str| {
         (t.len() >= 12 && PREFIXES.iter().any(|p| t.starts_with(p)))
-            || (t.len() >= 32
-                && t.chars().any(|c| c.is_ascii_digit())
-                && t.chars().any(|c| c.is_ascii_alphabetic()))
+            // A long unbroken random run; hyphenated model names ("gemma-4-12b-...") are short words.
+            || t.split(['-', '_']).any(|seg| {
+                seg.len() >= 24
+                    && seg.chars().any(|c| c.is_ascii_digit())
+                    && seg.chars().any(|c| c.is_ascii_alphabetic())
+            })
     };
     let mut out = String::with_capacity(s.len());
     let mut token = String::new();
@@ -441,6 +444,16 @@ mod tests {
             "bad key sk-abcdefghijkl1 for gpt-4.1-mini, id 0123456789abcdef0123456789abcdef.",
         );
         assert_eq!(s, "bad key *** for gpt-4.1-mini, id ***.");
+    }
+
+    #[test]
+    fn keeps_long_hyphenated_model_names() {
+        let name = "Model 'gemma-4-12b-coder-fable5-composer2.5-4bit' not found";
+        assert_eq!(scrub_tokens(name), name);
+        assert_eq!(
+            scrub_tokens("token abc-0123456789abcdef0123456789abcdef-x"),
+            "token ***"
+        );
     }
 
     #[test]

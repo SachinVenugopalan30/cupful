@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT p.grams FROM food_portions p JOIN foods f ON f.id = p.food_id\n                     WHERE f.source = 'staple' AND f.name = ? AND p.unit = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "grams",
+        "ordinal": 0,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "189b8ba1c8d1cbdf58863190bbb1445cc2212418f13e3453a3aab19651e58b63"
+}

@@ -317,7 +317,9 @@ Table-driven tests from `fixtures/budget_cases.json` must cover each flag, both 
    - Teaspoon of oil or butter ≈ 4.5 g, tablespoon ≈ 13.5 g; other foods 5 g and 15 g.
    - Roti ≈ 40 g; chicken breast ≈ 130 g cooked.
    - Anything else (a slice, a bagel, a taco) uses the matched food's USDA portion.
-   - Prefer explicit grams from the model when they are valid.
+   - **Grams come from, in order:** the user's saved portion; the household measures above; USDA's own portion for that unit of the matched food (`food_portions`, e.g. 1 scoop of whey ≈ 29 g, 1 cup of rolled oats = 81 g); a generic teaspoon (5 g) or tablespoon (15 g); the model's grams; the matched food's default portion. Measured portions beat the model because small local models misjudge weights badly.
+   - **Plausibility:** a measured or model weight must be within 10× of the matched food's normal portion (for one portion or for the stated count), else it's treated as a count echoed as a weight ("1 g" of salmon) and the next source is used.
+   - **Missed foods:** if the description names a known food (by alias) that no item covers, the review shows "The estimate may have missed: …" so the user can add it. Small models drop items ("a splash of milk").
 4. **Match.** Normalize the name (lowercase, strip punctuation, singularize simple plurals). Then:
    1. Look for an exact alias in `food_aliases` (the user's own aliases first).
    2. Otherwise run an FTS5 search (bm25) over names and aliases, preferring `staple` foods.

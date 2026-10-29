@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT grams FROM food_portions WHERE food_id = ? AND unit = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "grams",
+        "ordinal": 0,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "74f0655b648df7f18a160b771f154d895b1b5f373f6acd7782b3d25acef389ba"
+}

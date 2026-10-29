@@ -9,7 +9,7 @@ Dosa, plain|2708347|1|medium
 Masala dosa|2709129|1|medium
 Upma|2709128|1|cup
 Vada|2709130|1|item
-Oats, rolled, dry|2346396|0|
+Oats, rolled, dry|173904|0|cup
 Oatmeal, cooked with water|2708381|0|cup, cooked
 Bread, white|174924|0|slice
 Bread, whole wheat|172688|0|slice
@@ -263,3 +263,4 @@ Barbecue sauce|174523|0|tbsp
 Guacamole|2709307|0|tbsp
 Pepperoni pizza|2708640|1|piece, medium
 Chicken burrito|2708543|1|small/regular
+Espresso|171891|0|fl oz

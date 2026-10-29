@@ -10,7 +10,7 @@ Idli,0,128.0,6.36,25.0,0.35,38.0,1 item,2708346,Idli
 Masala dosa,1,184.0,5.46,30.8,4.27,267.0,1 medium,2709129,"Dosa, with filling"
 Upma,1,87.0,1.98,13.8,2.64,170.0,"1 cup, cooked",2709128,Upma
 Vada,1,266.0,12.8,33.2,9.73,30.0,"1 item, any size",2709130,Vada
-"Oats, rolled, dry",0,379.0,13.5,68.7,5.89,40.0,1.0 RACC,2346396,"Oats, whole grain, rolled, old fashioned"
+"Oats, rolled, dry",0,379.0,13.2,67.7,6.52,81.0,1.0 cup,173904,"Cereals, oats, regular and quick, not fortified, dry"
 "Oatmeal, cooked with water",0,64.0,2.21,11.4,1.09,240.0,"1 cup, cooked",2708381,"Oatmeal, regular or quick, made with water, no added fat"
 "Bread, white",0,266.0,8.85,49.4,3.33,29.0,1.0 slice,174924,"Bread, white, commercially prepared (includes soft bread crumbs)"
 "Bread, whole wheat",0,252.0,12.4,42.7,3.5,32.0,1.0 slice,172688,"Bread, whole-wheat, commercially prepared"
@@ -264,3 +264,4 @@ Barbecue sauce,0,172.0,0.82,40.8,0.63,17.0,1.0 tbsp,174523,"Sauce, barbecue"
 Guacamole,0,155.0,1.95,8.45,14.2,15.0,1 tablespoon,2709307,"Guacamole, NFS"
 Pepperoni pizza,1,282.0,11.7,32.0,11.9,88.0,"1 piece, medium pizza",2708640,"Pizza with pepperoni, from restaurant or fast food,  medium crust"
 Chicken burrito,1,244.0,13.7,28.3,8.06,220.0,1 small/regular,2708543,"Burrito, chicken, cheese"
+Espresso,0,9.0,0.12,1.67,0.18,29.6,1.0 fl oz,171891,"Beverages, coffee, brewed, espresso, restaurant-prepared"

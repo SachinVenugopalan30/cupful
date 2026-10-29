@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM food_portions WHERE food_id IN (SELECT id FROM foods WHERE source = 'staple')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "7eae5dab2d35876a19100943a5bd2ca176667bc665dd93f11090b059d7e39bc2"
+}

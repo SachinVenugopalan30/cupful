@@ -1,0 +1,32 @@
+{
+  "description": "Half cup of oats soaked overnight in a shot of espresso, splash of lactose free milk, 2 teaspoons of chia seeds and a scoop of chocolate protein powder",
+  "recorded": {
+    "provider": "oMLX (owner's laptop)",
+    "model": "LFM2.5-1.2B-Instruct-MLX-4bit",
+    "recorded_at": "2026-10-29",
+    "note": "Real reply, except the milk item: the model left it out; it's added here as the reply the prompt now asks for.",
+    "output": {
+      "items": [
+        {"food": "oats", "amount": 0.5, "unit": "cup", "grams": 30, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 114, "protein": 4, "carbs": 20, "fat": 2}},
+        {"food": "chocolate protein powder", "amount": 1, "unit": "scoop", "grams": 15, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 54, "protein": 9, "carbs": 4, "fat": 0.2}},
+        {"food": "chia seeds", "amount": 2, "unit": "teaspoon", "grams": 10, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 49, "protein": 2, "carbs": 4, "fat": 3}},
+        {"food": "espresso", "amount": 1, "unit": "shot", "grams": 5, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 18, "protein": 4, "carbs": 0.3, "fat": 0}},
+        {"food": "lactose free milk", "amount": 1, "unit": "splash", "grams": null, "cooking": "none", "mentions_oil": false,
+         "estimate": {"kcal": 15, "protein": 1, "carbs": 1.5, "fat": 0.6}}
+      ],
+      "assumptions": "The description refers to a health-focused breakfast or snack.",
+      "confidence": "low"
+    }
+  },
+  "expected": [
+    {"food": "Oats, rolled, dry", "match": "matched", "grams": 40.5},
+    {"food": "Whey protein powder", "match": "matched", "grams": 28.7},
+    {"food": "Chia seeds", "match": "matched", "grams": 10},
+    {"food": "Espresso", "match": "matched", "grams": 30},
+    {"food": "Milk, toned (2% fat)", "match": "matched", "grams": 30}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT alias_norm, food_id FROM food_aliases\n         WHERE (user_id IS NULL OR user_id = ?) AND instr(?, ' ' || alias_norm || ' ') > 0",
+  "describe": {
+    "columns": [
+      {
+        "name": "alias_norm",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "alias_norm"
+          }
+        }
+      },
+      {
+        "name": "food_id",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "food_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "37631255963ffac452b41fd6323f475d599a5e0489f5b0388f092f85294050de"
+}
