@@ -8,8 +8,8 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ## Status
 
-- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette.
-- **Next:** M4 (Activity, Trends, seed-demo).
+- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette. M4 (Activity, ingest tokens + Shortcut endpoint, Trends with LayerChart, seed-demo, Google Health v4 steps sync moved up from v0.2; owner connected Google live).
+- **Next:** M5 (CSV export, Fuel Ledger import, JSON backup/restore).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout
