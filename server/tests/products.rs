@@ -604,3 +604,38 @@ async fn outbound_lookups_are_rate_limited_per_user() {
     let mut b = user(&app, &state, "bob").await;
     assert_eq!(lookup(&mut b, &ean8(n)).await.0, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn any_count_of_a_product_without_its_own_unit_is_a_serving() {
+    // Label entry has no serving text, so "scoop" isn't a portion; a scoop is still one serving,
+    // but a spoon stays a spoon.
+    let (_, _, state, mut a) = setup(false).await;
+    let mut body = label("96385074", "Chocolate protein powder");
+    body["kcal"] = json!(400.0);
+    body["serving_g"] = json!(31.0);
+    body["serving_text"] = json!(null);
+    let (_, p) = a.post("/api/products", body).await;
+    let id = p["food_id"].as_i64().unwrap();
+    a.post(
+        "/api/aliases",
+        json!({"alias": "chocolate protein powder", "food_id": id}),
+    )
+    .await;
+    let uid: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'admin'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    for (unit, grams) in [("scoop", 31.0), ("tbsp", 15.0)] {
+        let reply = json!({"items": [{"food": "chocolate protein powder", "amount": 1, "unit": unit,
+            "grams": 15, "cooking": "none", "mentions_oil": false, "estimate": null}],
+            "assumptions": null, "confidence": "high"});
+        let est = cupful::nutrition::estimate(&state.db, uid, &Recorded(reply), "a scoop", vec![])
+            .await
+            .unwrap();
+        assert_eq!(
+            (est.items[0].food_id, est.items[0].grams),
+            (Some(id), grams),
+            "{unit}"
+        );
+    }
+}

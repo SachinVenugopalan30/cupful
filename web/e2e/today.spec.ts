@@ -297,7 +297,7 @@ test.describe('numbers and my products', () => {
 		await expect(page.getByTestId('meal').last()).toContainText('Edited');
 	});
 
-	test('use my product + remember: the same phrase then resolves to it (needs backend)', async ({ page }) => {
+	test('use my product + remember: the same phrase then resolves to it', async ({ page }) => {
 		const made = await page.request.post('/api/products', {
 			headers: { 'X-Cupful': '1' },
 			data: { name: 'Choc Whey', brand: 'Acme', barcode: '4006381333931', basis: 'serving', serving_g: 31, serving_text: '1 scoop', kcal: 120, protein_g: 24, carbs_g: 3, fat_g: 2 }
@@ -327,7 +327,7 @@ test.describe('numbers and my products', () => {
 		await sheet.getByRole('button', { name: 'Cancel' }).click();
 	});
 
-	test('a second product takes over the phrase; the earlier meal is unchanged (needs backend)', async ({ page }) => {
+	test('a second product takes over the phrase; the earlier meal is unchanged', async ({ page }) => {
 		const before = await meals(page);
 		const sheet = page.getByRole('dialog');
 		await page.getByRole('button', { name: 'Scan barcode' }).click();
@@ -350,7 +350,7 @@ test.describe('numbers and my products', () => {
 
 		const next = await estimate(page);
 		await expect(next.locator('.item').first().getByText('Database')).toBeVisible();
-		await expect(next.locator('.totals')).toContainText('56 kcal'); // B's 150 kcal / 40 g at the model's 15 g; no serving text, so no scoop weight
+		await expect(next.locator('.totals')).toContainText('150 kcal'); // a scoop of B is one 40 g serving
 		await next.getByRole('button', { name: 'Cancel' }).click();
 		expect(await meals(page)).toEqual(before);
 	});

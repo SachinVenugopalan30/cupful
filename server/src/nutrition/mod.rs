@@ -482,7 +482,19 @@ pub async fn estimate(
             None => foods::find(db, user_id, &without_sizes(&food_norm)).await?,
         };
         let (default_portion, usda_unit) = match &matched {
-            Match::Matched(f) => (f.default_portion_g, food_portion(db, f.id, unit).await?),
+            Match::Matched(f) => {
+                let own = food_portion(db, f.id, unit).await?;
+                // A product's label gives one serving: any other count of it ("a scoop") is one.
+                let product = matches!(f.source.as_str(), "off" | "user")
+                    && !is_weight(&unit_norm)
+                    && spoon_grams(&unit_norm).is_none();
+                let serving = if product && own.is_none() {
+                    food_portion(db, f.id, "serving").await?
+                } else {
+                    None
+                };
+                (f.default_portion_g, own.or(serving))
+            }
             _ => (None, None),
         };
         // Within 10x of the food's normal portion, for one portion or for `amount` of them (models
