@@ -247,6 +247,18 @@ export type ProviderIn = Omit<Provider, 'id' | 'has_key' | 'has_extra_headers'> 
 };
 export type ProviderTest = { ok: boolean; code?: string; message: string };
 
+/** One entry of GET /api/trends; null means unknown (no meals, no profile yet, no weigh-in). */
+export type TrendDay = {
+	date: string;
+	eaten_kcal: number | null;
+	budget_kcal: number | null;
+	weight_kg: number | null;
+	steps: number | null;
+	gym_minutes: number | null;
+};
+
+export type IngestToken = { id: number; label: string; created_at: string; last_used_at: string | null };
+
 // ---- endpoints ----
 
 const enc = encodeURIComponent;
@@ -270,7 +282,18 @@ export const getBudget = (date: string) => api.get<Budget>(`/api/budget/${enc(da
 export const getDay = (date: string) => api.get<Day>(`/api/days/${enc(date)}`);
 export const getDays = (from: string, to: string) =>
 	api.get<{ days: Day[] }>(`/api/days?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
-export const getMeals = (date: string) =>
+export const getTrends = (from: string, to: string) =>
+	api.get<{ days: TrendDay[] }>(`/api/trends?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
+
+export const ingestTokens = {
+	list: () => api.get<{ tokens: IngestToken[] }>('/api/ingest-tokens').then((r) => r.tokens),
+	/** The plain token is in the reply once; the server keeps only a hash. */
+	create: (label: string) =>
+		api.post<IngestToken & { token: string }>('/api/ingest-tokens', { label }),
+	remove: (id: number) => api.delete<object>(`/api/ingest-tokens/${id}`)
+};
+
+export const getMeals =(date: string) =>
 	api.get<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`).then((r) => r.meals);
 
 /** POST /api/estimate. `photo` should already be re-encoded through a canvas (strips EXIF). */

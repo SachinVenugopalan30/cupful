@@ -42,12 +42,12 @@ server/                 Rust crate `cupful`
   tests/                integration tests (oneshot against the Router, in-memory SQLite)
   tests/isolation.rs    user A vs user B for every `Access::User` route
   tests/products.rs     barcode lookups against wiremock
-web/                    SvelteKit app (adapter-static, SPA fallback)
+web/                    SvelteKit app (adapter-static, SPA fallback); routes: / (Today), /activity (phone tab), /trends, /settings, /login, /setup
   src/lib/api.ts        API client, types for every endpoint, ApiError, errorMessage(e, context)
   src/lib/sync/         uuidv7, op builders, sendOps (the only logged-data write path), scaleItems
   src/lib/{format,date,theme}.ts, session.svelte.ts   formatting, dates, theme preference, session/day state
   src/lib/styles/       tokens.css (design tokens, light-dark()), global.css (shared classes)
-  src/lib/{today,products,settings}/   screen components (products/PhraseLinks.svelte: phrases that resolve to a product) (props documented in each file's header)
+  src/lib/{today,products,settings,activity,trends}/   screen components (activity/: ActivitySection + form helpers; trends/: Charts.svelte (LayerChart, lazy-loaded), ChartCard, logic.ts; settings/TokensSection: ingest tokens) (products/PhraseLinks.svelte: phrases that resolve to a product) (props documented in each file's header)
   e2e/, playwright.config.ts   Playwright against the real server
 docs/design.md          design direction, tokens, component rules
 fixtures/budget_cases.json   shared budget test vectors

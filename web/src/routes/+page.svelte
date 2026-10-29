@@ -3,6 +3,7 @@
 	import DayNav from '#lib/DayNav.svelte';
 	import BudgetCard from '#lib/today/BudgetCard.svelte';
 	import Composer from '#lib/today/Composer.svelte';
+	import ActivitySection from '#lib/activity/ActivitySection.svelte';
 	import MealList from '#lib/today/MealList.svelte';
 	import BarcodeEntry from '#lib/products/BarcodeEntry.svelte';
 	import { day } from '#lib/session.svelte.ts';
@@ -22,6 +23,8 @@
 		<BarcodeEntry date={day.date} onSaved={changed} />
 	</div>
 	<div class="meals"><MealList date={day.date} {refreshKey} onChanged={changed} /></div>
+	<!-- Phones have the Activity tab instead. -->
+	<div class="activity"><ActivitySection date={day.date} {refreshKey} onChanged={changed} /></div>
 </div>
 
 <style>
@@ -46,13 +49,20 @@
 	.meals {
 		grid-area: meals;
 	}
+	.activity {
+		grid-area: activity;
+		display: none;
+	}
 	/* Wide: the budget stays in view beside logging and the meal list. */
 	@media (min-width: 60rem) {
 		.today {
-			grid-template-areas: 'nav nav' 'budget log' 'budget meals';
+			grid-template-areas: 'nav nav' 'budget log' 'budget meals' 'budget activity';
 			grid-template-columns: 22rem minmax(0, 1fr);
-			grid-template-rows: auto auto 1fr;
+			grid-template-rows: auto auto auto 1fr;
 			column-gap: var(--space-6);
+		}
+		.activity {
+			display: block;
 		}
 		.budget {
 			align-self: start;

@@ -35,6 +35,18 @@ Cupful is opened many times a day, on a phone, for a few seconds at a time: chec
 - **Meaning is separate from decoration**: `--over`/`--error` crimson (deeper and pinker than coral), `--under` emerald (bluer than sage), `--warning` amber-orange (redder than gold). Meaning is always also in words.
 - Rule: blue stays primary; aim for 2-3 accents per screen; accent colors are for categories, never for state.
 
+## Charts
+
+LayerChart (SVG layer, pinned `2.8.0`) draws Trends; `ChartCard` maps its CSS variables onto the tokens, so both themes follow `light-dark()` with no chart-specific theme code.
+
+- **Colors**: intake bars `--chart-intake` (blue), bars over budget `--chart-over` (crimson), the per-day budget tick `--chart-budget` (navy / near-white) with a halo in the card color so it reads over any bar; weight points `--chart-weight` (violet) and the 7-day average line `--chart-average` (sage); steps `--chart-steps` (emerald). Grid `--chart-grid`, axis text `--chart-axis`.
+- **Never color alone**: a legend names each mark with a shape and a word; over-budget days also say "over" in the readout.
+- **Tap values**: LayerChart's floating tooltip is off (it moves under the finger). The day touched, hovered or clicked is written as a sentence in a fixed two-line readout above the chart ("Fri 16 Oct: 1797 kcal eaten of 2154 kcal, 357 left."), which stays after the finger lifts, so tapping never shifts the layout.
+- **Screen readers**: the plot is `role="img"` with an `aria-label` summary (range, counts, averages). Keyboard users get the summary only; there's no keyboard day-stepping yet.
+- **Empty**: each chart has its own `.empty` sentence that says what to log to fill it; the average card says the same. Gaps (no meals, no weigh-in) are gaps, never zeros.
+- **Range** (7d / 30d / 90d / 365d) is a `.segmented` control remembered per device; bars thin to hairlines past 120 days.
+- The Charts chunk is loaded when Trends opens, so Today doesn't carry the library.
+
 ## Tokens (`web/src/lib/styles/tokens.css`)
 
 | Group | Tokens |

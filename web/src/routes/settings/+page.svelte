@@ -2,6 +2,7 @@
 <script lang="ts">
 	import ProfileSection from '#lib/settings/ProfileSection.svelte';
 	import ProvidersSection from '#lib/settings/ProvidersSection.svelte';
+	import TokensSection from '#lib/settings/TokensSection.svelte';
 	import AboutSection from '#lib/settings/AboutSection.svelte';
 	import { auth, errorMessage } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -42,6 +43,7 @@
 		<p class="hint">Remembered on this device. System follows your phone or computer.</p>
 	</section>
 
+	<TokensSection />
 	<ProvidersSection isAdmin={session.user?.is_admin ?? false} />
 	<AboutSection />
 

@@ -29,6 +29,7 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
+		"layerchart": "2.8.0",
 		"zxing-wasm": "^3.1.6"
 	}
 }

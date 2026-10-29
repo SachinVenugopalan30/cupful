@@ -52,6 +52,15 @@
 				>
 				<span>Today</span>
 			</a>
+			<!-- On wide screens Today shows the Activity section itself. -->
+			<a href="/activity" class="activity-tab" aria-current={path === '/activity' ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4" /></svg>
+				<span>Activity</span>
+			</a>
+			<a href="/trends" aria-current={path === '/trends' ? 'page' : undefined}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+				<span>Trends</span>
+			</a>
 			<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"
 					><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle
@@ -166,6 +175,11 @@
 		}
 		.page {
 			padding-top: var(--space-5);
+		}
+	}
+	@media (min-width: 60rem) {
+		.tabs .activity-tab {
+			display: none;
 		}
 	}
 </style>
