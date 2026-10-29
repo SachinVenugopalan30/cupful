@@ -8,8 +8,8 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ## Status
 
-- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX).
-- **In progress:** M3 — Today screen built, polished and merged (budget card, composer + review, meal list, barcode scanning, settings). Waiting on the owner's phone check over the tailnet (PLAN.md §14 M3 done-criterion).
+- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette.
+- **Next:** M4 (Activity, Trends, seed-demo).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout
@@ -45,7 +45,7 @@ web/                    SvelteKit app (adapter-static, SPA fallback)
   src/lib/sync/         uuidv7, op builders, sendOps (the only logged-data write path), scaleItems
   src/lib/{format,date,theme}.ts, session.svelte.ts   formatting, dates, theme preference, session/day state
   src/lib/styles/       tokens.css (design tokens, light-dark()), global.css (shared classes)
-  src/lib/{today,products,settings}/   screen components (props documented in each file's header)
+  src/lib/{today,products,settings}/   screen components (products/PhraseLinks.svelte: phrases that resolve to a product) (props documented in each file's header)
   e2e/, playwright.config.ts   Playwright against the real server
 docs/design.md          design direction, tokens, component rules
 fixtures/budget_cases.json   shared budget test vectors
