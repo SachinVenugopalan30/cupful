@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO google_connections\n                   (user_id, refresh_token, access_token, access_expires_at, connected_at)\n                 VALUES (?, ?, ?, ?, ?)\n                 ON CONFLICT (user_id) DO UPDATE SET refresh_token = excluded.refresh_token,\n                   access_token = excluded.access_token, access_expires_at = excluded.access_expires_at,\n                   connected_at = excluded.connected_at, needs_reconnect = 0, last_error = NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "3a1142ebe5eb28e338fd1bdba9c9cd45c1a26d233594b7337e7548384b6ed030"
+}

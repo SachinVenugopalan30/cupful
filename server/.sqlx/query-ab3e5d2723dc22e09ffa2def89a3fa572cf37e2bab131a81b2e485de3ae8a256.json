@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT refresh_token, access_token, access_expires_at, needs_reconnect\n         FROM google_connections WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "refresh_token",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "refresh_token"
+          }
+        }
+      },
+      {
+        "name": "access_token",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "access_token"
+          }
+        }
+      },
+      {
+        "name": "access_expires_at",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "access_expires_at"
+          }
+        }
+      },
+      {
+        "name": "needs_reconnect",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "needs_reconnect"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ab3e5d2723dc22e09ffa2def89a3fa572cf37e2bab131a81b2e485de3ae8a256"
+}

@@ -20,6 +20,17 @@ pub struct Config {
     pub off_timeout: Duration,
     /// Hosted AI calls per user per local day (`CUPFUL_AI_DAILY_CAP`).
     pub ai_daily_cap: i64,
+    /// Google Health (PLAN.md §15): the feature exists only when both are set.
+    pub google_client_id: Option<String>,
+    pub google_client_secret: Option<crate::crypto::Secret>,
+    /// `https://<name>.<tailnet>.ts.net`; the OAuth redirect URI is this plus `/api/google/callback`.
+    /// Unset: derived from the request's Host header.
+    pub public_url: Option<String>,
+    /// Google endpoints; not env-configurable, tests point them at wiremock.
+    pub google_auth_url: String,
+    pub google_token_url: String,
+    pub google_revoke_url: String,
+    pub google_health_url: String,
     /// Provider HTTP timeouts and retry backoff; not env-configurable, tests shorten them.
     pub ai_timeouts: crate::ai::Timeouts,
 }
@@ -37,6 +48,13 @@ impl Default for Config {
             off_timeout: Duration::from_secs(10),
             ai_daily_cap: 200,
             ai_timeouts: Default::default(),
+            google_client_id: None,
+            google_client_secret: None,
+            public_url: None,
+            google_auth_url: "https://accounts.google.com/o/oauth2/v2/auth".into(),
+            google_token_url: "https://oauth2.googleapis.com/token".into(),
+            google_revoke_url: "https://oauth2.googleapis.com/revoke".into(),
+            google_health_url: "https://health.googleapis.com/v4".into(),
         }
     }
 }
@@ -71,6 +89,9 @@ impl Config {
                 .parse()
                 .map_err(|e| format!("CUPFUL_AI_DAILY_CAP={v}: {e}"))?;
         }
+        c.google_client_id = var("CUPFUL_GOOGLE_CLIENT_ID");
+        c.google_client_secret = var("CUPFUL_GOOGLE_CLIENT_SECRET").map(crate::crypto::Secret::new);
+        c.public_url = var("CUPFUL_PUBLIC_URL").map(|u| u.trim_end_matches('/').to_string());
         Ok(c)
     }
 }

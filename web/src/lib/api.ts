@@ -308,6 +308,25 @@ export const providers = {
 	test: (id: number) => api.post<ProviderTest>(`/api/ai/providers/${id}/test`)
 };
 
+export type GoogleStatus =
+	| { configured: false }
+	| { configured: true; connected: false }
+	| {
+			configured: true;
+			connected: true;
+			needs_reconnect: boolean;
+			last_sync_at: string | null;
+			last_error: string | null;
+	  };
+
+export const google = {
+	status: () => api.get<GoogleStatus>('/api/google'),
+	/** Starts the Google sign-in; this is a page navigation (the server redirects to Google). */
+	connectUrl: '/api/google/connect',
+	sync: () => api.post<{ days: number; changed: number }>('/api/google/sync'),
+	disconnect: () => api.delete<object>('/api/google')
+};
+
 // ---- error messages (PLAN.md §9) ----
 
 const MESSAGES: Record<string, string> = {

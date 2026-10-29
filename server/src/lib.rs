@@ -9,6 +9,7 @@ pub mod crypto;
 pub mod db;
 pub mod demo;
 pub mod error;
+pub mod google;
 pub mod ingest;
 pub mod nutrition;
 pub mod products;
@@ -38,6 +39,8 @@ pub struct AppState {
     /// Encrypts provider secrets. `new` uses a throwaway key; `main` sets the real one.
     pub secrets: Arc<crypto::Cipher>,
     pub ai_http: reqwest::Client,
+    /// Google OAuth and Health calls (only used when Google Health is configured).
+    pub google_http: reqwest::Client,
 }
 
 impl AppState {
@@ -54,6 +57,11 @@ impl AppState {
             ingest_limiter: Arc::new(auth::RateLimiter::new(60, Duration::from_secs(3600))),
             secrets: Arc::new(crypto::Cipher::random()),
             ai_http,
+            google_http: reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(20))
+                .build()
+                .expect("build HTTP client"),
         }
     }
 }
@@ -100,6 +108,11 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
             User,
             delete(ingest::revoke),
         ),
+        ("GET", "/api/google", User, get(google::status)),
+        ("DELETE", "/api/google", User, delete(google::disconnect)),
+        ("GET", "/api/google/connect", User, get(google::connect)),
+        ("GET", "/api/google/callback", User, get(google::callback)),
+        ("POST", "/api/google/sync", User, post(google::sync_now)),
         (
             "POST",
             ingest::ACTIVITY_PATH,

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM google_connections WHERE user_id = ? RETURNING refresh_token",
+  "describe": {
+    "columns": [
+      {
+        "name": "refresh_token",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "google_connections",
+            "name": "refresh_token"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d4208019355c59ec5f848938a9d706477eb921dcdc4a7f45c0329092f7c2e478"
+}

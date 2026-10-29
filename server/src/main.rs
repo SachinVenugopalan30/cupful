@@ -144,6 +144,7 @@ async fn serve() -> Result<(), String> {
     state.secrets = std::sync::Arc::new(secrets);
     cupful::ai::settings::seed_from_env(&state, |k| std::env::var(k).ok()).await?;
     cupful::cleanup::spawn(db);
+    cupful::google::spawn(state.clone());
     let listener = tokio::net::TcpListener::bind(config.bind)
         .await
         .map_err(|e| format!("bind {}: {e}", config.bind))?;
