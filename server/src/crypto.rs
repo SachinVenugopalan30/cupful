@@ -7,6 +7,7 @@ use std::path::Path;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
 use chacha20poly1305::aead::common::Generate;
 use chacha20poly1305::aead::{Aead, KeyInit};
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
@@ -14,6 +15,11 @@ use sqlx::SqlitePool;
 
 const CHECK: &str = "cupful key check";
 const KEY_FILE: &str = "secret.key";
+
+/// 32 random bytes, base64url without padding: tokens, OAuth state, passwords.
+pub fn random_token() -> String {
+    B64URL.encode(Key::generate().as_slice())
+}
 
 /// A secret in memory. `Debug` and `Display` print `***`.
 #[derive(Clone, PartialEq)]

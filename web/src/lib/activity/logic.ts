@@ -36,10 +36,4 @@ export function toggle(list: string[], part: string): string[] {
 	return BODY_PARTS.filter((p) => next.includes(p));
 }
 
-const SOURCES: Record<ActivitySource, string> = {
-	manual: 'Manual',
-	shortcut: 'Shortcut',
-	import: 'Import',
-	google: 'Google'
-};
-export const sourceLabel = (s: ActivitySource) => SOURCES[s];
+export const sourceLabel = (s: ActivitySource) => s[0].toUpperCase() + s.slice(1);

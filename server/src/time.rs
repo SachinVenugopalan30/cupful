@@ -8,6 +8,12 @@ pub fn now_ms() -> i64 {
     jiff::Timestamp::now().as_millisecond()
 }
 
+pub fn rfc3339(ms: i64) -> Result<String> {
+    jiff::Timestamp::from_millisecond(ms)
+        .map(|t| t.to_string())
+        .map_err(|e| Error::Internal(e.to_string()))
+}
+
 pub fn parse_date(s: &str) -> Result<Date> {
     s.parse()
         .map_err(|_| Error::bad_request(format!("invalid date {s:?}; use YYYY-MM-DD")))

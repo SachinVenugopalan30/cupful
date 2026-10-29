@@ -44,6 +44,17 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Counts a hit on the ingest limiter (60/hour per key); 429 with `msg` once over.
+    pub fn rate_limit(&self, key: &str, msg: &str) -> error::Result<()> {
+        if self.ingest_limiter.allow(key, std::time::Instant::now()) {
+            return Ok(());
+        }
+        Err(error::Error::Status(
+            axum::http::StatusCode::TOO_MANY_REQUESTS,
+            msg.into(),
+        ))
+    }
+
     pub fn new(db: SqlitePool, config: Config) -> Self {
         let ai_http = reqwest::Client::builder()
             .connect_timeout(config.ai_timeouts.connect)

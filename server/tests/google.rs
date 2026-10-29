@@ -233,6 +233,44 @@ async fn callback_exchanges_code_with_verifier_and_stores_encrypted_tokens() {
 }
 
 #[tokio::test]
+async fn callback_uses_the_redirect_uri_from_connect_not_the_callback_host() {
+    let g = MockServer::start().await;
+    let (app, _) = app_with(Config {
+        product_lookup: false,
+        google_client_id: Some("cid".into()),
+        google_client_secret: Some(Secret::new("shh-secret".into())),
+        google_auth_url: format!("{}/auth", g.uri()),
+        google_token_url: format!("{}/token", g.uri()),
+        ..Config::default()
+    })
+    .await;
+    let mut a = admin(&app).await;
+    token_ok(&g).await;
+    let get = |uri: String, host: &'static str, ck: Option<String>| {
+        let mut b = Request::get(uri).header("host", host);
+        if let Some(ck) = ck {
+            b = b.header("cookie", ck);
+        }
+        b.body(Body::empty()).unwrap()
+    };
+    let (_, h, _) = send(
+        &app,
+        get("/api/google/connect".into(), "a.test", a.cookie.clone()),
+    )
+    .await;
+    let p = params(h.get("location").unwrap().to_str().unwrap());
+    assert!(p["redirect_uri"].contains("a.test"));
+    if let Some(sc) = h.get("set-cookie") {
+        a.cookie = Some(sc.to_str().unwrap().split(';').next().unwrap().to_string());
+    }
+    let uri = format!("/api/google/callback?code=c&state={}", p["state"]);
+    send(&app, get(uri, "b.test", a.cookie.clone())).await;
+    let body = String::from_utf8(g.received_requests().await.unwrap()[0].body.clone()).unwrap();
+    let sent = &params(&format!("http://x/?{body}"))["redirect_uri"];
+    assert_eq!(sent, &p["redirect_uri"]);
+}
+
+#[tokio::test]
 async fn sync_maps_rollups_to_dates_and_writes_source_google() {
     let (g, _, state, mut a) = setup().await;
     link(&state, user_id(&state, "admin").await, 3600).await;

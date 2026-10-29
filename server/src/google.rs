@@ -3,7 +3,7 @@
 //! rest. Never logs tokens, codes or response bodies. Every route answers 404 unless
 //! `CUPFUL_GOOGLE_CLIENT_ID` and `CUPFUL_GOOGLE_CLIENT_SECRET` are set.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use axum::Json;
 use axum::extract::State;
@@ -11,8 +11,6 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::Redirect;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
-use chacha20poly1305::Key;
-use chacha20poly1305::aead::common::Generate;
 use jiff::ToSpan;
 use jiff::civil::Date;
 use serde::{Deserialize, Serialize};
@@ -22,16 +20,14 @@ use tower_sessions::Session;
 
 use crate::AppState;
 use crate::auth::User;
+use crate::crypto::random_token;
 use crate::error::{Error, Query, Result};
-use crate::ingest::rfc3339;
-use crate::sync::{DayPatch, Source, patch_day};
-use crate::time::{now_ms, user_today};
+use crate::sync::{DayPatch, Source, WINDOW_DAYS, patch_day};
+use crate::time::{now_ms, rfc3339, user_today};
 
 pub const SCOPE: &str =
     "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly";
 const SESSION_KEY: &str = "google_oauth";
-/// Days synced each time, today included; a phone that syncs late still lands in range.
-const WINDOW_DAYS: i8 = 14;
 
 fn creds(s: &AppState) -> Result<(&str, &str)> {
     match (&s.config.google_client_id, &s.config.google_client_secret) {
@@ -74,10 +70,6 @@ async fn read_json<T: serde::de::DeserializeOwned>(res: reqwest::Response) -> Op
     serde_json::from_slice(&res.bytes().await.ok()?).ok()
 }
 
-fn random() -> String {
-    B64URL.encode(Key::generate().as_slice())
-}
-
 // ---- status ----
 
 pub async fn status(State(s): State<AppState>, user: User) -> Result<Json<Value>> {
@@ -108,6 +100,8 @@ pub async fn status(State(s): State<AppState>, user: User) -> Result<Json<Value>
 struct Pending {
     state: String,
     verifier: String,
+    /// Fixed at connect: Google requires the same value in the token exchange.
+    redirect_uri: String,
 }
 
 pub async fn connect(
@@ -118,8 +112,9 @@ pub async fn connect(
 ) -> Result<Redirect> {
     let (client_id, _) = creds(&s)?;
     let pending = Pending {
-        state: random(),
-        verifier: random(),
+        state: random_token(),
+        verifier: random_token(),
+        redirect_uri: redirect_uri(&s, &headers)?,
     };
     let challenge = B64URL.encode(Sha256::digest(pending.verifier.as_bytes()));
     let url = format!(
@@ -127,7 +122,7 @@ pub async fn connect(
         s.config.google_auth_url,
         form(&[
             ("client_id", client_id),
-            ("redirect_uri", &redirect_uri(&s, &headers)?),
+            ("redirect_uri", &pending.redirect_uri),
             ("response_type", "code"),
             ("scope", SCOPE),
             ("state", &pending.state),
@@ -236,7 +231,6 @@ pub async fn callback(
     State(s): State<AppState>,
     user: User,
     session: Session,
-    headers: HeaderMap,
     Query(q): Query<CallbackQuery>,
 ) -> Result<Redirect> {
     creds(&s)?;
@@ -252,14 +246,13 @@ pub async fn callback(
     let Some(code) = q.code else {
         return Err(Error::bad_request("missing code"));
     };
-    let uri = redirect_uri(&s, &headers)?;
     let tokens = token_request(
         &s,
         &[
             ("grant_type", "authorization_code"),
             ("code", &code),
             ("code_verifier", &pending.verifier),
-            ("redirect_uri", &uri),
+            ("redirect_uri", &pending.redirect_uri),
         ],
     )
     .await;
@@ -269,7 +262,7 @@ pub async fn callback(
             Ok(Redirect::to("/settings?google=connected"))
         }
         Ok(_) => Ok(Redirect::to("/settings?google=error")),
-        Err(TokenError::InvalidGrant) | Err(TokenError::Other(_)) => {
+        Err(_) => {
             tracing::warn!("google code exchange failed");
             Ok(Redirect::to("/settings?google=error"))
         }
@@ -374,7 +367,7 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
     let today = user_today(&s.db, user_id).await?;
     let body = json!({
         "range": {
-            "start": civil(today.saturating_sub(i64::from(WINDOW_DAYS - 1).days())),
+            "start": civil(today.saturating_sub((WINDOW_DAYS - 1).days())),
             "end": civil(today.saturating_add(1.day())),
         },
         "windowSizeDays": 1,
@@ -392,9 +385,8 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
         .body(body.to_string())
         .send()
         .await;
-    let res = match res {
-        Ok(r) => r,
-        Err(_) => return Err(fail(s, user_id, "could not reach Google Health", false).await?),
+    let Ok(res) = res else {
+        return Err(fail(s, user_id, "could not reach Google Health", false).await?);
     };
     let status = res.status();
     if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
@@ -415,9 +407,8 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
         )
         .await?);
     }
-    let rollups: Rollups = match read_json(res).await {
-        Some(r) => r,
-        None => return Err(fail(s, user_id, "unreadable reply from Google Health", false).await?),
+    let Some(rollups) = read_json::<Rollups>(res).await else {
+        return Err(fail(s, user_id, "unreadable reply from Google Health", false).await?);
     };
     let (mut seen, mut changed) = (0, 0);
     let now = now_ms();
@@ -451,15 +442,10 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
 pub async fn sync_now(State(s): State<AppState>, user: User) -> Result<Json<Value>> {
     creds(&s)?;
     // ponytail: shares the ingest limiter's 60/hour; a dedicated limit if this ever matters
-    if !s
-        .ingest_limiter
-        .allow(&format!("google:{}", user.id), Instant::now())
-    {
-        return Err(Error::Status(
-            StatusCode::TOO_MANY_REQUESTS,
-            "too many syncs; try again later".into(),
-        ));
-    }
+    s.rate_limit(
+        &format!("google:{}", user.id),
+        "too many syncs; try again later",
+    )?;
     let (days, changed) = sync_user(&s, user.id).await?;
     Ok(Json(json!({ "days": days, "changed": changed })))
 }

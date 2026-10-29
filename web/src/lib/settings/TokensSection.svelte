@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import { errorMessage, ingestTokens, type IngestToken } from '#lib/api.ts';
-	import { curlExample } from './tokens.ts';
+	import { today } from '#lib/session.svelte.ts';
 
 	let list = $state<IngestToken[] | null>(null);
 	let listError = $state('');
@@ -125,7 +125,10 @@
 			</div>
 			<details>
 				<summary>Test it with curl</summary>
-				<pre class="curl">{curlExample(location.origin, fresh.token)}</pre>
+				<pre class="curl">curl -X POST {location.origin}/api/ingest/activity \
+  -H 'Authorization: Bearer {fresh.token}' \
+  -H 'Content-Type: application/json' \
+  -d '{`{"date":"${today()}","steps":5000}`}'</pre>
 			</details>
 		</div>
 	{/if}

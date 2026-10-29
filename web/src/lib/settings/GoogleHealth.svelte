@@ -5,15 +5,13 @@
 -->
 <script lang="ts">
 	import { errorMessage, google, type GoogleStatus } from '#lib/api.ts';
-	import { googleResult, googleView } from './google.ts';
+	import { googleResult } from './google.ts';
 
 	let status = $state<GoogleStatus | null>(null);
 	let loadError = $state('');
 	let message = $state('');
 	let messageOk = $state(true);
 	let busy = $state(false);
-
-	const view = $derived(googleView(status));
 
 	async function load() {
 		try {
@@ -32,13 +30,13 @@
 		load();
 	});
 
-	async function syncNow() {
+	/** Runs `fn`, shows the message it returns (or the error), then reloads the status. */
+	async function run(fn: () => Promise<string>) {
 		busy = true;
 		message = '';
 		try {
-			const r = await google.sync();
+			message = await fn();
 			messageOk = true;
-			message = `Synced ${r.days} ${r.days === 1 ? 'day' : 'days'} of steps.`;
 		} catch (e) {
 			messageOk = false;
 			message = errorMessage(e);
@@ -48,21 +46,18 @@
 		}
 	}
 
-	async function disconnect() {
+	const syncNow = () =>
+		run(async () => {
+			const r = await google.sync();
+			return `Synced ${r.days} ${r.days === 1 ? 'day' : 'days'} of steps.`;
+		});
+
+	function disconnect() {
 		if (!confirm('Disconnect Google Health? Steps already synced stay; Cupful forgets the connection and asks Google to revoke it.')) return;
-		busy = true;
-		message = '';
-		try {
+		run(async () => {
 			await google.disconnect();
-			messageOk = true;
-			message = 'Google Health disconnected.';
-		} catch (e) {
-			messageOk = false;
-			message = errorMessage(e);
-		} finally {
-			busy = false;
-			await load();
-		}
+			return 'Google Health disconnected.';
+		});
 	}
 </script>
 
@@ -71,7 +66,7 @@
 		<h2 id="google-h">Google Health</h2>
 		<p class="notice notice-error" role="alert">{loadError}</p>
 	</section>
-{:else if view !== 'hidden'}
+{:else if status?.configured}
 	<section class="card stack" aria-labelledby="google-h">
 		<h2 id="google-h">Google Health</h2>
 		<p class="small muted">
@@ -82,10 +77,10 @@
 			<p class="notice {messageOk ? 'notice-info' : 'notice-error'}" role="status">{message}</p>
 		{/if}
 
-		{#if view === 'connect'}
+		{#if !status.connected}
 			<p><a class="btn btn-primary" href={google.connectUrl}>Connect Google Health</a></p>
-		{:else if status?.configured && status.connected}
-			{#if view === 'reconnect'}
+		{:else}
+			{#if status.needs_reconnect}
 				<p class="notice notice-warning" role="alert">
 					Google Health needs to be connected again. {status.last_error ?? ''}
 				</p>
@@ -96,16 +91,15 @@
 					{status.last_sync_at ? new Date(status.last_sync_at).toLocaleString() : 'not yet'}
 				</p>
 				{#if status.last_error}<p class="notice notice-error" role="alert">{status.last_error}</p>{/if}
-				<div class="row">
+			{/if}
+			<div class="row">
+				{#if !status.needs_reconnect}
 					<button class="btn" onclick={syncNow} disabled={busy}>
 						{busy ? 'Syncing…' : 'Sync now'}
 					</button>
-					<button class="btn btn-quiet" onclick={disconnect} disabled={busy}>Disconnect</button>
-				</div>
-			{/if}
-			{#if view === 'reconnect'}
-				<p><button class="btn btn-quiet" onclick={disconnect} disabled={busy}>Disconnect</button></p>
-			{/if}
+				{/if}
+				<button class="btn btn-quiet" onclick={disconnect} disabled={busy}>Disconnect</button>
+			</div>
 		{/if}
 	</section>
 {/if}

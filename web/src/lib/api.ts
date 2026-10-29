@@ -293,7 +293,7 @@ export const ingestTokens = {
 	remove: (id: number) => api.delete<object>(`/api/ingest-tokens/${id}`)
 };
 
-export const getMeals =(date: string) =>
+export const getMeals = (date: string) =>
 	api.get<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`).then((r) => r.meals);
 
 /** POST /api/estimate. `photo` should already be re-encoded through a canvas (strips EXIF). */

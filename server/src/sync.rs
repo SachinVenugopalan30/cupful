@@ -466,6 +466,9 @@ impl DayPatch {
     }
 }
 
+/// Days of Shortcut and Google activity accepted or synced, counting back from today.
+pub const WINDOW_DAYS: i64 = 14;
+
 /// Applies each present field that wins: newer than that field's last write, and never an
 /// automated source over a manual value. Returns whether any field changed. Callers validate first.
 pub async fn patch_day(

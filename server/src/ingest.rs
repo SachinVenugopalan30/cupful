@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Ingest tokens and the Shortcuts activity endpoint (PLAN.md §11).
 
-use std::time::Instant;
-
 use axum::Json;
 use axum::extract::{FromRequestParts, Path, State};
 use axum::http::StatusCode;
 use axum::http::request::Parts;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
-use chacha20poly1305::Key;
-use chacha20poly1305::aead::common::Generate;
 use jiff::ToSpan;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -18,9 +14,10 @@ use sha2::{Digest, Sha256};
 
 use crate::AppState;
 use crate::auth::User;
+use crate::crypto::random_token;
 use crate::error::{Error, JsonBody, Result};
-use crate::sync::{DayPatch, Source, patch_day};
-use crate::time::{now_ms, parse_date, user_today};
+use crate::sync::{DayPatch, Source, WINDOW_DAYS, patch_day};
+use crate::time::{now_ms, parse_date, rfc3339, user_today};
 
 pub const ACTIVITY_PATH: &str = "/api/ingest/activity";
 const PREFIX: &str = "cupful_";
@@ -28,12 +25,6 @@ const MAX_LABEL_CHARS: usize = 100;
 
 fn hash(token: &str) -> String {
     B64URL.encode(Sha256::digest(token.as_bytes()))
-}
-
-pub(crate) fn rfc3339(ms: i64) -> Result<String> {
-    jiff::Timestamp::from_millisecond(ms)
-        .map(|t| t.to_string())
-        .map_err(|e| Error::Internal(e.to_string()))
 }
 
 // ---- token management (session auth) ----
@@ -75,7 +66,7 @@ pub async fn create(
             "label must be 1-{MAX_LABEL_CHARS} characters"
         )));
     }
-    let token = format!("{PREFIX}{}", B64URL.encode(Key::generate().as_slice()));
+    let token = format!("{PREFIX}{}", random_token());
     let (hash, now) = (hash(&token), now_ms());
     let id = sqlx::query_scalar!(
         "INSERT INTO ingest_tokens (user_id, label, token_hash, created_at)
@@ -135,15 +126,10 @@ impl FromRequestParts<AppState> for TokenUser {
         .fetch_optional(&state.db)
         .await?
         .ok_or_else(bad)?;
-        if !state
-            .ingest_limiter
-            .allow(&format!("token:{}", row.id), Instant::now())
-        {
-            return Err(Error::Status(
-                StatusCode::TOO_MANY_REQUESTS,
-                "at most 60 requests per hour per token".into(),
-            ));
-        }
+        state.rate_limit(
+            &format!("token:{}", row.id),
+            "at most 60 requests per hour per token",
+        )?;
         let now = now_ms();
         sqlx::query!(
             "UPDATE ingest_tokens SET last_used_at = ? WHERE id = ?",
@@ -181,7 +167,7 @@ pub async fn activity(
     }
     patch.validate().map_err(Error::bad_request)?;
     let today = user_today(&s.db, user_id).await?;
-    if !(today.saturating_sub(14.days())..=today.saturating_add(1.day())).contains(&date) {
+    if !(today.saturating_sub(WINDOW_DAYS.days())..=today.saturating_add(1.day())).contains(&date) {
         return Err(Error::bad_request(
             "date must be within the last 14 days, or tomorrow",
         ));

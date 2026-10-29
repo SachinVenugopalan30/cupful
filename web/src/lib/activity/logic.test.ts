@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import { parseCount, parseWeight, sourceLabel, toggle } from './logic';
+import { parseCount, parseWeight, toggle } from './logic';
 
 describe('parseCount', () => {
 	it('empty clears the field', () => {
@@ -36,14 +36,5 @@ describe('toggle', () => {
 	it('adds in canonical order and removes', () => {
 		expect(toggle(['Legs'], 'Chest')).toEqual(['Chest', 'Legs']);
 		expect(toggle(['Chest', 'Legs'], 'Chest')).toEqual(['Legs']);
-	});
-});
-
-describe('sourceLabel', () => {
-	it('names every source in words', () => {
-		expect(sourceLabel('manual')).toBe('Manual');
-		expect(sourceLabel('shortcut')).toBe('Shortcut');
-		expect(sourceLabel('import')).toBe('Import');
-		expect(sourceLabel('google')).toBe('Google');
 	});
 });

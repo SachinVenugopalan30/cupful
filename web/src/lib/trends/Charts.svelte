@@ -20,12 +20,8 @@
 	let { days, today, unit }: { days: TrendDay[]; today: string; unit: WeightUnit } = $props();
 
 	type Ctx = ComponentProps<typeof BarChart>['context'];
-	const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	const shortDate = (iso: string) => {
-		const [, m, d] = iso.split('-').map(Number);
-		return `${d} ${MONTHS[m - 1]}`;
-	};
-	const fromTime = (t: Date) => shortDate(t.toISOString().slice(0, 10));
+	const fromTime = (t: Date) => t.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+	const shortDate = (iso: string) => fromTime(new Date(iso));
 	const xTicks = $derived(tickDates(days.map((d) => d.date), 5));
 	const bandPadding = $derived(days.length > 120 ? 0 : days.length > 45 ? 0.1 : 0.3);
 	const pad = { left: 40, bottom: 24, top: 8, right: 8 };
@@ -68,6 +64,7 @@
 	$effect(() => void (stepsCtx?.tooltip.data && (stepsDay = stepsCtx.tooltip.data)));
 </script>
 
+<!-- Any tooltip snippet replaces LayerChart's default popup; the readout above each chart takes its place. -->
 {#snippet tooltip()}{/snippet}
 
 <ChartCard

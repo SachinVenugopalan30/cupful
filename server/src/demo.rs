@@ -2,10 +2,6 @@
 //! `cupful seed-demo`: a `demo` user with believable history, for screenshots and trying the
 //! charts (PLAN.md §13). Same seed and day count, same rows (ids and timestamps included).
 
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
-use chacha20poly1305::Key;
-use chacha20poly1305::aead::common::Generate;
 use jiff::ToSpan;
 use jiff::civil::Date;
 use sqlx::SqlitePool;
@@ -96,10 +92,6 @@ impl Rng {
     }
 }
 
-fn db_err(e: impl std::fmt::Debug) -> String {
-    format!("{e:?}")
-}
-
 fn round1(v: f64) -> f64 {
     (v * 10.0).round() / 10.0
 }
@@ -114,39 +106,49 @@ pub async fn seed(
     seed: u64,
     force: bool,
 ) -> Result<String, String> {
+    seed_rows(db, today, days, seed, force)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+type BoxErr = Box<dyn std::error::Error>;
+
+async fn seed_rows(
+    db: &SqlitePool,
+    today: Date,
+    days: u32,
+    seed: u64,
+    force: bool,
+) -> Result<String, BoxErr> {
     let existing = sqlx::query_scalar!("SELECT id FROM users WHERE username = ?", USERNAME)
         .fetch_optional(db)
-        .await
-        .map_err(db_err)?;
+        .await?;
     if let Some(id) = existing {
         if !force {
-            return Err(format!(
-                "user {USERNAME:?} already exists; pass --force to replace it"
-            ));
+            return Err(
+                format!("user {USERNAME:?} already exists; pass --force to replace it").into(),
+            );
         }
         // Sessions have no foreign key; the rest cascades.
         sqlx::query!("DELETE FROM sessions WHERE user_id = ?", id)
             .execute(db)
-            .await
-            .map_err(db_err)?;
+            .await?;
         sqlx::query!("DELETE FROM users WHERE id = ?", id)
             .execute(db)
-            .await
-            .map_err(db_err)?;
+            .await?;
     }
     // The first user on a fresh instance is the admin, so the demo can open Settings.
     let first = sqlx::query_scalar!("SELECT NOT EXISTS (SELECT 1 FROM users) AS \"v!: bool\"")
         .fetch_one(db)
-        .await
-        .map_err(db_err)?;
-    let password = B64URL.encode(Key::generate().as_slice())[..20].to_string();
+        .await?;
+    let password = crate::crypto::random_token()[..20].to_string();
     let user = crate::auth::create_user(db, USERNAME, &password, TIMEZONE, first)
         .await
-        .map_err(db_err)?;
+        .map_err(|e| format!("{e:?}"))?;
 
     let mut rng = Rng(seed);
     let start = today.saturating_sub(i64::from(days.saturating_sub(1)).days());
-    let mut tx = db.begin().await.map_err(db_err)?;
+    let mut tx = db.begin().await?;
     let start_s = start.to_string();
     sqlx::query!(
         "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,
@@ -156,15 +158,13 @@ pub async fn seed(
         start_s
     )
     .execute(&mut *tx)
-    .await
-    .map_err(db_err)?;
+    .await?;
     let mut sessions = 0;
     for i in 0..i64::from(days) {
         let date = start.saturating_add(i.days());
         let at = date
             .at(12, 0, 0, 0)
-            .to_zoned(jiff::tz::TimeZone::UTC)
-            .map_err(db_err)?
+            .to_zoned(jiff::tz::TimeZone::UTC)?
             .timestamp()
             .as_millisecond();
         let d = date.to_string();
@@ -232,10 +232,9 @@ pub async fn seed(
             weight_at
         )
         .execute(&mut *tx)
-        .await
-        .map_err(db_err)?;
+        .await?;
     }
-    tx.commit().await.map_err(db_err)?;
+    tx.commit().await?;
     Ok(password)
 }
 
@@ -247,7 +246,7 @@ async fn insert_meal(
     meal_type: &str,
     foods: &[&str],
     at: i64,
-) -> Result<(), String> {
+) -> Result<(), BoxErr> {
     let meal_id = uuid::Uuid::from_u64_pair(rng.next(), rng.next()).to_string();
     let description = foods.join(" + ");
     sqlx::query!(
@@ -262,8 +261,7 @@ async fn insert_meal(
         at
     )
     .execute(&mut *tx)
-    .await
-    .map_err(db_err)?;
+    .await?;
     for (position, name) in (0i64..).zip(foods) {
         let food = sqlx::query!(
             "SELECT id, kcal, protein_g, carbs_g, fat_g, default_portion_g FROM foods
@@ -271,8 +269,7 @@ async fn insert_meal(
             name
         )
         .fetch_optional(&mut *tx)
-        .await
-        .map_err(db_err)?
+        .await?
         .ok_or_else(|| format!("staple food {name:?} is missing"))?;
         let grams = (food.default_portion_g.unwrap_or(100.0)
             * rng.pick(&[1.0, 1.5, 1.5, 2.0, 2.0]))
@@ -303,8 +300,7 @@ async fn insert_meal(
             food.id
         )
         .execute(&mut *tx)
-        .await
-        .map_err(db_err)?;
+        .await?;
     }
     Ok(())
 }
