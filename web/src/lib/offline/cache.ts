@@ -4,9 +4,9 @@
 
 import {
 	cacheKey,
-	clearUserData,
 	deleteCacheEntry,
 	getCacheEntry,
+	getDb,
 	putCacheEntry,
 	type CacheEntry
 } from './db.ts';
@@ -110,7 +110,11 @@ export async function deleteCachedBody(userId: number, path: string): Promise<vo
 	await deleteCacheEntry(userId, path);
 }
 
-/** Drops every cached API body for one user, leaving other accounts alone. */
+/** Drops every cached API body for one user, leaving their queue and other accounts alone. */
 export async function clearUserCache(userId: number): Promise<void> {
-	await clearUserData(userId);
+	const db = await getDb();
+	const tx = db.transaction('cache', 'readwrite');
+	const keys = await tx.store.index('by_user').getAllKeys(userId);
+	for (const key of keys) await tx.store.delete(key);
+	await tx.done;
 }
