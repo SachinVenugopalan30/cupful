@@ -628,7 +628,11 @@ async fn another_users_label_food_survives_a_restore() {
         .fetch_one(&state.db)
         .await
         .unwrap();
-    assert_eq!(row, (None, "Bob's bar".into()));
+    let bob_id: i64 = sqlx::query_scalar("SELECT id FROM users WHERE username = 'bob'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(row, (Some(bob_id), "Bob's bar".into()));
     let (status, meals) = b.get(&format!("/api/meals?date={}", today(TZ))).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(meals["meals"][0]["id"], bob_meal.as_str());
@@ -1015,4 +1019,32 @@ async fn oversized_restore_body_is_rejected() {
         )
         .await;
     assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[tokio::test]
+async fn old_backup_with_a_shared_label_food_restores_privately() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let fx = rich_data(&app, &state, &mut a).await;
+    let mut doc = export(&mut a).await;
+    // Older backups wrote label foods as shared rows: user_id null, source_ref = owner.
+    let uid: i64 = sqlx::query_scalar("SELECT id FROM users ORDER BY id LIMIT 1")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    for f in doc["foods"].as_array_mut().unwrap() {
+        if f["id"] == json!(fx.label_food) {
+            f["user_id"] = json!(null);
+            f["source_ref"] = json!(uid.to_string());
+        }
+    }
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let owner: Option<i64> =
+        sqlx::query_scalar("SELECT user_id FROM foods WHERE barcode = ? AND name = 'Test yogurt'")
+            .bind(LABEL_BARCODE)
+            .fetch_one(&state.db)
+            .await
+            .unwrap();
+    assert_eq!(owner, Some(uid));
 }

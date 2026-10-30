@@ -27,7 +27,6 @@ fn group<K: std::hash::Hash + Eq, V>(rows: Vec<V>, key: impl Fn(&V) -> K) -> Has
 pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
     let db = &s.db;
     let id = user.id;
-    let id_str = id.to_string();
     let today = user_today(db, id).await?;
 
     let profile = sqlx::query_as!(
@@ -90,7 +89,6 @@ pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
         WHERE (f.user_id IS NULL OR f.user_id = ?)
           AND (
             f.user_id = ?
-            OR (f.source = 'user' AND f.user_id IS NULL AND f.source_ref = ?)
             OR f.id IN (
                 SELECT i.food_id FROM meal_items i JOIN meals m ON m.id = i.meal_id
                 WHERE m.user_id = ? AND m.deleted_at IS NULL AND i.food_id IS NOT NULL
@@ -102,7 +100,6 @@ pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
         ORDER BY f.id",
         id,
         id,
-        &id_str,
         id,
         id,
         id,
@@ -163,10 +160,13 @@ pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
                 .unwrap_or_default()
                 .into_iter()
                 .map(|i| Item {
-                    food: i.food_id.and_then(|f| food_ref.get(&f)).map(|(s, r)| FoodRef {
-                        source: s.clone(),
-                        source_ref: r.clone(),
-                    }),
+                    food: i
+                        .food_id
+                        .and_then(|f| food_ref.get(&f))
+                        .map(|(s, r)| FoodRef {
+                            source: s.clone(),
+                            source_ref: r.clone(),
+                        }),
                     core: i,
                 })
                 .collect(),

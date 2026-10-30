@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT date, steps, steps_source, steps_updated_at, gym_minutes, gym_source,\n                gym_updated_at, trained, trained_updated_at, weight_kg, weight_updated_at\n         FROM days WHERE user_id = ? ORDER BY date",
+  "query": "SELECT date, steps, steps_source, steps_updated_at AS \"steps_updated_at: Ts\",\n                gym_minutes, gym_source, gym_updated_at AS \"gym_updated_at: Ts\", trained,\n                trained_updated_at AS \"trained_updated_at: Ts\", weight_kg,\n                weight_updated_at AS \"weight_updated_at: Ts\"\n         FROM days WHERE user_id = ? ORDER BY date",
   "describe": {
     "columns": [
       {
@@ -37,7 +37,7 @@
         }
       },
       {
-        "name": "steps_updated_at",
+        "name": "steps_updated_at: Ts",
         "ordinal": 3,
         "type_info": "Integer",
         "origin": {
@@ -70,7 +70,7 @@
         }
       },
       {
-        "name": "gym_updated_at",
+        "name": "gym_updated_at: Ts",
         "ordinal": 6,
         "type_info": "Integer",
         "origin": {
@@ -92,7 +92,7 @@
         }
       },
       {
-        "name": "trained_updated_at",
+        "name": "trained_updated_at: Ts",
         "ordinal": 8,
         "type_info": "Integer",
         "origin": {
@@ -114,7 +114,7 @@
         }
       },
       {
-        "name": "weight_updated_at",
+        "name": "weight_updated_at: Ts",
         "ordinal": 10,
         "type_info": "Integer",
         "origin": {
@@ -142,5 +142,5 @@
       true
     ]
   },
-  "hash": "b2e192f564885cfd2430ca8f001832fb38f6836e591c0a706ee9cf3e1eee5f46"
+  "hash": "c7a40841b10d7286f944eeb02f0d5ea3e1690ca35425093ed4168c67ec2a9349"
 }
