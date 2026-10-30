@@ -3,6 +3,7 @@
 
 use std::time::Instant;
 
+pub mod invites;
 mod limits;
 mod password;
 mod session;
@@ -18,7 +19,7 @@ use axum::http::StatusCode;
 use axum::http::request::Parts;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sqlx::SqlitePool;
+use sqlx::{SqliteConnection, SqlitePool};
 use tower_sessions::Session;
 
 use crate::AppState;
@@ -54,22 +55,18 @@ pub fn validate_timezone(tz: &str) -> Result<()> {
 
 // ---- users ----
 
-/// Inserts a user and their profile. With `first_only`, inserts only if there are no users yet,
+/// Inserts a user and their profile on `conn`. Callers validate and hash first, so the write lock
+/// is held for as little as possible. With `first_only`, inserts only if there are no users yet,
 /// in one statement, so two simultaneous first-run requests can't both succeed.
-async fn insert_user(
-    db: &SqlitePool,
+pub(super) async fn insert_user(
+    conn: &mut SqliteConnection,
     username: &str,
-    password: &str,
+    hash: &str,
     timezone: &str,
     is_admin: bool,
     first_only: bool,
+    now: i64,
 ) -> Result<Option<i64>> {
-    validate_username(username)?;
-    validate_password(password)?;
-    validate_timezone(timezone)?;
-    let hash = hash_password(password).await?;
-    let now = now_ms();
-    let mut tx = db.begin().await?;
     let id = sqlx::query_scalar!(
         "INSERT INTO users (username, password_hash, is_admin, created_at)
          SELECT ?, ?, ?, ? WHERE NOT ? OR NOT EXISTS (SELECT 1 FROM users)
@@ -80,7 +77,7 @@ async fn insert_user(
         now,
         first_only
     )
-    .fetch_optional(&mut *tx)
+    .fetch_optional(&mut *conn)
     .await
     .map_err(|e| match e {
         sqlx::Error::Database(d) if d.is_unique_violation() => {
@@ -94,10 +91,9 @@ async fn insert_user(
             id,
             timezone
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?;
     }
-    tx.commit().await?;
     Ok(id)
 }
 
@@ -108,11 +104,24 @@ pub async fn create_user(
     timezone: &str,
     is_admin: bool,
 ) -> Result<i64> {
-    Ok(
-        insert_user(db, username, password, timezone, is_admin, false)
-            .await?
-            .expect("unconditional insert returns an id"),
+    validate_username(username)?;
+    validate_password(password)?;
+    validate_timezone(timezone)?;
+    let hash = hash_password(password).await?;
+    let mut tx = db.begin().await?;
+    let id = insert_user(
+        &mut tx,
+        username,
+        &hash,
+        timezone,
+        is_admin,
+        false,
+        now_ms(),
     )
+    .await?
+    .expect("unconditional insert returns an id");
+    tx.commit().await?;
+    Ok(id)
 }
 
 /// For the `reset-password` CLI. Also ends the user's sessions.
@@ -218,9 +227,23 @@ pub async fn setup(
     session: Session,
     JsonBody(b): JsonBody<SetupBody>,
 ) -> Result<Json<Value>> {
-    let id = insert_user(&s.db, &b.username, &b.password, &b.timezone, true, true)
-        .await?
-        .ok_or_else(|| Error::conflict("setup is already done"))?;
+    validate_username(&b.username)?;
+    validate_password(&b.password)?;
+    validate_timezone(&b.timezone)?;
+    let hash = hash_password(&b.password).await?;
+    let mut tx = s.db.begin().await?;
+    let id = insert_user(
+        &mut tx,
+        &b.username,
+        &hash,
+        &b.timezone,
+        true,
+        true,
+        now_ms(),
+    )
+    .await?
+    .ok_or_else(|| Error::conflict("setup is already done"))?;
+    tx.commit().await?;
     log_in(&session, id).await?;
     Ok(Json(json!({ "id": id })))
 }
@@ -265,7 +288,7 @@ pub async fn login(
 }
 
 /// New session id at every login, against fixation.
-async fn log_in(session: &Session, user_id: i64) -> Result<()> {
+pub(super) async fn log_in(session: &Session, user_id: i64) -> Result<()> {
     session.cycle_id().await?;
     session.insert(USER_KEY, user_id).await?;
     Ok(())

@@ -34,6 +34,8 @@ pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
     pub login_limiter: Arc<auth::RateLimiter>,
+    /// 10 invite-accept attempts an hour, per invite (or the shared miss bucket) and per IP.
+    pub invite_limiter: Arc<auth::RateLimiter>,
     /// 60 requests an hour per ingest token.
     pub ingest_limiter: Arc<auth::RateLimiter>,
     pub products: Arc<products::Lookup>,
@@ -68,6 +70,7 @@ impl AppState {
             products: Arc::new(products::Lookup::new(&config)),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
+            invite_limiter: Arc::new(auth::RateLimiter::new(10, Duration::from_secs(3600))),
             ingest_limiter: Arc::new(auth::RateLimiter::new(60, Duration::from_secs(3600))),
             secrets: Arc::new(crypto::Cipher::random()),
             ai_http,
@@ -100,7 +103,21 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/auth/state", Public, get(auth::auth_state)),
         ("POST", "/api/auth/setup", Public, post(auth::setup)),
         ("POST", "/api/auth/login", Public, post(auth::login)),
+        (
+            "POST",
+            "/api/auth/accept-invite",
+            Public,
+            post(auth::invites::accept),
+        ),
         ("POST", "/api/auth/logout", Public, post(auth::logout)),
+        ("GET", "/api/invites", Admin, get(auth::invites::list)),
+        ("POST", "/api/invites", Admin, post(auth::invites::create)),
+        (
+            "DELETE",
+            "/api/invites/{id}",
+            Admin,
+            delete(auth::invites::revoke),
+        ),
         ("GET", "/api/profile", User, get(profile::get)),
         ("PUT", "/api/profile", User, put(profile::put)),
         (

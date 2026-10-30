@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM invites WHERE expires_at < ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "27f617377959f0808db5a3fbc98e6d04f6e054e8c3de4f5b6fb24e9eeb8e4feb"
+}
