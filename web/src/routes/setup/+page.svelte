@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { ApiError, auth, errorMessage } from '#lib/api.ts';
+	import { onMount } from 'svelte';
+	import { ApiError, auth, errorMessage, health, type Health } from '#lib/api.ts';
 	import { loadSession } from '#lib/session.svelte.ts';
 
 	const zones = Intl.supportedValuesOf('timeZone');
@@ -10,6 +11,20 @@
 	let timezone = $state(Intl.DateTimeFormat().resolvedOptions().timeZone);
 	let error = $state('');
 	let busy = $state(false);
+	/** Running version and AGPL source offer. Absent when the server cannot be reached. */
+	let server = $state<Health | null>(null);
+
+	onMount(() => {
+		let active = true;
+		health()
+			.then((h) => {
+				if (active) server = h;
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	});
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
@@ -79,5 +94,12 @@
 			{busy ? 'Creating…' : 'Create account'}
 		</button>
 	</form>
+	{#if server}
+		<p class="muted small">
+			Cupful <span class="num">{server.version}</span> ·
+			<a href={server.source_url} rel="noopener">Source code</a> (AGPL-3.0-or-later)
+		</p>
+	{:else}
+		<p class="muted small">Free software under AGPL-3.0-or-later.</p>
+	{/if}
 </div>
-

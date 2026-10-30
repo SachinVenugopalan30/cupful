@@ -149,6 +149,7 @@ async fn serve() -> Result<(), String> {
     let config = Config::from_env()?;
     cupful::config::validate_identity(&config)?;
     let db = open_db(&config).await?;
+    cupful::db::warn_if_network_filesystem(&config.data_dir);
     let env_key = std::env::var("CUPFUL_SECRET_KEY")
         .ok()
         .filter(|v| !v.is_empty());
