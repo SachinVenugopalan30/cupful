@@ -14,6 +14,7 @@
 	import { round, weightToKg } from '#lib/format.ts';
 	import { session, today } from '#lib/session.svelte.ts';
 	import { dayPatch, sendOps, type DayFields } from '#lib/sync/index.ts';
+	import { staleNotice } from '#lib/sync/stale.ts';
 	import {
 		BODY_PARTS,
 		MAX_GYM,
@@ -71,6 +72,11 @@
 		try {
 			const [r] = await sendOps([dayPatch(date, fields)]);
 			if (r.status === 'rejected') throw new Error(`Not saved: ${r.error ?? 'rejected'}.`);
+			if (r.status === 'stale') {
+				error = staleNotice('day');
+				onChanged();
+				return;
+			}
 			status = done;
 			onChanged();
 		} catch (e) {

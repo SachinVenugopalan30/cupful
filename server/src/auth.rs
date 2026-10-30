@@ -55,7 +55,12 @@ pub fn validate_timezone(tz: &str) -> Result<()> {
 
 // ---- passwords ----
 
+/// Argon2 is memory-hard and these run before authentication: cap how many run at once so a
+/// flood of logins can't exhaust memory or the blocking pool.
+static HASHING: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(4);
+
 async fn hash_password(password: &str) -> Result<String> {
+    let _permit = HASHING.acquire().await.expect("semaphore is never closed");
     let password = password.to_owned();
     tokio::task::spawn_blocking(move || {
         Argon2::default()
@@ -81,6 +86,7 @@ async fn verify_password(password: &str, hash: Option<String>) -> bool {
             })
             .clone()
     });
+    let _permit = HASHING.acquire().await.expect("semaphore is never closed");
     let password = password.to_owned();
     let ok = tokio::task::spawn_blocking(move || {
         PasswordHash::new(&hash).is_ok_and(|h| {

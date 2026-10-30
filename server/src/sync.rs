@@ -335,6 +335,15 @@ pub(crate) async fn write_meal_on(
         }
     }
     let date = m.date.to_string();
+    // The client supplies this; an id that matches no provider is stored as NULL.
+    let provider_id = match m.provider_id {
+        Some(p) => {
+            sqlx::query_scalar!("SELECT id FROM ai_providers WHERE id = ?", p)
+                .fetch_optional(&mut *conn)
+                .await?
+        }
+        None => None,
+    };
     sqlx::query!(
         "INSERT INTO meals (id, user_id, date, meal_type, description, scale, assumptions,
              confidence, source, provider_id, updated_at, received_at, edited)
@@ -354,7 +363,7 @@ pub(crate) async fn write_meal_on(
         m.assumptions,
         m.confidence,
         m.source,
-        m.provider_id,
+        provider_id,
         effective,
         received,
         edited
@@ -404,7 +413,23 @@ async fn delete_meal(db: &SqlitePool, user_id: i64, id: &str, effective: i64) ->
     .fetch_optional(&mut *tx)
     .await?;
     let Some(e) = existing else {
-        return Ok(Applied); // never synced; nothing to delete
+        // Never seen here: leave a tombstone so an older upsert of this id (a delayed offline
+        // write from another device) loses. Placeholder values are never read: reads skip
+        // tombstones, and cleanup purges them after TOMBSTONE_RETENTION_MS.
+        sqlx::query!(
+            "INSERT INTO meals (id, user_id, date, meal_type, description, source,
+                 updated_at, received_at, deleted_at)
+             VALUES (?, ?, '1970-01-01', 'snack', '', 'manual', ?, ?, ?)",
+            id,
+            user_id,
+            effective,
+            effective,
+            effective
+        )
+        .execute(&mut *tx)
+        .await?;
+        tx.commit().await?;
+        return Ok(Applied);
     };
     if e.user_id != user_id {
         return Ok(reject("meal id belongs to another account"));

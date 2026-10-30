@@ -11,6 +11,7 @@
 	import { errorMessage, getMeals, type Macros, type Meal } from '#lib/api.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { mealDelete, mealUpsert, sendOps, type Op } from '#lib/sync/index.ts';
+	import { staleNotice } from '#lib/sync/stale.ts';
 	import Review from './Review.svelte';
 	import {
 		MEAL_TYPES,
@@ -63,6 +64,12 @@
 		try {
 			const [r] = await sendOps([op]);
 			if (r.status === 'rejected') throw new Error(`The change wasn't saved: ${r.error ?? 'rejected'}.`);
+			if (r.status === 'stale') {
+				actionError = { id: meal.id, message: staleNotice('meal') };
+				confirming = null;
+				onChanged();
+				return;
+			}
 			status = done;
 			confirming = null;
 			onChanged();
@@ -183,6 +190,7 @@
 		title="Edit meal"
 		onClose={() => (editing = null)}
 		onSaved={() => ((status = 'Meal updated.'), onChanged())}
+		onStale={onChanged}
 	/>
 {/if}
 

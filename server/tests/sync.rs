@@ -215,6 +215,59 @@ async fn delete_leaves_a_tombstone_that_beats_later_upserts() {
 }
 
 #[tokio::test]
+async fn delete_of_an_unseen_meal_still_beats_an_older_upsert() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = today(TZ).to_string();
+    let id = uuid();
+    assert_eq!(
+        a.sync(vec![op("meal.delete", &at(-10), json!({"id": id}))])
+            .await,
+        ["applied"]
+    );
+    let res = a
+        .sync(vec![op(
+            "meal.upsert",
+            &at(-20),
+            meal(&id, &d, json!([item(&uuid(), 200.0)])),
+        )])
+        .await;
+    assert_eq!(res, ["stale"]);
+    assert_eq!(meals(&mut a, &d).await.as_array().unwrap().len(), 0);
+}
+
+#[tokio::test]
+async fn tombstone_of_an_unseen_id_cannot_be_claimed_by_another_user() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let mut b = user(&app, &state, "bob").await;
+    let d = today(TZ).to_string();
+    let id = uuid();
+    a.sync(vec![op("meal.delete", &at(-10), json!({"id": id}))])
+        .await;
+    // The tombstone belongs to a, so b can neither resurrect nor claim the id.
+    let res = b
+        .sync(vec![op("meal.upsert", &at(-5), meal(&id, &d, json!([])))])
+        .await;
+    assert_eq!(res, ["rejected"]);
+}
+
+#[tokio::test]
+async fn unknown_provider_id_is_not_stored() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = today(TZ).to_string();
+    let id = uuid();
+    let mut m = meal(&id, &d, json!([item(&uuid(), 200.0)]));
+    m["provider_id"] = json!(424242);
+    assert_eq!(
+        a.sync(vec![op("meal.upsert", &at(0), m)]).await,
+        ["applied"]
+    );
+    assert!(meals(&mut a, &d).await[0]["provider_id"].is_null());
+}
+
+#[tokio::test]
 async fn delete_older_than_the_last_edit_is_stale() {
     let (app, _) = app().await;
     let mut a = admin(&app).await;

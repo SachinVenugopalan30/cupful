@@ -77,6 +77,24 @@ impl ProviderError {
     }
 }
 
+impl ProviderError {
+    /// Full message with upstream detail. Admin-only (Test connection); users get `Error::from`.
+    pub fn detail(&self) -> String {
+        match self {
+            ProviderError::NotConfigured => "no AI provider is configured".to_string(),
+            ProviderError::Timeout => "the AI provider timed out".to_string(),
+            ProviderError::Unreachable(m) => format!("the AI provider is unreachable: {m}"),
+            ProviderError::Unparseable(m) => {
+                format!("the AI provider's reply could not be read: {m}")
+            }
+            ProviderError::RateLimited => "the AI provider is rate limiting requests".to_string(),
+            ProviderError::DailyCapReached => "today's AI call limit is reached".to_string(),
+            ProviderError::Auth(m) => format!("the AI provider rejected its credentials: {m}"),
+            ProviderError::Other(m) => m.clone(),
+        }
+    }
+}
+
 impl From<ProviderError> for Error {
     fn from(e: ProviderError) -> Self {
         let status = match e {
@@ -88,21 +106,21 @@ impl From<ProviderError> for Error {
             _ => StatusCode::BAD_GATEWAY,
         };
         let msg = match &e {
-            ProviderError::NotConfigured => "no AI provider is configured".to_string(),
-            ProviderError::Timeout => "the AI provider timed out".to_string(),
-            ProviderError::Unreachable(m) => format!("the AI provider is unreachable: {m}"),
-            ProviderError::Unparseable(m) => {
-                format!("the AI provider's reply could not be read: {m}")
-            }
-            ProviderError::RateLimited => "the AI provider is rate limiting requests".to_string(),
-            ProviderError::DailyCapReached => "today's AI call limit is reached".to_string(),
-            ProviderError::Auth(m) => format!("the AI provider rejected its credentials: {m}"),
-            ProviderError::Other(m) => m.clone(),
+            // Upstream detail (internal hosts, response bodies) stays out of user-facing errors.
+            ProviderError::Unreachable(_) => "the AI provider is unreachable".to_string(),
+            ProviderError::Auth(_) => "the AI provider rejected its credentials".to_string(),
+            _ => e.detail(),
         };
-        if matches!(e, ProviderError::Unparseable(_) | ProviderError::Other(_)) {
-            // The detail can echo the user's meal: debug only, like raw replies.
-            tracing::warn!(code = e.code(), "AI provider reply unusable");
-            tracing::debug!("{msg}");
+        if matches!(
+            e,
+            ProviderError::Unparseable(_)
+                | ProviderError::Other(_)
+                | ProviderError::Unreachable(_)
+                | ProviderError::Auth(_)
+        ) {
+            // The detail can echo the user's meal or internal URLs: debug only, like raw replies.
+            tracing::warn!(code = e.code(), "AI provider call failed");
+            tracing::debug!("{}", e.detail());
         }
         Error::Coded(status, e.code(), msg)
     }

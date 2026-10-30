@@ -6,6 +6,7 @@
     title: string           sheet heading
     onClose: () => void     the sheet closed (saved or not); unmount it
     onSaved: () => void     the meal was saved
+    onStale?: () => void    a newer write already won; refetch (nothing was saved)
   Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft), then
   the "always use this" aliases (REST; a failure leaves the meal saved and says so).
 -->
@@ -15,6 +16,7 @@
 	import { filterSaved } from '#lib/products/logic.ts';
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
+	import { staleNotice } from '#lib/sync/stale.ts';
 	import {
 		MEAL_TYPES,
 		MULTIPLIERS,
@@ -31,7 +33,13 @@
 		type NumKey
 	} from './meal';
 
-	let { draft, title, onClose, onSaved }: { draft: Draft; title: string; onClose: () => void; onSaved: () => void } =
+	let {
+		draft,
+		title,
+		onClose,
+		onSaved,
+		onStale
+	}: { draft: Draft; title: string; onClose: () => void; onSaved: () => void; onStale?: () => void } =
 		$props();
 
 	let d = $state(structuredClone(untrack(() => $state.snapshot(draft)) as Draft));
@@ -96,6 +104,11 @@
 			const [r] = await sendOps([mealUpsert(mealFromDraft(d))]);
 			if (r.status === 'rejected') {
 				error = `The meal wasn't saved: ${r.error ?? 'the server rejected it'}.`;
+				return;
+			}
+			if (r.status === 'stale') {
+				error = staleNotice('meal');
+				onStale?.();
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.

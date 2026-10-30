@@ -40,6 +40,20 @@ async fn unknown_page_path_serves_spa_index() {
 }
 
 #[tokio::test]
+async fn spa_responses_carry_security_headers() {
+    let (app, _) = app().await;
+    let (_, h, _) = send(&app, get("/today")).await;
+    assert_eq!(h["x-content-type-options"], "nosniff");
+    assert_eq!(h["referrer-policy"], "same-origin");
+    assert_eq!(h["x-frame-options"], "DENY");
+    let csp = h["content-security-policy"].to_str().unwrap();
+    assert!(
+        csp.contains("frame-ancestors 'none'") && csp.contains("'sha256-"),
+        "{csp}"
+    );
+}
+
+#[tokio::test]
 async fn malformed_bodies_and_queries_get_json_errors() {
     let (app, _) = app().await;
     let mut a = admin(&app).await;
