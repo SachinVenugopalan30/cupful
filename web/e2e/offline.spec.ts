@@ -225,7 +225,9 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 	await expect(page.getByTestId('sync-bar')).toContainText(/1 change waiting/);
 
 	await page.getByRole('link', { name: 'Settings' }).click();
-	await expect(syncOpRows(page)).toHaveCount(1);
+	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	// The offline boot may reload the shell and load the queue from IndexedDB; CI is slow.
+	await expect(syncOpRows(page)).toHaveCount(1, { timeout: 30_000 });
 
 	// Offline, logging out is refused before anything local is deleted.
 	await page.getByRole('button', { name: 'Log out', exact: true }).click();
