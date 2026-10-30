@@ -7,7 +7,7 @@ use axum::extract::State;
 use jiff::civil::Date;
 use serde::{Deserialize, Deserializer};
 use serde_json::{Value, json};
-use sqlx::SqlitePool;
+use sqlx::{SqliteConnection, SqlitePool};
 
 use crate::AppState;
 use crate::auth::User;
@@ -159,19 +159,19 @@ async fn apply(
     Ok(outcome)
 }
 
-fn date_ok(date: Date, tomorrow: Date) -> std::result::Result<(), String> {
+pub(crate) fn date_ok(date: Date, tomorrow: Date) -> std::result::Result<(), String> {
     (date <= tomorrow)
         .then_some(())
         .ok_or_else(|| format!("{date} is in the future"))
 }
 
-fn finite_in(v: f64, lo: f64, hi: f64, what: &str) -> std::result::Result<(), String> {
+pub(crate) fn finite_in(v: f64, lo: f64, hi: f64, what: &str) -> std::result::Result<(), String> {
     (v.is_finite() && (lo..=hi).contains(&v))
         .then_some(())
         .ok_or_else(|| format!("{what} must be between {lo} and {hi}"))
 }
 
-fn one_of(v: &str, allowed: &[&str], what: &str) -> std::result::Result<(), String> {
+pub(crate) fn one_of(v: &str, allowed: &[&str], what: &str) -> std::result::Result<(), String> {
     allowed
         .contains(&v)
         .then_some(())
@@ -192,36 +192,46 @@ struct MealRef {
 }
 
 #[derive(Deserialize)]
-struct MealIn {
-    id: String,
-    date: Date,
-    meal_type: String,
-    description: String,
-    scale: f64,
-    assumptions: Option<String>,
-    confidence: Option<String>,
-    source: String,
-    provider_id: Option<i64>,
-    items: Vec<ItemIn>,
+pub(crate) struct MealIn {
+    pub(crate) id: String,
+    pub(crate) date: Date,
+    pub(crate) meal_type: String,
+    pub(crate) description: String,
+    pub(crate) scale: f64,
+    pub(crate) assumptions: Option<String>,
+    pub(crate) confidence: Option<String>,
+    pub(crate) source: String,
+    pub(crate) provider_id: Option<i64>,
+    pub(crate) items: Vec<ItemIn>,
 }
 
 #[derive(Deserialize)]
-struct ItemIn {
-    id: String,
-    name: String,
+pub(crate) struct ItemIn {
+    pub(crate) id: String,
+    pub(crate) name: String,
     #[serde(default)]
-    portion_text: String,
-    grams: Option<f64>,
-    kcal: f64,
-    protein_g: f64,
-    carbs_g: f64,
-    fat_g: f64,
-    food_id: Option<i64>,
-    origin: String,
+    pub(crate) portion_text: String,
+    pub(crate) grams: Option<f64>,
+    pub(crate) kcal: f64,
+    pub(crate) protein_g: f64,
+    pub(crate) carbs_g: f64,
+    pub(crate) fat_g: f64,
+    pub(crate) food_id: Option<i64>,
+    pub(crate) origin: String,
+}
+
+/// How a caller writes a meal: through sync (full conflict rules), a CSV import, or a restore.
+/// `Import` and `Restore` are used by the transfer handlers.
+#[allow(dead_code)]
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum WriteMode {
+    Sync,
+    Import,
+    Restore,
 }
 
 impl MealIn {
-    fn validate(&self, tomorrow: Date) -> std::result::Result<(), String> {
+    pub(crate) fn validate(&self, tomorrow: Date) -> std::result::Result<(), String> {
         uuid(&self.id, "meal id")?;
         date_ok(self.date, tomorrow)?;
         one_of(
@@ -282,23 +292,41 @@ async fn upsert_meal(
     received: i64,
 ) -> Result<Outcome> {
     let mut tx = db.begin_with("BEGIN IMMEDIATE").await?;
+    let outcome = write_meal_on(&mut tx, user_id, m, effective, received, WriteMode::Sync).await?;
+    if outcome == Applied {
+        tx.commit().await?;
+    }
+    Ok(outcome)
+}
+
+/// Inserts or updates `m` and replaces its items on an open connection. The caller owns the
+/// transaction. `Sync` also applies the stale/tombstone rules; `Import` and `Restore` skip only
+/// those, still refusing ids owned by another account.
+pub(crate) async fn write_meal_on(
+    conn: &mut SqliteConnection,
+    user_id: i64,
+    m: &MealIn,
+    effective: i64,
+    received: i64,
+    mode: WriteMode,
+) -> Result<Outcome> {
     let existing = sqlx::query!(
         "SELECT user_id, updated_at, deleted_at FROM meals WHERE id = ?",
         m.id
     )
-    .fetch_optional(&mut *tx)
+    .fetch_optional(&mut *conn)
     .await?;
     if let Some(e) = existing {
         if e.user_id != user_id {
             return Ok(reject("meal id belongs to another account"));
         }
-        if e.deleted_at.is_some() || e.updated_at >= effective {
+        if mode == WriteMode::Sync && (e.deleted_at.is_some() || e.updated_at >= effective) {
             return Ok(Stale);
         }
     }
     for i in &m.items {
         let owner = sqlx::query_scalar!("SELECT meal_id FROM meal_items WHERE id = ?", i.id)
-            .fetch_optional(&mut *tx)
+            .fetch_optional(&mut *conn)
             .await?;
         if owner.is_some_and(|o| o != m.id) {
             return Ok(reject("item id belongs to another meal"));
@@ -327,10 +355,10 @@ async fn upsert_meal(
         effective,
         received
     )
-    .execute(&mut *tx)
+    .execute(&mut *conn)
     .await?;
     sqlx::query!("DELETE FROM meal_items WHERE meal_id = ?", m.id)
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?;
     for (pos, i) in m.items.iter().enumerate() {
         let pos = pos as i64;
@@ -351,15 +379,15 @@ async fn upsert_meal(
             i.food_id,
             i.origin
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?;
         if let Some(food_id) = i.food_id
-            && !crate::products::item_logged(&mut tx, user_id, food_id, i.grams, received).await?
+            && !crate::products::item_logged(&mut *conn, user_id, food_id, i.grams, received)
+                .await?
         {
             return Ok(reject(format!("food {food_id} not found")));
         }
     }
-    tx.commit().await?;
     Ok(Applied)
 }
 
@@ -479,15 +507,29 @@ pub async fn patch_day(
     source: Source,
     effective: i64,
 ) -> Result<bool> {
+    let mut tx = db.begin_with("BEGIN IMMEDIATE").await?;
+    let changed = patch_day_on(&mut tx, user_id, date, p, source, effective).await?;
+    tx.commit().await?;
+    Ok(changed)
+}
+
+/// Applies a day patch on an open connection. The caller owns the transaction.
+pub(crate) async fn patch_day_on(
+    conn: &mut SqliteConnection,
+    user_id: i64,
+    date: Date,
+    p: &DayPatch,
+    source: Source,
+    effective: i64,
+) -> Result<bool> {
     let date = date.to_string();
     let src = source.as_str();
-    let mut tx = db.begin_with("BEGIN IMMEDIATE").await?;
     sqlx::query!(
         "INSERT OR IGNORE INTO days (user_id, date) VALUES (?, ?)",
         user_id,
         date
     )
-    .execute(&mut *tx)
+    .execute(&mut *conn)
     .await?;
     let mut changed = 0;
     if let Some(v) = p.steps {
@@ -505,7 +547,7 @@ pub async fn patch_day(
             effective,
             src
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?
         .rows_affected();
     }
@@ -523,7 +565,7 @@ pub async fn patch_day(
             effective,
             src
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?
         .rows_affected();
     }
@@ -540,7 +582,7 @@ pub async fn patch_day(
             date,
             effective
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?
         .rows_affected();
     }
@@ -554,10 +596,9 @@ pub async fn patch_day(
             date,
             effective
         )
-        .execute(&mut *tx)
+        .execute(&mut *conn)
         .await?
         .rows_affected();
     }
-    tx.commit().await?;
     Ok(changed > 0)
 }
