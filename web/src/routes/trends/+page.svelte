@@ -63,7 +63,7 @@
 		</div>
 	{:else}
 		<section class="card summary" aria-label="Average intake against budget">
-			{#if avg && avg.days}
+			{#if avg?.days}
 				<p class="small muted">
 					Average a day, over {avg.days} {avg.days === 1 ? 'day' : 'days'} with meals
 				</p>

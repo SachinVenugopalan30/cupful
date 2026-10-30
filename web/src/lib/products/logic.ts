@@ -36,7 +36,6 @@ export function normalizeScan(raw: string, format = ''): string | null {
 	return gtinOk(code) ? code : null;
 }
 
-
 export const servingsToGrams = (servings: number, servingG: number) => round(servings * servingG, 1);
 export const gramsToServings = (grams: number, servingG: number) => round(grams / servingG, 2);
 

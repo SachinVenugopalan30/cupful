@@ -16,6 +16,7 @@
 	import Review from './Review.svelte';
 	import {
 		MEAL_TYPES,
+		capitalize,
 		dayTotals,
 		draftFromMeal,
 		itemSourceLabel,
@@ -82,7 +83,6 @@
 		}
 	}
 
-	const label = (t: string) => t[0].toUpperCase() + t.slice(1);
 	const title = (m: Meal) => m.description || m.items.map((i) => i.name).join(', ') || 'Meal';
 	const macros = (t: Macros) =>
 		`P ${formatGrams(t.protein_g)} · C ${formatGrams(t.carbs_g)} · F ${formatGrams(t.fat_g)} g`;
@@ -113,8 +113,8 @@
 		<p class="empty">Nothing logged yet. Describe what you ate above.</p>
 	{:else}
 		{#each groups as g (g.type)}
-			<section class="group" aria-label={label(g.type)} style="--m: var(--meal-{g.type}); --m-text: var(--meal-{g.type}-text)">
-				<h3 class="small group-title">{label(g.type)}</h3>
+			<section class="group" aria-label={capitalize(g.type)} style="--m: var(--meal-{g.type}); --m-text: var(--meal-{g.type}-text)">
+				<h3 class="small group-title">{capitalize(g.type)}</h3>
 				<ul class="list-cards">
 					{#each g.meals as m (m.id)}
 						<li class="card meal" data-testid="meal">
@@ -134,14 +134,14 @@
 								</summary>
 								<ul class="list items">
 									{#each m.items as i (i.id)}
+										{@const src = itemSourceLabel(i, m)}
 										<li>
 											<span class="item-what">
 												<span>{i.name}</span>
 												<span class="row small muted">
 													{#if i.portion_text}<span>{i.portion_text}</span>{/if}
 													{#if i.grams !== null}<span class="num">{formatGrams(i.grams)} g</span>{/if}
-													{#if itemSourceLabel(i, m)}
-														{@const src = itemSourceLabel(i, m)!}
+													{#if src}
 														<span class="chip {src.kind === 'plain' ? '' : `chip-${src.kind}`}">{src.text}</span>
 													{/if}
 												</span>

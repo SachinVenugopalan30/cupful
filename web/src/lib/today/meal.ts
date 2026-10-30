@@ -19,6 +19,9 @@ export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 export const MULTIPLIERS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 export const MAX_DESCRIPTION = 1000;
 
+/** "breakfast" -> "Breakfast", for a label or heading. */
+export const capitalize = (text: string) => text[0].toUpperCase() + text.slice(1);
+
 /** Photo size after downscaling the long side to `max` (never upscaled). */
 export function fitWithin(width: number, height: number, max: number) {
 	const k = Math.min(1, max / Math.max(width, height));

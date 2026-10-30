@@ -12,6 +12,13 @@
 	let busy = $state(false);
 	/** A previous account with unsynced changes; logging in as someone else would lose them. */
 	let switchFrom = $state<{ userId: number; username: string; waiting: number } | null>(null);
+	const switchWarning = $derived.by(() => {
+		if (!switchFrom) return '';
+		const n = switchFrom.waiting;
+		return `${n} ${n === 1 ? 'change' : 'changes'} from ${switchFrom.username} ${
+			n === 1 ? 'hasn’t' : 'haven’t'
+		} synced. Logging in as ${username} discards ${n === 1 ? 'it' : 'them'}.`;
+	});
 
 	async function login(discard = false) {
 		busy = true;
@@ -71,15 +78,7 @@
 		</div>
 		{#if switchFrom}
 			<div class="notice notice-warning" role="group" aria-label="Confirm account switch">
-				<p>
-					{switchFrom.waiting}
-					{switchFrom.waiting === 1 ? 'change' : 'changes'} from {switchFrom.username} {switchFrom.waiting ===
-					1
-						? 'hasn’t'
-						: 'haven’t'} synced. Logging in as {username} discards {switchFrom.waiting === 1
-						? 'it'
-						: 'them'}.
-				</p>
+				<p>{switchWarning}</p>
 				<div class="row">
 					<button class="btn btn-danger" type="button" onclick={() => login(true)} disabled={busy}>
 						Log in and discard
