@@ -5,6 +5,9 @@
 
 import type { WeightUnit, HeightUnit } from './format';
 import { fallbackFilename, responseFilename } from './settings/data.ts';
+import { CacheHttpError, cachedGetJson } from './offline/cache.ts';
+import { overlayDay, overlayMeals } from './offline/overlay.ts';
+import { connection, queueState } from './offline/state.svelte.ts';
 
 export class ApiError extends Error {
 	constructor(
@@ -82,6 +85,26 @@ export const api = {
 	/** Multipart POST; the browser sets the boundary. */
 	postForm: <T>(path: string, form: FormData) => request<T>('POST', path, form)
 };
+
+/**
+ * GET a read endpoint through the offline cache once a user is active: network first, cached body
+ * when offline. Cache errors become ApiErrors, and a 401 still sends the user to /login.
+ */
+async function cachedGet<T>(path: string): Promise<T> {
+	const userId = connection.activeUserId;
+	if (userId === null) return api.get<T>(path);
+	try {
+		return await cachedGetJson<T>(path, userId);
+	} catch (err) {
+		if (err instanceof CacheHttpError) {
+			if (err.status === 401 && !path.startsWith('/api/auth/') && typeof location !== 'undefined') {
+				location.assign('/login');
+			}
+			throw new ApiError(err.status, err.message);
+		}
+		throw err;
+	}
+}
 
 /** GET a binary attachment. Throws ApiError like the JSON calls. */
 export const getBlob = (path: string) => request<Blob>('GET', path, undefined, 'blob');
@@ -347,16 +370,15 @@ export const auth = {
 };
 
 export const profile = {
-	get: () => api.get<Profile>('/api/profile'),
+	get: () => cachedGet<Profile>('/api/profile'),
 	save: (p: ProfileIn) => api.put<object>('/api/profile', p)
 };
 
-export const getBudget = (date: string) => api.get<Budget>(`/api/budget/${enc(date)}`);
-export const getDay = (date: string) => api.get<Day>(`/api/days/${enc(date)}`);
+export const getBudget = (date: string) => cachedGet<Budget>(`/api/budget/${enc(date)}`);
 export const getDays = (from: string, to: string) =>
 	api.get<{ days: Day[] }>(`/api/days?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
 export const getTrends = (from: string, to: string) =>
-	api.get<{ days: TrendDay[] }>(`/api/trends?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
+	cachedGet<{ days: TrendDay[] }>(`/api/trends?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
 
 export const ingestTokens = {
 	list: () => api.get<{ tokens: IngestToken[] }>('/api/ingest-tokens').then((r) => r.tokens),
@@ -366,8 +388,16 @@ export const ingestTokens = {
 	remove: (id: number) => api.delete<object>(`/api/ingest-tokens/${id}`)
 };
 
-export const getMeals = (date: string) =>
-	api.get<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`).then((r) => r.meals);
+export async function getMeals(date: string): Promise<Meal[]> {
+	const body = await cachedGet<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`);
+	return overlayMeals(body.meals, queueState.ops, date);
+}
+
+/** Shows the day with any queued step/gym/weight patches already applied. */
+export async function getDay(date: string): Promise<Day> {
+	const body = await cachedGet<Day>(`/api/days/${enc(date)}`);
+	return overlayDay(body, queueState.ops, date);
+}
 
 /** Import a Fuel Ledger CSV. Re-importing the same file changes nothing. */
 export const importCsv = (text: string) => postText<ImportSummary>('/api/import/fuel-ledger', text);
@@ -397,7 +427,7 @@ export const products = {
 	/** By barcode. Errors: 400 bad barcode, product_not_found, lookup_failed, rate_limited. */
 	lookup: (barcode: string) => api.get<Product>(`/api/products/${enc(barcode)}`),
 	label: (b: LabelIn) => api.post<Product>('/api/products', b),
-	list: () => api.get<{ products: SavedProduct[] }>('/api/products').then((r) => r.products),
+	list: () => cachedGet<{ products: SavedProduct[] }>('/api/products').then((r) => r.products),
 	/** By food id. */
 	remove: (foodId: number) => api.delete<object>(`/api/products/${foodId}`)
 };

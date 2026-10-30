@@ -1,6 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError, errorMessage, parseError } from './api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+	api,
+	ApiError,
+	errorMessage,
+	getBudget,
+	getDay,
+	getMeals,
+	getTrends,
+	parseError,
+	products,
+	profile,
+	providers
+} from './api';
+import { CacheHttpError } from './offline/cache.ts';
+
+const mocks = vi.hoisted(() => ({
+	connection: { activeUserId: null as number | null },
+	queueState: { ops: [] as unknown[] },
+	cachedGetJson: vi.fn(),
+	overlayMeals: vi.fn(),
+	overlayDay: vi.fn()
+}));
+
+vi.mock('./offline/state.svelte.ts', () => ({
+	connection: mocks.connection,
+	queueState: mocks.queueState
+}));
+vi.mock('./offline/cache.ts', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('./offline/cache.ts')>();
+	return { ...actual, cachedGetJson: mocks.cachedGetJson };
+});
+vi.mock('./offline/overlay.ts', () => ({
+	overlayMeals: mocks.overlayMeals,
+	overlayDay: mocks.overlayDay
+}));
 
 const json = (body: unknown, status = 200) =>
 	new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -112,5 +146,94 @@ describe('errorMessage', () => {
 
 	it('falls back to the server message', () => {
 		expect(errorMessage(new ApiError(400, 'grams must be 0-2000'))).toBe('grams must be 0-2000');
+	});
+});
+
+describe('cached reads', () => {
+	const date = '2026-10-29';
+
+	beforeEach(() => {
+		mocks.connection.activeUserId = null;
+		mocks.queueState.ops = [];
+		for (const fn of [mocks.cachedGetJson, mocks.overlayMeals, mocks.overlayDay]) fn.mockReset();
+	});
+
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('gets meals through the cache and applies queued ops', async () => {
+		const meals = [{ id: 'm1' }];
+		const shown = [{ id: 'm1', description: 'optimistic' }];
+		const ops = [{ op_id: 'o1' }];
+		mocks.connection.activeUserId = 42;
+		mocks.queueState.ops = ops;
+		mocks.cachedGetJson.mockResolvedValue({ meals });
+		mocks.overlayMeals.mockReturnValue(shown);
+
+		expect(await getMeals(date)).toBe(shown);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/meals?date=${date}`, 42);
+		expect(mocks.overlayMeals).toHaveBeenCalledWith(meals, ops, date);
+	});
+
+	it('gets the day through the cache and applies queued patches', async () => {
+		const serverDay = { date, steps: 1000, steps_source: 'manual', trained: [] };
+		const shown = { ...serverDay, steps: 2500 };
+		mocks.connection.activeUserId = 42;
+		mocks.cachedGetJson.mockResolvedValue(serverDay);
+		mocks.overlayDay.mockReturnValue(shown);
+
+		expect(await getDay(date)).toBe(shown);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/days/${date}`, 42);
+		expect(mocks.overlayDay).toHaveBeenCalledWith(serverDay, mocks.queueState.ops, date);
+	});
+
+	it('uses the cache for budget, trends, profile and saved products', async () => {
+		mocks.connection.activeUserId = 7;
+		mocks.cachedGetJson.mockImplementation(async (path: string) => {
+			if (path.startsWith('/api/trends')) return { days: [{ date }] };
+			if (path === '/api/products') return { products: [{ food_id: 1 }] };
+			return { date };
+		});
+
+		expect(await getBudget(date)).toEqual({ date });
+		expect(await getTrends('2026-10-01', date)).toEqual([{ date }]);
+		expect(await profile.get()).toEqual({ date });
+		expect(await products.list()).toEqual([{ food_id: 1 }]);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/budget/${date}`, 7);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/trends?from=2026-10-01&to=${date}`, 7);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith('/api/profile', 7);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith('/api/products', 7);
+	});
+
+	it('maps a cached 401 to ApiError and sends the user to login', async () => {
+		const assign = vi.fn();
+		vi.stubGlobal('location', { assign });
+		mocks.connection.activeUserId = 42;
+		mocks.cachedGetJson.mockRejectedValue(
+			new CacheHttpError(401, 'The server answered with an error (401).')
+		);
+
+		const err = await getBudget(date).catch((e: unknown) => e);
+		expect(err).toBeInstanceOf(ApiError);
+		expect(err).toMatchObject({ status: 401 });
+		expect(assign).toHaveBeenCalledWith('/login');
+	});
+
+	it('leaves configuration reads on the plain API', async () => {
+		const fetch = vi.fn(async () => json({ providers: [] }));
+		vi.stubGlobal('fetch', fetch);
+		mocks.connection.activeUserId = 42;
+
+		expect(await providers.list()).toEqual([]);
+		expect(fetch).toHaveBeenCalled();
+		expect(mocks.cachedGetJson).not.toHaveBeenCalled();
+	});
+
+	it('does not consult the cache before a user is active', async () => {
+		const fetch = vi.fn(async () => json({ date }));
+		vi.stubGlobal('fetch', fetch);
+
+		expect(await getBudget(date)).toEqual({ date });
+		expect(fetch).toHaveBeenCalled();
+		expect(mocks.cachedGetJson).not.toHaveBeenCalled();
 	});
 });

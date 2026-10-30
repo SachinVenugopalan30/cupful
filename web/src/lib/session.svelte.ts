@@ -2,8 +2,19 @@
 // Shared app state: who is logged in, their profile, and the selected day.
 // Mutate the properties; never reassign the exported objects.
 
-import { auth, profile as profileApi, type AuthState, type AuthUser, type Profile } from './api';
+import {
+	ApiError,
+	auth,
+	profile as profileApi,
+	type AuthState,
+	type AuthUser,
+	type Profile
+} from './api';
 import { todayIn } from './date';
+import { clearUserCache } from './offline/cache.ts';
+import { start } from './offline/queue.ts';
+import { clearSessionCache, loadSessionCache, saveSession } from './offline/session-cache.ts';
+import { connection } from './offline/state.svelte.ts';
 
 export const session = $state({
 	/** Set once GET /api/auth/state has answered. */
@@ -20,13 +31,53 @@ export function today(): string {
 	return todayIn(session.profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
 }
 
-/** Loads auth state, and the profile when logged in. Call again after login, setup or profile save. */
+/**
+ * Loads auth state, and the profile when logged in. Call again after login, setup or profile save.
+ * Offline, it boots from the last user's cached session instead, so their data stays readable.
+ */
 export async function loadSession(): Promise<void> {
-	const s = await auth.state();
-	session.profile = s.user ? await profileApi.get() : null;
-	session.user = s.user;
+	if (typeof navigator !== 'undefined') connection.online = navigator.onLine;
+
+	let s: AuthState;
+	try {
+		s = await auth.state();
+	} catch (err) {
+		// Only a network failure falls back; an HTTP error is the server's answer.
+		if (err instanceof ApiError) throw err;
+		const cached = await loadSessionCache();
+		// No cached session: the layout shows its "Can't reach Cupful" screen.
+		if (!cached) throw err;
+		connection.activeUserId = cached.userId;
+		connection.online = false;
+		session.auth = cached.auth;
+		session.user = cached.auth.user;
+		session.profile = cached.profile;
+		// Offline, so start() has nothing to flush.
+		await start(cached.userId);
+		if (!day.date) day.date = today();
+		return;
+	}
+
+	if (s.user) {
+		connection.activeUserId = s.user.id;
+		const profile = await profileApi.get();
+		await saveSession(s.user.id, s, profile);
+		await start(s.user.id);
+		session.auth = s;
+		session.user = s.user;
+		session.profile = profile;
+		if (!day.date) day.date = today();
+		return;
+	}
+
+	// Logged out: drop the previous user's cached reads, then the active marker. The layout redirects.
+	const previous = connection.activeUserId;
+	if (previous !== null) await clearUserCache(previous);
+	await clearSessionCache();
+	connection.activeUserId = null;
 	session.auth = s;
-	if (s.user && !day.date) day.date = today();
+	session.user = null;
+	session.profile = null;
 }
 
 const PUBLIC = ['/login', '/setup'];
