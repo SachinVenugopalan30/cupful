@@ -17,7 +17,7 @@ export type CacheEntry = {
 	saved_at: number;
 };
 
-export type MetaEntry = { key: string; value: unknown };
+type MetaEntry = { key: string; value: unknown };
 
 interface CupfulDB extends DBSchema {
 	queue: {
@@ -36,8 +36,8 @@ interface CupfulDB extends DBSchema {
 	};
 }
 
-export const DB_NAME = 'cupful-offline';
-export const DB_VERSION = 1;
+const DB_NAME = 'cupful-offline';
+const DB_VERSION = 1;
 
 function hasIndexedDB(): boolean {
 	return typeof indexedDB !== 'undefined';
@@ -46,7 +46,7 @@ function hasIndexedDB(): boolean {
 let dbPromise: Promise<IDBPDatabase<CupfulDB>> | null = null;
 
 /** Opens (once) the offline database: `queue`, `cache` and `meta`. */
-export function getDb(): Promise<IDBPDatabase<CupfulDB>> {
+function getDb(): Promise<IDBPDatabase<CupfulDB>> {
 	if (!hasIndexedDB()) {
 		return Promise.reject(new Error('IndexedDB is not available in this environment.'));
 	}
@@ -127,6 +127,21 @@ export async function deleteCacheEntry(userId: number, path: string): Promise<vo
 	await (await getDb()).delete('cache', cacheKey(userId, path));
 }
 
+/** Every cached API body for one user. */
+export async function allCacheForUser(userId: number): Promise<CacheEntry[]> {
+	if (!hasIndexedDB()) return [];
+	return (await getDb()).getAllFromIndex('cache', 'by_user', userId);
+}
+
+/** Removes one user's cached API bodies, leaving their queue and other accounts alone. */
+export async function clearCacheForUser(userId: number): Promise<void> {
+	if (!hasIndexedDB()) return;
+	const tx = (await getDb()).transaction('cache', 'readwrite');
+	const keys = await tx.store.index('by_user').getAllKeys(userId);
+	for (const key of keys) await tx.store.delete(key);
+	await tx.done;
+}
+
 // ---- meta ----
 
 export async function getMeta<T = unknown>(key: string): Promise<T | undefined> {
@@ -157,8 +172,5 @@ export async function clearUserData(userId: number): Promise<void> {
 	for (const key of queueKeys) await queueTx.store.delete(key);
 	await queueTx.done;
 
-	const cacheTx = db.transaction('cache', 'readwrite');
-	const cacheKeys = await cacheTx.store.index('by_user').getAllKeys(userId);
-	for (const key of cacheKeys) await cacheTx.store.delete(key);
-	await cacheTx.done;
+	await clearCacheForUser(userId);
 }

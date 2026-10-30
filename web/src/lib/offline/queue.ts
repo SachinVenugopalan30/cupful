@@ -10,16 +10,17 @@
 import type { Day, Meal } from '../api.ts';
 import type { Op, OpResult } from '../sync/index.ts';
 import {
+	allCacheForUser,
 	allQueueForUser,
 	clearUserData,
+	deleteCacheEntry,
 	deleteQueueItem,
-	getDb,
 	putQueueItem,
 	putQueueItems
 } from './db.ts';
-import { deleteCachedBody, putCachedBody } from './cache.ts';
+import { putCachedBody } from './cache.ts';
 import { overlayDay, overlayMeals } from './overlay.ts';
-import { bumpDataVersion, connection, queueState } from './state.svelte.ts';
+import { connection, dataVersion, queueState } from './state.svelte.ts';
 import type { QueuedOp } from './types.ts';
 
 const CHUNK = 100;
@@ -101,14 +102,6 @@ export function stop(): void {
 	connection.failed = 0;
 }
 
-// ---- direct post (storage fallback) ----
-
-async function postDirect(ops: Op[]): Promise<OpResult[]> {
-	const outcome = await postChunk(ops);
-	if (outcome.kind !== 'ok') throw new Error('Could not save the change.');
-	return outcome.results;
-}
-
 /**
  * Stores ops for later sending. If IndexedDB refuses the write (a full quota, say) and we're
  * online, the ops are posted straight away and their results are returned; offline there is
@@ -134,7 +127,9 @@ export async function enqueue(ops: Op[], userId: number): Promise<OpResult[] | n
 				'This device has no room to store the change offline. Free some space and try again.'
 			);
 		}
-		const results = await postDirect(ops);
+		const outcome = await postChunk(ops);
+		if (outcome.kind !== 'ok') throw new Error('Could not save the change.');
+		const results = outcome.results;
 		await refresh();
 		return results;
 	}
@@ -188,11 +183,9 @@ async function writeThrough(userId: number, item: QueuedOp): Promise<void> {
 	if (item.op.kind === 'day.patch') {
 		const date = item.op.payload.date;
 		await updateDays(userId, item, date);
-		await deleteCachedBody(userId, `/api/budget/${date}`);
-		const db = await getDb();
-		const entries = await db.getAllFromIndex('cache', 'by_user', userId);
-		for (const entry of entries) {
-			if (entry.path.startsWith('/api/trends')) await deleteCachedBody(userId, entry.path);
+		await deleteCacheEntry(userId, `/api/budget/${date}`);
+		for (const entry of await allCacheForUser(userId)) {
+			if (entry.path.startsWith('/api/trends')) await deleteCacheEntry(userId, entry.path);
 		}
 		return;
 	}
@@ -206,14 +199,12 @@ function listFrom<T>(body: unknown, field: string): T[] | null {
 }
 
 async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
-	const db = await getDb();
-	const entries = await db.getAllFromIndex('cache', 'by_user', userId);
 	// A delete doesn't care about the date; the overlay removes by id for every cached day.
 	const upsertDate = item.op.kind === 'meal.upsert' ? item.op.payload.date : '';
 	// The row may be `failed` when it is retried; the overlay only applies live rows.
 	const pending = { ...item, status: 'pending' as const };
 
-	for (const entry of entries) {
+	for (const entry of await allCacheForUser(userId)) {
 		if (!entry.path.startsWith('/api/meals?')) continue;
 		const list = listFrom<Meal>(entry.body, 'meals');
 		if (list === null) continue;
@@ -226,11 +217,9 @@ async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
 }
 
 async function updateDays(userId: number, item: QueuedOp, date: string): Promise<void> {
-	const db = await getDb();
-	const entries = await db.getAllFromIndex('cache', 'by_user', userId);
 	const pending = { ...item, status: 'pending' as const };
 
-	for (const entry of entries) {
+	for (const entry of await allCacheForUser(userId)) {
 		if (entry.path === `/api/days/${date}`) {
 			const day = entry.body as Day | null;
 			if (!day || typeof day !== 'object') continue;
@@ -403,7 +392,7 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 	}
 
 	await refresh(userId);
-	bumpDataVersion();
+	dataVersion.n++;
 	return results;
 }
 
@@ -434,7 +423,7 @@ export async function retry(opId: string): Promise<void> {
 export async function discard(opId: string): Promise<void> {
 	await deleteQueueItem(opId);
 	await refresh();
-	bumpDataVersion();
+	dataVersion.n++;
 }
 
 /** Drops a user's queue and cached reads (logout, or "start over" before switching accounts). */
@@ -445,7 +434,7 @@ export async function clearUser(userId: number): Promise<void> {
 		connection.pending = 0;
 		connection.failed = 0;
 	}
-	bumpDataVersion();
+	dataVersion.n++;
 }
 
 /** How many ops are still in the queue (waiting or needing attention) for this user. */
