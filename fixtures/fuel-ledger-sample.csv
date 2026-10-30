@@ -1,0 +1,9 @@
+date,meal_id,item_index,meal,description,food,portion,kcal,protein_g,carbs_g,fat_g,steps,gym_minutes,trained,weight_kg
+2026-01-05,11111111-1111-5111-8111-111111111111,0,breakfast,oats and coffee,Oats,1 bowl,300,10,50,6,8000,30,Chest;Arms,80.5
+2026-01-05,11111111-1111-5111-8111-111111111111,1,breakfast,oats and coffee,Coffee,1 mug,0,0,1,0,8000,30,Chest;Arms,80.5
+2026-01-05,22222222-2222-5222-8222-222222222222,0,lunch,"rice, ""special"" and 米饭",Rice,1 cup,200,4,40,0.5,8000,30,Chest;Arms,80.5
+2026-01-05,22222222-2222-5222-8222-222222222222,1,lunch,"rice, ""special"" and 米饭",Chicken,1 breast,250,40,0,10,8000,30,Chest;Arms,80.5
+2026-01-06,33333333-3333-5333-8333-333333333333,0,dinner,=1+1 soup,Soup,1 bowl,150,5,20,3,9000,,,80.4
+2026-01-06,,,,,,,,,,,9000,,,80.4
+2026-01-07,,,,,,,,,,,10000,45,"Legs;Core",80.2
+2026-01-08,,,,,,,,,,,,,,79.9

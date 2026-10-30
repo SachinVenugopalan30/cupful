@@ -1,0 +1,6 @@
+date,meal_id,item_index,meal,description,food,portion,kcal,protein_g,carbs_g,fat_g,steps,gym_minutes,trained,weight_kg
+2026-02-01,,0,lunch,rice and chicken,Rice,1 cup,200,4,40,0.5,,,,
+2026-02-01,,1,lunch,rice and chicken,Chicken,1 breast,250,40,0,10,,,,
+2026-02-01,,0,lunch,rice and chicken,Rice,1 cup,200,4,40,0.5,,,,
+2026-02-01,,1,lunch,rice and chicken,Chicken,1 breast,250,40,0,10,,,,
+2026-02-02,,,snack,apple,Apple,1 medium,95,0.5,25,0.3,4000,,,
