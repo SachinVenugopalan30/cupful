@@ -23,6 +23,8 @@ export class CacheHttpError extends Error {
 }
 
 const CACHEABLE_EXACT = ['/api/products', '/api/profile'];
+/** A dead connection can leave `fetch` hanging; fall back to the cache after this long. */
+const NETWORK_TIMEOUT = 4_000;
 
 /**
  * True for the read endpoints that are safe to keep offline. Everything else (auth, providers,
@@ -49,12 +51,23 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 	const cacheable = isCacheable(path);
 	let networkError: unknown;
 
+	// Known-offline: don't wait for a fetch that cannot succeed. This is what makes Activity and
+	// Trends open instantly from a cold start in airplane mode.
+	if (cacheable && typeof navigator !== 'undefined' && navigator.onLine === false) {
+		const cached = await getCachedBody<T>(userId, path);
+		if (cached !== undefined) return cached;
+		throw new Error('You’re offline and this page isn’t saved on this device yet.');
+	}
+
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT);
 	try {
 		const res = await fetch(path, {
 			method: 'GET',
 			cache: 'no-store',
 			credentials: 'same-origin',
-			headers: { Accept: 'application/json' }
+			headers: { Accept: 'application/json' },
+			signal: controller.signal
 		});
 		if (res.ok) {
 			const body = await res.json();
@@ -68,6 +81,8 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 	} catch (err) {
 		if (err instanceof CacheHttpError) throw err;
 		networkError = err;
+	} finally {
+		clearTimeout(timer);
 	}
 
 	if (cacheable) {

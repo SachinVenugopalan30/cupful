@@ -102,6 +102,11 @@ network error or a 5xx, the cached body for the same user and path is used when 
 403 or 404 is never served from the cache; those are real answers about the current session or
 resource.
 
+When the browser already reports itself offline, the cache is read without attempting the network,
+so a screen opened for the first time in airplane mode renders immediately instead of waiting for a
+dead request. A request that hangs on a half-connected network is aborted after 4 seconds and the
+cached body is used; if nothing is cached, the screen says the page is not saved on the device yet.
+
 Only these reads are cacheable:
 
 - `GET /api/meals?date=...`

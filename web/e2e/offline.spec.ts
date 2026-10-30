@@ -63,6 +63,8 @@ test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on 
 	// Cache the day/activity read before going offline (phones open Activity on its own tab).
 	await page.getByRole('link', { name: 'Activity' }).click();
 	await expect(page.getByLabel(/Weigh-in/)).toBeVisible();
+	await page.getByRole('link', { name: 'Trends' }).click();
+	await expect(page.getByText(/kcal eaten/)).toBeVisible();
 	await page.getByRole('link', { name: 'Today' }).click();
 	await page.waitForURL((url) => url.pathname === '/');
 	await waitForController(page);
@@ -91,6 +93,13 @@ test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on 
 	await page.reload();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 	await expect(page.getByTestId('meal').filter({ hasText: 'offline seed bowl' })).toHaveCount(2);
+
+	// Activity and Trends open from the cache on a cold start in airplane mode.
+	await page.getByRole('link', { name: 'Activity' }).click();
+	await expect(page.getByLabel(/Weigh-in/)).toHaveValue('81');
+	await page.getByRole('link', { name: 'Trends' }).click();
+	await expect(page.getByText(/kcal eaten/)).toBeVisible();
+	await page.getByRole('link', { name: 'Today' }).click();
 
 	await page.context().setOffline(false);
 	await expect(bar).toBeHidden({ timeout: 30_000 });
