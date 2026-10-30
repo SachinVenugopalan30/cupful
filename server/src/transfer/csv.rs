@@ -85,6 +85,7 @@ struct StoredMeal {
     source: String,
     provider_id: Option<i64>,
     deleted_at: Option<i64>,
+    edited: i64,
 }
 
 #[derive(sqlx::FromRow)]
@@ -768,6 +769,7 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
     let mut tx = s.db.begin_with("BEGIN IMMEDIATE").await?;
 
     let (mut created, mut updated, mut unchanged) = (0i64, 0i64, 0i64);
+    let (mut skipped_deleted, mut skipped_edited) = (0i64, 0i64);
     let mut item_count = 0i64;
 
     for d in &drafts {
@@ -799,13 +801,19 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
         let existing: Option<StoredMeal> = sqlx::query_as!(
             StoredMeal,
             "SELECT date, meal_type, description, scale, assumptions, confidence, source,
-                    provider_id, deleted_at
+                    provider_id, deleted_at, edited
              FROM meals WHERE id = ? AND user_id = ?",
             &meal_id,
             user_id
         )
         .fetch_optional(&mut *tx)
         .await?;
+
+        // PLAN §6: an upsert of a deleted id is stale, and import is never newer than the app.
+        if existing.as_ref().is_some_and(|e| e.deleted_at.is_some()) {
+            skipped_deleted += 1;
+            continue;
+        }
 
         let existing_items: Vec<StoredItem> = if existing.is_some() {
             sqlx::query_as!(
@@ -914,18 +922,13 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
                 item_count += meal.items.len() as i64;
                 continue;
             }
+            // Edited in Cupful since it was logged or imported: the app's version wins.
+            if existing.as_ref().is_some_and(|e| e.edited != 0) {
+                skipped_edited += 1;
+                continue;
+            }
         }
 
-        if existing.is_some() && !live {
-            // A tombstoned id is revived by a fresh import.
-            sqlx::query!(
-                "UPDATE meals SET deleted_at = NULL WHERE id = ? AND user_id = ?",
-                &meal_id,
-                user_id
-            )
-            .execute(&mut *tx)
-            .await?;
-        }
         match write_meal_on(&mut tx, user_id, &meal, now, now, WriteMode::Import).await? {
             crate::sync::Outcome::Applied => {
                 if live {
@@ -1001,6 +1004,8 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
         "meals_created": created,
         "meals_updated": updated,
         "meals_unchanged": unchanged,
+        "meals_skipped_deleted": skipped_deleted,
+        "meals_skipped_edited": skipped_edited,
         "items": item_count,
         "days": day_count,
     })))

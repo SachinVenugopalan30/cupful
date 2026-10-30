@@ -316,6 +316,8 @@ pub(crate) async fn write_meal_on(
     )
     .fetch_optional(&mut *conn)
     .await?;
+    // A rewrite through sync, or anything restored, counts as edited: CSV import leaves it alone.
+    let edited = mode == WriteMode::Restore || (mode == WriteMode::Sync && existing.is_some());
     if let Some(e) = existing {
         if e.user_id != user_id {
             return Ok(reject("meal id belongs to another account"));
@@ -335,13 +337,14 @@ pub(crate) async fn write_meal_on(
     let date = m.date.to_string();
     sqlx::query!(
         "INSERT INTO meals (id, user_id, date, meal_type, description, scale, assumptions,
-             confidence, source, provider_id, updated_at, received_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             confidence, source, provider_id, updated_at, received_at, edited)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET date = excluded.date, meal_type = excluded.meal_type,
              description = excluded.description, scale = excluded.scale,
              assumptions = excluded.assumptions, confidence = excluded.confidence,
              source = excluded.source, provider_id = excluded.provider_id,
-             updated_at = excluded.updated_at, received_at = excluded.received_at",
+             updated_at = excluded.updated_at, received_at = excluded.received_at,
+             edited = meals.edited OR excluded.edited",
         m.id,
         user_id,
         date,
@@ -353,7 +356,8 @@ pub(crate) async fn write_meal_on(
         m.source,
         m.provider_id,
         effective,
-        received
+        received,
+        edited
     )
     .execute(&mut *conn)
     .await?;

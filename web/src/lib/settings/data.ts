@@ -37,15 +37,20 @@ export function fallbackFilename(path: string, date: string): string {
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** "Imported 3 meals (1 updated, 2 unchanged), 5 items, 2 days." */
+/** "Imported 3 meals (1 updated, 2 unchanged), 5 items, 2 days. Skipped 1 deleted meal." */
 export function formatImportSummary(s: ImportSummary): string {
+	// Skipped meals were not imported, so they are not in the total.
 	const total = s.meals_created + s.meals_updated + s.meals_unchanged;
 	const parts: string[] = [];
 	if (s.meals_created) parts.push(`${s.meals_created} new`);
 	if (s.meals_updated) parts.push(`${s.meals_updated} updated`);
 	if (s.meals_unchanged) parts.push(`${s.meals_unchanged} unchanged`);
 	const detail = parts.length ? ` (${parts.join(', ')})` : '';
-	return `Imported ${count(total, 'meal', 'meals')}${detail}, ${count(s.items, 'item', 'items')}, ${count(s.days, 'day', 'days')}.`;
+	const skipped: string[] = [];
+	if (s.meals_skipped_deleted) skipped.push(`${count(s.meals_skipped_deleted, 'deleted meal', 'deleted meals')}`);
+	if (s.meals_skipped_edited) skipped.push(`${count(s.meals_skipped_edited, 'meal', 'meals')} edited in Cupful`);
+	const tail = skipped.length ? ` Skipped ${skipped.join(' and ')}.` : '';
+	return `Imported ${count(total, 'meal', 'meals')}${detail}, ${count(s.items, 'item', 'items')}, ${count(s.days, 'day', 'days')}.${tail}`;
 }
 
 /** "Restored 2 days, 3 meals, 5 items, 4 foods, 1 alias, 2 portions and 0 products." */

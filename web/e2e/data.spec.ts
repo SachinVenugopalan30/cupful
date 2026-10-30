@@ -161,17 +161,14 @@ test.describe('Settings → Data', () => {
 		expect(typeof backup).toBe('object');
 
 		// Restore asks first, then reports what it replaced.
-		let asked = '';
-		page.once('dialog', (dialog) => {
-			asked = dialog.message();
-			void dialog.accept();
-		});
 		await data.getByLabel('Restore backup').setInputFiles({
 			name: 'cupful-backup.json',
 			mimeType: 'application/json',
 			buffer: Buffer.from(JSON.stringify(backup))
 		});
-		await expect.poll(() => asked).toContain('Replace all logged data');
+		const confirm = data.getByRole('group', { name: 'Confirm restore' });
+		await expect(confirm).toContainText('Replace all logged data');
+		await confirm.getByRole('button', { name: 'Replace my data' }).click();
 		await expect(data.getByRole('status')).toContainText(/Restored/);
 		await expect(data.getByRole('status')).toContainText('1 meal');
 

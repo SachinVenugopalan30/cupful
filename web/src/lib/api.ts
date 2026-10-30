@@ -306,11 +306,16 @@ export type TrendDay = {
 
 export type IngestToken = { id: number; label: string; created_at: string; last_used_at: string | null };
 
-/** POST /api/import/fuel-ledger answer. `meals_unchanged` were already identical. */
+/**
+ * POST /api/import/fuel-ledger answer. `meals_unchanged` were already identical; the `skipped`
+ * ones were left alone because they were deleted, or edited in Cupful, since.
+ */
 export type ImportSummary = {
 	meals_created: number;
 	meals_updated: number;
 	meals_unchanged: number;
+	meals_skipped_deleted: number;
+	meals_skipped_edited: number;
 	items: number;
 	days: number;
 };

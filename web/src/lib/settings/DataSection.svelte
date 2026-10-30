@@ -2,7 +2,7 @@
 <!--
   DataSection — export the CSV and a JSON backup, import a Fuel Ledger CSV, restore a backup
   (PLAN.md §14 M5). Config REST, online only: the server streams the files and replaces rows.
-  Restoring is destructive and asks with the browser's own confirm dialog first.
+  Restoring is destructive and asks in the card first.
 -->
 <script lang="ts">
 	import { download, errorMessage, importCsv, restoreBackup } from '#lib/api.ts';
@@ -17,6 +17,8 @@
 	let busy = $state<Busy>('');
 	let status = $state('');
 	let error = $state('');
+	// A parsed backup waiting for the user's yes.
+	let pending = $state<Record<string, unknown> | null>(null);
 
 	async function saveFile(path: string) {
 		status = error = '';
@@ -69,13 +71,13 @@
 			error = errorMessage(err);
 			return;
 		}
-		if (
-			!confirm(
-				'Replace all logged data with this backup? Current meals, days and profile versions are replaced, and this cannot be undone.'
-			)
-		) {
-			return;
-		}
+		pending = doc;
+	}
+
+	async function restore() {
+		const doc = pending;
+		pending = null;
+		if (!doc) return;
 		busy = 'restore';
 		try {
 			status = formatRestoreSummary(await restoreBackup(doc));
@@ -89,7 +91,7 @@
 		}
 	}
 
-	const blocked = $derived(busy !== '');
+	const blocked = $derived(busy !== '' || pending !== null);
 </script>
 
 <section class="card stack" aria-labelledby="data-h">
@@ -119,8 +121,8 @@
 	<div class="group stack">
 		<h3>Import CSV</h3>
 		<p class="small muted">
-			Import a Fuel Ledger CSV. Re-importing the same file changes nothing; a changed row under the
-			same meal id updates that meal.
+			Import a Fuel Ledger CSV. Re-importing the same file changes nothing. A changed row under the
+			same meal id updates that meal, unless you deleted or edited it in Cupful since.
 		</p>
 		<div class="row">
 			<label class="btn" class:disabled={blocked} aria-disabled={blocked}>
@@ -142,6 +144,18 @@
 			Replace this account's logs with a backup file. The file is checked before anything is
 			replaced, and you'll be asked to confirm.
 		</p>
+		{#if pending}
+			<div class="notice notice-warning" role="group" aria-label="Confirm restore">
+				<p>
+					Replace all logged data with this backup? Current meals, days and profile versions are
+					replaced, and this cannot be undone.
+				</p>
+				<div class="row">
+					<button class="btn btn-danger" onclick={restore}>Replace my data</button>
+					<button class="btn btn-quiet" onclick={() => (pending = null)}>Cancel</button>
+				</div>
+			</div>
+		{/if}
 		<div class="row">
 			<label class="btn btn-danger" class:disabled={blocked} aria-disabled={blocked}>
 				{busy === 'restore' ? 'Restoring…' : 'Restore backup'}

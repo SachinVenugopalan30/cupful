@@ -520,3 +520,48 @@ async fn an_item_id_owned_by_an_unaffected_meal_is_a_conflict() {
     assert_eq!(status, StatusCode::CONFLICT, "{res}");
     assert!(error(&res).contains("another meal"), "{res}");
 }
+
+#[tokio::test]
+async fn reimporting_does_not_revive_a_deleted_meal() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = today(TZ).to_string();
+    let id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    let body = csv(&[&format!("{d},{id},0,lunch,soup,Soup,1 bowl,100,1,2,3,,,,")]);
+    let (_, res) = import(&mut a, &body).await;
+    assert_eq!(res["meals_created"], 1, "{res}");
+    // A foreign-looking id is rehashed per user, so take the stored one.
+    let stored = meals(&mut a, &d).await[0]["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    a.sync(vec![op("meal.delete", &at(1), json!({ "id": stored }))])
+        .await;
+    let (status, res) = import(&mut a, &body).await;
+    assert_eq!(status, StatusCode::OK, "{res}");
+    assert_eq!(res["meals_skipped_deleted"], 1);
+    assert_eq!(res["meals_created"], 0);
+    assert!(meals(&mut a, &d).await.as_array().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn reimporting_does_not_overwrite_a_meal_edited_in_the_app() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = today(TZ).to_string();
+    let id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    let body = csv(&[&format!("{d},{id},0,lunch,soup,Soup,1 bowl,100,1,2,3,,,,")]);
+    import(&mut a, &body).await;
+    let m = meals(&mut a, &d).await;
+    let stored = m[0]["id"].as_str().unwrap().to_string();
+    let item_id = m[0]["items"][0]["id"].as_str().unwrap().to_string();
+    let mut edited = meal(&stored, &d, json!([item(&item_id, 555.0)]));
+    edited["source"] = json!("import");
+    edited["description"] = json!("soup");
+    a.sync(vec![op("meal.upsert", &at(1), edited)]).await;
+    let (status, res) = import(&mut a, &body).await;
+    assert_eq!(status, StatusCode::OK, "{res}");
+    assert_eq!(res["meals_skipped_edited"], 1, "{res}");
+    assert_eq!(res["meals_updated"], 0);
+    assert_eq!(meals(&mut a, &d).await[0]["items"][0]["kcal"], 555.0);
+}

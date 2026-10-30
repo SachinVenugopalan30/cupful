@@ -15,6 +15,8 @@ describe('formatImportSummary', () => {
 				meals_created: 0,
 				meals_updated: 1,
 				meals_unchanged: 2,
+				meals_skipped_deleted: 0,
+				meals_skipped_edited: 0,
 				items: 5,
 				days: 2
 			})
@@ -27,6 +29,8 @@ describe('formatImportSummary', () => {
 				meals_created: 1,
 				meals_updated: 1,
 				meals_unchanged: 0,
+				meals_skipped_deleted: 0,
+				meals_skipped_edited: 0,
 				items: 1,
 				days: 1
 			})
@@ -39,10 +43,29 @@ describe('formatImportSummary', () => {
 				meals_created: 0,
 				meals_updated: 0,
 				meals_unchanged: 0,
+				meals_skipped_deleted: 0,
+				meals_skipped_edited: 0,
 				items: 0,
 				days: 0
 			})
 		).toBe('Imported 0 meals, 0 items, 0 days.');
+	});
+});
+
+describe('formatImportSummary skipped meals', () => {
+	it('says what was left alone and why', () => {
+		const base = {
+			meals_created: 0,
+			meals_updated: 0,
+			meals_unchanged: 1,
+			meals_skipped_deleted: 1,
+			meals_skipped_edited: 2,
+			items: 1,
+			days: 0
+		};
+		expect(formatImportSummary(base)).toBe(
+			'Imported 1 meal (1 unchanged), 1 item, 0 days. Skipped 1 deleted meal and 2 meals edited in Cupful.'
+		);
 	});
 });
 

@@ -91,6 +91,11 @@ When the file is Cupful's own export (or another file carrying the same UUIDs), 
 - the meal's `scale` ("×1.5" display), `source` (`ai`, `manual`, `repeat` or `import`), assumptions, confidence and provider link;
 - for days, the source and timestamp of fields whose value did not change.
 
+Two rules stop an old file from undoing what you did in Cupful, and the report counts each:
+
+- **Deleted meals stay deleted** (`meals_skipped_deleted`). A meal id that was deleted in Cupful is skipped, as the write contract treats an upsert of a deleted id as stale.
+- **Edited meals are not overwritten** (`meals_skipped_edited`). Once a meal has been rewritten through sync (an edit in the app, or any restore from a backup), import leaves it alone when the file differs. A meal that was only ever created, by the app or by an import, still takes edits made in the file. A file that matches the stored meal is `unchanged`, not skipped.
+
 A newly created meal gets `source: 'import'`, scale 1 and no food links. Its items have no grams, because the file carries only portion text and nutrients.
 
 Because UUIDv5 ids are not time-ordered (unlike the UUIDv7s Cupful normally creates), imported meals within one date have no guaranteed chronological order. The day total is unaffected; only the ordering of meals in a list may look arbitrary.
