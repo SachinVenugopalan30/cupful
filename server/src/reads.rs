@@ -134,15 +134,25 @@ pub async fn meals(
     )
     .fetch_all(&s.db)
     .await?;
+    // One query for the whole day's items, grouped by meal.
+    let all_items = sqlx::query!(
+        "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g, i.carbs_g,
+                i.fat_g, i.food_id, i.origin
+         FROM meal_items i JOIN meals m ON m.id = i.meal_id
+         WHERE m.user_id = ? AND m.date = ? AND m.deleted_at IS NULL
+         ORDER BY i.meal_id, i.position",
+        user.id,
+        date
+    )
+    .fetch_all(&s.db)
+    .await?;
+    let mut by_meal: HashMap<String, Vec<_>> = HashMap::new();
+    for i in all_items {
+        by_meal.entry(i.meal_id.clone()).or_default().push(i);
+    }
     let mut out = Vec::with_capacity(meals.len());
     for m in meals {
-        let items = sqlx::query!(
-            "SELECT id, name, portion_text, grams, kcal, protein_g, carbs_g, fat_g, food_id, origin
-             FROM meal_items WHERE meal_id = ? ORDER BY position",
-            m.id
-        )
-        .fetch_all(&s.db)
-        .await?;
+        let items = by_meal.remove(&m.id).unwrap_or_default();
         let sum = |f: fn(&_) -> f64| items.iter().map(f).sum::<f64>();
         let totals = json!({
             "kcal": sum(|i| i.kcal),

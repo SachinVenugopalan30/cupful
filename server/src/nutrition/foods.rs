@@ -120,27 +120,14 @@ fn singular(w: &str) -> String {
     stem.to_string()
 }
 
-/// Rows of a simple CSV: quoted fields with `""` escapes, no newlines inside fields.
+/// Rows of a CSV (header included); quotes and `""` escapes handled by the `csv` crate.
 fn csv(s: &str) -> Vec<Vec<String>> {
-    s.lines()
-        .filter(|l| !l.trim().is_empty())
-        .map(|line| {
-            let (mut row, mut field, mut quoted) = (vec![], String::new(), false);
-            let mut chars = line.chars().peekable();
-            while let Some(c) = chars.next() {
-                match c {
-                    '"' if quoted && chars.peek() == Some(&'"') => {
-                        field.push('"');
-                        chars.next();
-                    }
-                    '"' => quoted = !quoted,
-                    ',' if !quoted => row.push(std::mem::take(&mut field)),
-                    c => field.push(c),
-                }
-            }
-            row.push(field);
-            row
-        })
+    csv::ReaderBuilder::new()
+        .has_headers(false)
+        .flexible(true)
+        .from_reader(s.as_bytes())
+        .records()
+        .map(|r| r.expect("shipped csv").iter().map(String::from).collect())
         .collect()
 }
 

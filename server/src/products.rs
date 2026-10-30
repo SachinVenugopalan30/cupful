@@ -162,21 +162,20 @@ pub async fn lookup(
     Ok(Json(food.json()))
 }
 
-/// The best stored entry for `barcode`: the user's own label entry, then anyone's (newest first),
-/// then the Open Food Facts copy. Other users' private foods are never visible.
+/// The best stored entry for `barcode`: the user's own label entry, then the Open Food Facts copy.
+/// Other users' label entries are never visible.
 async fn stored(db: &SqlitePool, user_id: i64, barcode: &str) -> Result<Option<Food>> {
-    let me = user_id.to_string();
     Ok(sqlx::query_as!(
         Food,
         "SELECT id, source, name, brand, barcode, kcal, protein_g, carbs_g, fat_g, serving_g,
                 serving_text, fetched_at
          FROM foods
-         WHERE barcode = ? AND source IN ('user', 'off') AND (user_id IS NULL OR user_id = ?)
-         ORDER BY CASE WHEN source = 'off' THEN 2 WHEN source_ref = ? THEN 0 ELSE 1 END, id DESC
+         WHERE barcode = ? AND ((source = 'off' AND user_id IS NULL)
+                                OR (source = 'user' AND user_id = ?))
+         ORDER BY source = 'off', id DESC
          LIMIT 1",
         barcode,
-        user_id,
-        me
+        user_id
     )
     .fetch_optional(db)
     .await?)
@@ -469,7 +468,7 @@ fn label_food(b: LabelIn) -> std::result::Result<Food, String> {
     })
 }
 
-/// "Enter from the label": a shared `user` food for the barcode, saved to the user's products.
+/// "Enter from the label": a `user` food private to the caller for the barcode, saved to the user's products.
 /// Entering the same barcode again updates the user's earlier entry.
 pub async fn create(
     State(s): State<AppState>,
@@ -477,17 +476,13 @@ pub async fn create(
     JsonBody(body): JsonBody<LabelIn>,
 ) -> Result<Json<Value>> {
     let f = label_food(body).map_err(Error::bad_request)?;
-    let (me, norm, now) = (
-        user.id.to_string(),
-        crate::nutrition::foods::normalize(&f.name),
-        now_ms(),
-    );
+    let (norm, now) = (crate::nutrition::foods::normalize(&f.name), now_ms());
     let mut tx = s.db.begin_with("BEGIN IMMEDIATE").await?;
     let existing = sqlx::query_scalar!(
         "SELECT id FROM foods
-         WHERE barcode = ? AND source = 'user' AND source_ref = ? AND user_id IS NULL",
+         WHERE barcode = ? AND source = 'user' AND user_id = ?",
         f.barcode,
-        me
+        user.id
     )
     .fetch_optional(&mut *tx)
     .await?;
@@ -514,11 +509,12 @@ pub async fn create(
         }
         None => {
             sqlx::query_scalar!(
-                "INSERT INTO foods (source, source_ref, name, name_norm, brand, barcode, kcal,
-                     protein_g, carbs_g, fat_g, serving_g, serving_text)
-                 VALUES ('user', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "INSERT INTO foods (source, source_ref, user_id, name, name_norm, brand, barcode,
+                     kcal, protein_g, carbs_g, fat_g, serving_g, serving_text)
+                 VALUES ('user', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  RETURNING id",
-                me,
+                user.id.to_string(),
+                user.id,
                 f.name,
                 norm,
                 f.brand,
