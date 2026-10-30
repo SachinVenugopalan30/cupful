@@ -60,7 +60,7 @@
 			<p>
 				Sign in again to sync your changes.
 				{connection.pending > 0 ? ` ${waiting}.` : ''}
-				<a href="/login">Sign in</a>
+				<a href="/login" data-sveltekit-reload>Sign in</a>
 			</p>
 		{:else if barState === 'offline'}
 			<p>

@@ -8,6 +8,7 @@ import { deleteMeta, getMeta, putMeta } from './db.ts';
 export type CachedSession = { userId: number; auth: AuthState; profile: Profile };
 
 const ACTIVE_USER = 'active_user';
+const PREVIOUS_USER = 'previous_user';
 const authKey = (userId: number) => `auth:${userId}`;
 const profileKey = (userId: number) => `profile:${userId}`;
 const healthKey = (userId: number) => `health:${userId}`;
@@ -64,4 +65,21 @@ export async function loadHealth(): Promise<Health | null> {
 	const userId = await getMeta<unknown>(ACTIVE_USER);
 	if (typeof userId !== 'number') return null;
 	return (await getMeta<Health>(healthKey(userId))) ?? null;
+}
+
+/** The account that was signed in before the server session ended, kept to warn on a switch. */
+export type PreviousUser = { userId: number; username: string };
+
+export async function savePreviousUser(userId: number, username: string): Promise<void> {
+	await putMeta(PREVIOUS_USER, { userId, username });
+}
+
+export async function loadPreviousUser(): Promise<PreviousUser | null> {
+	const value = await getMeta<PreviousUser>(PREVIOUS_USER);
+	if (!value || typeof value.userId !== 'number' || typeof value.username !== 'string') return null;
+	return value;
+}
+
+export async function clearPreviousUser(): Promise<void> {
+	await deleteMeta(PREVIOUS_USER);
 }

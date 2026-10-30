@@ -214,25 +214,28 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 	await page.context().setOffline(true);
 	await repeatMeal(page, secret);
 	await expect(page.getByTestId('sync-bar')).toContainText(/1 change waiting/);
-	await page.context().setOffline(false);
 
 	await page.getByRole('link', { name: 'Settings' }).click();
 	await expect(syncOpRows(page)).toHaveCount(1);
 
+	// Offline, logging out is refused before anything local is deleted.
+	await page.getByRole('button', { name: 'Log out', exact: true }).click();
+	await expect(page.getByText(/Logging out needs a connection/)).toBeVisible();
+	await expect(page.getByText(/Logged in as/)).toContainText(USER_A.username);
+	expect(await queueCount(page)).toBeGreaterThan(0);
+	await page.context().setOffline(false);
+
 	// Cancel: A stays signed in and the queued change stays.
-	const cancelDialog = page.waitForEvent('dialog');
-	await page.getByRole('button', { name: 'Log out' }).click();
-	const first = await cancelDialog;
-	expect(first.message()).toMatch(/changes/i);
-	await first.dismiss();
+	await page.getByRole('button', { name: 'Log out', exact: true }).click();
+	await expect(page.getByRole('group', { name: 'Confirm logout' })).toContainText(/1\s+change/);
+	await page.getByRole('button', { name: 'Cancel' }).click();
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	await expect(page.getByText(/Logged in as/)).toContainText(USER_A.username);
 	expect(await queueCount(page)).toBeGreaterThan(0);
 
 	// Accept: the warning is the last chance; logging out discards A's queue and caches.
-	const acceptDialog = page.waitForEvent('dialog');
-	await page.getByRole('button', { name: 'Log out' }).click();
-	await (await acceptDialog).accept();
+	await page.getByRole('button', { name: 'Log out', exact: true }).click();
+	await page.getByRole('button', { name: 'Log out and discard' }).click();
 	await page.waitForURL(/\/login$/);
 	expect(await queueCount(page)).toBe(0);
 	expect(await cacheCountForUser(page, userA)).toBe(0);
@@ -247,4 +250,47 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 		meals: { description: string }[];
 	};
 	expect(bMeals.meals.map((m) => m.description)).not.toContain(secret);
+});
+
+test('an expired session keeps A’s queue and warns before B discards it', async ({ page }) => {
+	const date = localDate();
+	const secret = 'expired session secret';
+	await seedMeal(page, date, secret);
+	await page.reload();
+	await expect(page.getByTestId('meal').filter({ hasText: secret })).toHaveCount(1);
+	const userA = await currentUserId(page);
+
+	await page.route('**/api/sync', (route) => route.abort('blockedbyclient'));
+	await page.context().setOffline(true);
+	await repeatMeal(page, secret);
+	await expect(page.getByTestId('sync-bar')).toContainText(/1 change waiting/);
+	await page.context().clearCookies();
+	await page.context().setOffline(false);
+
+	// The server session is gone; the guard asks for a sign-in, not another account.
+	await expect(page.getByTestId('sync-bar')).toContainText('Sign in again to sync your changes.', {
+		timeout: 30_000
+	});
+	expect(await queueCount(page)).toBe(1);
+
+	// The full load lets the app see it is logged out; the queue survives.
+	await page.getByTestId('sync-bar').getByRole('link', { name: 'Sign in' }).click();
+	await expect(page.getByRole('heading', { name: 'Log in', level: 1 })).toBeVisible();
+	expect(await queueCount(page)).toBe(1);
+
+	await page.getByLabel('Username').fill(USER_B.username);
+	await page.getByLabel('Password').fill(USER_B.password);
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await expect(page.getByRole('group', { name: 'Confirm account switch' })).toContainText(/1\s+change/);
+
+	// Cancel: still at the login screen, A's queue untouched.
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	expect(await queueCount(page)).toBe(1);
+
+	// Accept: B logs in, A's queue and cache are gone.
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await page.getByRole('button', { name: 'Log in and discard' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+	expect(await queueCount(page)).toBe(0);
+	expect(await cacheCountForUser(page, userA)).toBe(0);
 });

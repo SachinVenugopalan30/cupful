@@ -253,7 +253,7 @@ describe('identity guard', () => {
 		expect(queueState.ops[0].status).toBe('pending');
 	});
 
-	it('pauses identity when signed out', async () => {
+	it('pauses for sign-in when the session expired', async () => {
 		const userId = newUser();
 		await boot(userId);
 		await enqueue([deleteOp()], userId);
@@ -265,7 +265,7 @@ describe('identity guard', () => {
 		await flush(userId);
 
 		expect(calls(fetch, '/api/sync')).toBe(0);
-		expect(connection.paused).toBe('identity');
+		expect(connection.paused).toBe('auth');
 		expect(await countFor(userId)).toBe(1);
 	});
 
@@ -289,6 +289,30 @@ describe('identity guard', () => {
 });
 
 describe('failure handling', () => {
+	it('resends a rejected batch one op at a time and fails only the bad op', async () => {
+		const userId = newUser();
+		await boot(userId);
+		const good = deleteOp();
+		const bad = deleteOp();
+		await enqueue([good, bad], userId);
+		stubFetch(async (url, init) => {
+			if (url === '/api/auth/state') return authState(userId);
+			const ops = (JSON.parse(init?.body as string) as { ops: Op[] }).ops;
+			if (ops.length > 1) return json({ error: 'the batch is bad' }, 400);
+			return ops[0].op_id === bad.op_id
+				? json({ error: 'this one is bad' }, 400)
+				: json({ results: [{ op_id: ops[0].op_id, status: 'applied' }] });
+		});
+
+		const results = await flush(userId);
+
+		expect(results.get(good.op_id)?.status).toBe('applied');
+		expect(await countFor(userId)).toBe(1);
+		expect(queueState.ops[0].op_id).toBe(bad.op_id);
+		expect(queueState.ops[0].status).toBe('failed');
+		expect(queueState.ops[0].error).toBe('The server answered with an error (400).');
+	});
+
 	it('pauses auth on a 401, keeps the ops and does not redirect', async () => {
 		const userId = newUser();
 		await boot(userId);

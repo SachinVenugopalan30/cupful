@@ -9,7 +9,14 @@
 
 import type { Day, Meal } from '../api.ts';
 import type { Op, OpResult } from '../sync/index.ts';
-import { allQueueForUser, clearUserData, deleteQueueItem, getDb, putQueueItem } from './db.ts';
+import {
+	allQueueForUser,
+	clearUserData,
+	deleteQueueItem,
+	getDb,
+	putQueueItem,
+	putQueueItems
+} from './db.ts';
 import { deleteCachedBody, putCachedBody } from './cache.ts';
 import { overlayDay, overlayMeals } from './overlay.ts';
 import { bumpDataVersion, connection, queueState } from './state.svelte.ts';
@@ -120,7 +127,7 @@ export async function enqueue(ops: Op[], userId: number): Promise<OpResult[] | n
 	}));
 
 	try {
-		for (const item of items) await putQueueItem(item);
+		await putQueueItems(items);
 	} catch {
 		if (!isOnline()) {
 			throw new Error(
@@ -155,8 +162,13 @@ async function withLock<T>(fn: () => Promise<T>): Promise<T> {
 	}
 }
 
-/** True while a session can still be checked; false once a network failure paused the queue. */
-async function identityMatches(userId: number): Promise<'ok' | 'identity' | 'network'> {
+/**
+ * `auth` means signed out (the session expired), `identity` means a different account is signed
+ * in. Keeping them apart is what makes the bar say "sign in" instead of "another account".
+ */
+async function identityMatches(
+	userId: number
+): Promise<'ok' | 'auth' | 'identity' | 'network'> {
 	try {
 		const res = await fetch('/api/auth/state', {
 			cache: 'no-store',
@@ -164,7 +176,8 @@ async function identityMatches(userId: number): Promise<'ok' | 'identity' | 'net
 		});
 		if (!res.ok) return 'network';
 		const state = (await res.json()) as { user?: { id?: number } | null };
-		return state?.user?.id === userId ? 'ok' : 'identity';
+		if (!state?.user) return 'auth';
+		return state.user.id === userId ? 'ok' : 'identity';
 	} catch {
 		return 'network';
 	}
@@ -272,6 +285,40 @@ async function postChunk(ops: Op[]): Promise<SendOutcome> {
 	}
 }
 
+/** Applies one server result to its queue row, the cached reads and the caller's result map. */
+async function applyResult(
+	userId: number,
+	item: QueuedOp,
+	result: OpResult,
+	results: Map<string, OpResult>
+): Promise<void> {
+	if (result.status === 'applied' || result.status === 'duplicate') {
+		try {
+			await writeThrough(userId, item);
+		} catch {
+			// The server has it; a failed cache write must not make us send it again.
+		}
+		await deleteQueueItem(item.op_id);
+	} else if (result.status === 'stale') {
+		await putQueueItem({
+			...item,
+			status: 'stale',
+			error: 'A newer version replaced this change.',
+		});
+	} else if (result.status === 'rejected') {
+		await putQueueItem({
+			...item,
+			status: 'rejected',
+			error: result.error ?? 'The server rejected this change.',
+		});
+	}
+	results.set(item.op_id, {
+		op_id: item.op_id,
+		status: result.status,
+		...(result.error ? { error: result.error } : {}),
+	});
+}
+
 async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 	const results = new Map<string, OpResult>();
 	if (!isOnline()) {
@@ -292,8 +339,8 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 	}
 
 	const identity = await identityMatches(userId);
-	if (identity === 'identity') {
-		connection.paused = 'identity';
+	if (identity === 'auth' || identity === 'identity') {
+		connection.paused = identity;
 		await refresh(userId);
 		return results;
 	}
@@ -318,17 +365,28 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 			break;
 		}
 		if (outcome.kind === 'error') {
-			// The request reached the server; this is not an offline pause. The ops stay
-			// visible as failed so Settings → Sync can explain and let the user retry.
+			// The batch reached the server but was rejected as a whole. Resend its ops one at a
+			// time so one bad change is marked failed instead of every change beside it.
 			connection.paused = null;
 			for (const item of chunk) {
-				if (item.status === 'failed') continue;
-				await putQueueItem({
-					...item,
-					status: 'failed',
-					error: outcome.message,
-				});
+				const single = await postChunk([item.op]);
+				if (single.kind === 'auth') {
+					connection.paused = 'auth';
+					break;
+				}
+				if (single.kind === 'network') {
+					connection.paused = 'offline';
+					scheduleBackoff();
+					break;
+				}
+				if (single.kind === 'error') {
+					await putQueueItem({ ...item, status: 'failed', error: single.message });
+					continue;
+				}
+				const result = single.results.find((r) => r.op_id === item.op_id) ?? single.results[0];
+				if (result) await applyResult(userId, item, result, results);
 			}
+			await refresh(userId);
 			break;
 		}
 
@@ -339,32 +397,7 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 		for (const [index, item] of chunk.entries()) {
 			const result = byId.get(item.op_id) ?? outcome.results[index];
 			if (!result) continue;
-
-			if (result.status === 'applied' || result.status === 'duplicate') {
-				try {
-					await writeThrough(userId, item);
-				} catch {
-					// The server has it; a failed cache write must not make us send it again.
-				}
-				await deleteQueueItem(item.op_id);
-			} else if (result.status === 'stale') {
-				await putQueueItem({
-					...item,
-					status: 'stale',
-					error: 'A newer version replaced this change.',
-				});
-			} else if (result.status === 'rejected') {
-				await putQueueItem({
-					...item,
-					status: 'rejected',
-					error: result.error ?? 'The server rejected this change.',
-				});
-			}
-			results.set(item.op_id, {
-				op_id: item.op_id,
-				status: result.status,
-				...(result.error ? { error: result.error } : {}),
-			});
+			await applyResult(userId, item, result, results);
 		}
 		await refresh(userId);
 	}

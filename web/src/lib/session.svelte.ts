@@ -13,7 +13,12 @@ import {
 import { todayIn } from './date';
 import { clearUserCache } from './offline/cache.ts';
 import { start } from './offline/queue.ts';
-import { clearSessionCache, loadSessionCache, saveSession } from './offline/session-cache.ts';
+import {
+	clearSessionCache,
+	loadSessionCache,
+	savePreviousUser,
+	saveSession
+} from './offline/session-cache.ts';
 import { connection } from './offline/state.svelte.ts';
 
 export const session = $state({
@@ -61,6 +66,14 @@ export async function loadSession(): Promise<void> {
 	}
 
 	if (s.user) {
+		// A different account signed in (a new login, or another tab). Drop the previous user's
+		// cached reads and session data. Their queued writes are left for the explicit switch flow,
+		// which warns before discarding them.
+		const cached = await loadSessionCache().catch(() => null);
+		if (cached && cached.userId !== s.user.id) {
+			await clearUserCache(cached.userId);
+			await clearSessionCache(cached.userId);
+		}
 		connection.activeUserId = s.user.id;
 		const profile = await profileApi.get();
 		await saveSession(s.user.id, s, profile);
@@ -72,10 +85,16 @@ export async function loadSession(): Promise<void> {
 		return;
 	}
 
-	// Logged out: drop the previous user's cached reads, then the active marker. The layout redirects.
-	const previous = connection.activeUserId;
-	if (previous !== null) await clearUserCache(previous);
-	await clearSessionCache();
+	// Logged out: drop the cached user's reads and session. The queue is kept so unsynced changes
+	// can still sync after signing in again. The layout redirects.
+	const cached = await loadSessionCache().catch(() => null);
+	if (cached) {
+		await savePreviousUser(cached.userId, cached.auth.user?.username ?? 'another account');
+		await clearUserCache(cached.userId);
+		await clearSessionCache(cached.userId);
+	} else {
+		await clearSessionCache();
+	}
 	connection.activeUserId = null;
 	session.auth = s;
 	session.user = null;

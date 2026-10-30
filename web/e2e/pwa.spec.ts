@@ -33,16 +33,27 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 	await page.reload();
 	await waitForController(page);
 
+	const cached = await page.evaluate(async () => {
+		const name = (await caches.keys()).find((key) => key.startsWith('cupful-'));
+		if (!name) return [];
+		const cache = await caches.open(name);
+		return (await cache.keys()).map((request) => new URL(request.url).pathname);
+	});
+	expect(cached.some((path) => path.endsWith('.wasm'))).toBe(false);
+	expect(cached.some((path) => path.includes('/_app/immutable/'))).toBe(true);
+
 	const manifest = await page.request.get('/manifest.webmanifest');
 	expect(manifest.status()).toBe(200);
 	expect(manifest.headers()['content-type']).toMatch(/manifest\+json|application\/json/);
 	const body = (await manifest.json()) as {
 		name: string;
 		display: string;
+		background_color: string;
 		icons: { src: string }[];
 	};
 	expect(body.name).toBe('Cupful');
 	expect(body.display).toBe('standalone');
+	expect(body.background_color).toBe('#f8f4ec');
 
 	for (const icon of ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png']) {
 		const res = await page.request.get(icon);

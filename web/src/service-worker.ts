@@ -26,8 +26,10 @@ const PRECACHE = Array.from(
 	new Set([
 		ROOT,
 		INDEX,
-		...immutable.map((entry) => at(entry.path)),
-		...assets.map((entry) => asset(entry.path))
+		...immutable.filter((entry) => !entry.path.endsWith('.wasm')).map((entry) => at(entry.path)),
+		// The barcode scanner is a ~925 KB wasm file most people never need. Leave it out of the
+		// install list; the fetch handler caches it on first scan.
+		...assets.filter((entry) => !entry.path.endsWith('.wasm')).map((entry) => asset(entry.path))
 	])
 );
 

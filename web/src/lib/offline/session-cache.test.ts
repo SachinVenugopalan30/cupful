@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { AuthState, Health, Profile } from '../api.ts';
 import {
 	clearSessionCache,
+	clearPreviousUser,
 	loadHealth,
+	loadPreviousUser,
 	loadSessionCache,
 	saveHealth,
+	savePreviousUser,
 	saveSession
 } from './session-cache.ts';
 
@@ -31,6 +34,7 @@ beforeEach(async () => {
 	await clearSessionCache(1);
 	await clearSessionCache(2);
 	await clearSessionCache();
+	await clearPreviousUser();
 });
 
 describe('session cache', () => {
@@ -83,5 +87,12 @@ describe('session cache', () => {
 
 		await saveSession(2, otherAuth, otherProfile);
 		expect(await loadHealth()).toBeNull();
+	});
+
+	it('remembers and clears the account that was signed out', async () => {
+		await savePreviousUser(2, 'bob');
+		expect(await loadPreviousUser()).toEqual({ userId: 2, username: 'bob' });
+		await clearPreviousUser();
+		expect(await loadPreviousUser()).toBeNull();
 	});
 });

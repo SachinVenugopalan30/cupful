@@ -87,6 +87,8 @@ session, or a logout/login in another tab unable to push the wrong account's wri
 - **5xx, 429 or a network failure** retries with capped exponential backoff. The first retry is a
   few seconds out, doubles, and stops growing at a small ceiling. Reconnecting or tapping Sync now
   resets the delay.
+- **A whole batch rejected with another 4xx** is resent one op at a time, so only the change the
+  server refuses is marked failed; the rest of the batch lands.
 - **IndexedDB unavailable, a quota error, or a failed enqueue** falls back to a direct
   `POST /api/sync` when the app is online. Offline, there is nowhere to persist the write, so the
   screen reports that the change was not saved.
@@ -155,15 +157,20 @@ Account switching and stale tabs:
 - Queue rows and cached bodies are keyed by user id, so two accounts on one phone never share them.
 - A tab left open as user A does not flush after user B signs in; the guard sees B's session and
   pauses with the `identity` message.
+- A different account signing in clears the previous cached user's reads and session. If that
+  account still has queued changes, the login screen warns and asks before discarding them.
 - A tab that has been open across a logout does not show its old reads to the next login, because
   logout clears that user's cache and session.
-- Signing out is refused with a warning while queued changes exist, unless the user confirms losing
-  them.
+- Logging out ends the server session first, then clears local data. It is refused while offline, so
+  queued changes cannot be deleted without a chance to sync. With queued changes, an in-card
+  confirmation names the count before discarding them.
 
 ## PWA
 
 - The manifest is `web/static/manifest.webmanifest`: name, short name, standalone display, theme
-  and background colors, and 192, 512 and maskable 512 icons. `web/static/icons/` also holds the
+  and background colors, and 192, 512 and maskable 512 icons. The background is the light sand
+  `#f8f4ec`. The manifest's `theme_color` is static (brand blue); `app.html` carries light and dark
+  `theme-color` metas so the browser bar follows the theme. `web/static/icons/` also holds the
   Apple touch icon.
 - The app uses SvelteKit 3's built-in service worker file, `web/src/service-worker.ts`. There is no
   Workbox or `@vite-pwa/sveltekit` dependency.
@@ -172,7 +179,8 @@ Account switching and stale tabs:
   SHA>`, else the package version. A new build therefore gets a new cache and the old `cupful-*`
   caches are deleted on activate. Settings → About shows the same label.
 - On install the worker precaches the app shell: the root, `index.html`, every immutable build asset
-  and every static asset. Development builds skip caching entirely.
+  and every static asset, except the barcode scanner's ~925 KB wasm file. That file is cached the
+  first time someone scans. Development builds skip caching entirely.
 - Navigations are network-first and fall back to the cached `index.html` when offline. Hashed static
   assets are cache-first and refreshed in the background, so a new deploy is picked up on the next
   visit.

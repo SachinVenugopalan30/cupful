@@ -4,7 +4,13 @@ import type { AuthState, Profile } from './api';
 import { ApiError } from './api';
 import { getCachedBody, putCachedBody } from './offline/cache.ts';
 import { clearUserData } from './offline/db.ts';
-import { clearSessionCache, loadSessionCache, saveSession } from './offline/session-cache.ts';
+import {
+	clearPreviousUser,
+	clearSessionCache,
+	loadPreviousUser,
+	loadSessionCache,
+	saveSession
+} from './offline/session-cache.ts';
 import { connection } from './offline/state.svelte.ts';
 import { day, loadSession, redirectFor, session, today } from './session.svelte';
 
@@ -71,6 +77,7 @@ describe('loadSession', () => {
 			await clearUserData(id);
 		}
 		await clearSessionCache();
+		await clearPreviousUser();
 	});
 
 	afterEach(() => vi.unstubAllGlobals());
@@ -109,6 +116,19 @@ describe('loadSession', () => {
 		expect(day.date).toBe(today());
 	});
 
+	it('clears the previous cached user when another account signs in', async () => {
+		await saveSession(7102, bob, profile);
+		await putCachedBody(7102, '/api/meals?date=2026-10-29', { meals: [] });
+		mocks.authState.mockResolvedValue(ada);
+		mocks.profileGet.mockResolvedValue(profile);
+
+		await loadSession();
+
+		expect(await getCachedBody(7102, '/api/meals?date=2026-10-29')).toBeUndefined();
+		expect(await loadSessionCache()).toEqual({ userId: 7101, auth: ada, profile });
+		expect(session.user).toEqual(ada.user);
+	});
+
 	it('rethrows the network failure when nothing is cached', async () => {
 		mocks.authState.mockRejectedValue(new TypeError('Failed to fetch'));
 
@@ -133,6 +153,7 @@ describe('loadSession', () => {
 		expect(mocks.start).not.toHaveBeenCalled();
 		expect(await getCachedBody(7103, '/api/meals?date=2026-10-29')).toBeUndefined();
 		expect(await loadSessionCache()).toBeNull();
+		expect(await loadPreviousUser()).toEqual({ userId: 7103, username: 'c' });
 	});
 
 	it('rethrows an HTTP error rather than treating it as offline', async () => {

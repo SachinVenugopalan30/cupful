@@ -86,6 +86,14 @@ export async function putQueueItem(item: QueuedOp): Promise<void> {
 	await (await getDb()).put('queue', item);
 }
 
+/** Stores several queue rows in one transaction, so a failed write stores none of them. */
+export async function putQueueItems(items: QueuedOp[]): Promise<void> {
+	if (!hasIndexedDB() || !items.length) return;
+	const tx = (await getDb()).transaction('queue', 'readwrite');
+	for (const item of items) tx.store.put(item);
+	await tx.done;
+}
+
 export async function deleteQueueItem(opId: string): Promise<void> {
 	if (!hasIndexedDB()) return;
 	await (await getDb()).delete('queue', opId);

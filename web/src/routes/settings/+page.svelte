@@ -11,31 +11,57 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { clearUser, countFor } from '#lib/offline/queue.ts';
-	import { clearSessionCache } from '#lib/offline/session-cache.ts';
+	import { clearPreviousUser, clearSessionCache } from '#lib/offline/session-cache.ts';
 	import { loadTheme, saveTheme, type ThemePref } from '#lib/theme.ts';
 
 	let theme = $state<ThemePref>(loadTheme());
 	$effect(() => saveTheme(theme));
 
 	let logoutError = $state('');
-	async function logout() {
+	let confirmingLogout = $state(false);
+	let waiting = $state(0);
+	let loggingOut = $state(false);
+
+	async function askLogout() {
 		logoutError = '';
-		try {
-			const userId = connection.activeUserId;
-			if (userId !== null) {
-				const waiting = await countFor(userId);
-				if (waiting > 0) {
-					const ok = confirm(`${waiting} changes haven’t synced. Log out and discard them?`);
-					if (!ok) return;
-				}
-				await clearUser(userId);
-				await clearSessionCache(userId);
+		if (!connection.online) {
+			logoutError = 'Logging out needs a connection. Reconnect so queued changes can sync first.';
+			return;
+		}
+		const userId = connection.activeUserId;
+		if (userId !== null) {
+			waiting = await countFor(userId);
+			if (waiting > 0) {
+				confirmingLogout = true;
+				return;
 			}
+		}
+		await logout();
+	}
+
+	async function logout() {
+		loggingOut = true;
+		logoutError = '';
+		const userId = connection.activeUserId;
+		try {
+			// End the server session first: if this fails, nothing local has been deleted.
 			await auth.logout();
+			if (userId !== null) {
+				try {
+					await clearUser(userId);
+					await clearSessionCache(userId);
+					await clearPreviousUser();
+				} catch {
+					// The next login clears any leftovers; being logged out still matters more.
+				}
+			}
 			// Full reload: no state from this account survives into the next one.
 			location.assign('/login');
 		} catch (e) {
 			logoutError = errorMessage(e);
+			confirmingLogout = false;
+		} finally {
+			loggingOut = false;
 		}
 	}
 </script>
@@ -70,7 +96,28 @@
 		<h2 id="account-h">Account</h2>
 		<p>Logged in as <strong>{session.user?.username}</strong>.</p>
 		{#if logoutError}<p class="notice notice-error" role="alert">{logoutError}</p>{/if}
-		<p><button class="btn btn-danger" onclick={logout}>Log out</button></p>
+		{#if confirmingLogout}
+			<div class="notice notice-warning" role="group" aria-label="Confirm logout">
+				<p>
+					{waiting} {waiting === 1 ? 'change hasn’t' : 'changes haven’t'} synced. Logging out discards
+					{waiting === 1 ? ' it' : ' them'} from this device.
+				</p>
+				<div class="row">
+					<button class="btn btn-danger" onclick={logout} disabled={loggingOut}>
+						Log out and discard
+					</button>
+					<button class="btn btn-quiet" onclick={() => (confirmingLogout = false)} disabled={loggingOut}>
+						Cancel
+					</button>
+				</div>
+			</div>
+		{:else}
+			<p>
+				<button class="btn btn-danger" onclick={askLogout} disabled={loggingOut}>
+					{loggingOut ? 'Logging out…' : 'Log out'}
+				</button>
+			</p>
+		{/if}
 	</section>
 </div>
 
