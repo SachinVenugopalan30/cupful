@@ -9,7 +9,7 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 ## Status
 
 - **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette. M4 (Activity, ingest tokens + Shortcut endpoint, Trends with LayerChart, seed-demo, Google Health v4 steps sync moved up from v0.2; owner connected Google live). M5 (CSV export, Fuel Ledger import, JSON backup/restore, Settings → Data, `docs/import-export.md` and `docs/backups.md`; backend, Vitest and Playwright suites green).
-- **Done:** M6 (PWA manifest and app shell, service worker with the update prompt, per-user IndexedDB read cache, queue-first logged-data writes with the flush identity guard, Settings → Sync detail, `docs/offline.md`; offline and PWA e2e, Vitest, svelte-check and build green).
+- **Done:** M6 (PWA manifest and app shell, service worker with the update prompt, per-user IndexedDB read cache, queue-first logged-data writes with the flush identity guard, Settings → Sync detail, `docs/offline.md`; offline and PWA e2e, Vitest, svelte-check and build green). Owner-verified on Android: WebAPK install, airplane-mode meal and weigh-in sync, Activity/Trends from a cold offline start. Scanner autofocus works in Chrome; Brave may ignore focus hints. The IndexedDB cache has no eviction yet.
 - **Next:** M7 (release v0.1.0: invites, Tailscale identity mode, `docs/self-hosting.md`, tag and published image).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
