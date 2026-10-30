@@ -669,6 +669,11 @@ Then run frontend-design-impeccable.
 - Invites, Tailscale identity mode with spoofing tests, and `docs/self-hosting.md` written for someone new to Tailscale (including Ollama setup and iOS Shortcuts).
 - CONTRIBUTING, screenshots, a final frontend-design-impeccable pass, the `v0.1.0` tag and the published container image.
 
+**M8 - UI refresh**
+- Planned after M7 ships. Apply the design-taste-frontend skill across Today, Activity, Trends, Settings, login, setup, invite, and the empty, error and offline states.
+- Keep routes, behavior, API contracts, tests and accessibility intact. Start from the existing tokens and `global.css` classes, then change what the refresh genuinely improves.
+- Done when every screen is reviewed at 360 px and desktop, in light and dark themes; contrast and touch targets pass; Vitest, Playwright, svelte-check and build are green; before and after screenshots are committed; the owner checks it on a phone.
+
 ---
 
 ## 15. Google Health integration (built in M4)

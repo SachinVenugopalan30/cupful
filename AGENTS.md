@@ -10,7 +10,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 
 - M0 to M6 are done. M6 covers PWA install, service worker, IndexedDB read cache, and the offline write queue. The owner verified it on Android.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
-- Next: M7, release v0.1.0. Invites, Tailscale identity mode, self-hosting docs, tag and image.
+- Next: M7, release v0.1.0. Then M8, a UI refresh with the design-taste-frontend skill.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout
