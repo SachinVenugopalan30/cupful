@@ -1,0 +1,122 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date, meal_type, description, scale, assumptions, confidence, source,\n                    provider_id, deleted_at\n             FROM meals WHERE id = ? AND user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "meal_type",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "meal_type"
+          }
+        }
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "name": "scale",
+        "ordinal": 3,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "scale"
+          }
+        }
+      },
+      {
+        "name": "assumptions",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "assumptions"
+          }
+        }
+      },
+      {
+        "name": "confidence",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "confidence"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "source"
+          }
+        }
+      },
+      {
+        "name": "provider_id",
+        "ordinal": 7,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "provider_id"
+          }
+        }
+      },
+      {
+        "name": "deleted_at",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "deleted_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "7eab34a9c8dfcce17e0a59616adaa8ac7955b4e188bcdb403c24557238c6358a"
+}

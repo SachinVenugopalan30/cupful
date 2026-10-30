@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE meals SET deleted_at = NULL WHERE id = ? AND user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "4d4e68c7c15f983478a0a22f423af03efa48e00d136a1e3b84b798d9b4e06947"
+}

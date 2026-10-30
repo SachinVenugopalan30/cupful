@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, food_id, alias, alias_norm FROM food_aliases\n         WHERE user_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "food_id",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "alias",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "alias"
+          }
+        }
+      },
+      {
+        "name": "alias_norm",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_aliases",
+            "name": "alias_norm"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "34b0ba735b7ca1e3429651186b18c31a503d505af5640fdddd899426f79cc9ae"
+}

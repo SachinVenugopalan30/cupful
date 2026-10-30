@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO food_aliases (food_id, alias, alias_norm, user_id) VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "ce139b7e7752e4be70a381e27c00080cb7864c43d8f926fa8cb85ec134a98034"
+}

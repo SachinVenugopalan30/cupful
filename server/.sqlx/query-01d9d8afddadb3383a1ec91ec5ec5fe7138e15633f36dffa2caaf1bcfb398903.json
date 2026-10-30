@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT steps, gym_minutes, trained, weight_kg FROM days\n                 WHERE user_id = ? AND date = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "steps",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps"
+          }
+        }
+      },
+      {
+        "name": "gym_minutes",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_minutes"
+          }
+        }
+      },
+      {
+        "name": "trained",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "trained"
+          }
+        }
+      },
+      {
+        "name": "weight_kg",
+        "ordinal": 3,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_kg"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "01d9d8afddadb3383a1ec91ec5ec5fe7138e15633f36dffa2caaf1bcfb398903"
+}

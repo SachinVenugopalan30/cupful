@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,\n                 start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": []
+  },
+  "hash": "f8d167353f9ea4d34e3753d4139ea61bf97fe9e1b6a7f046a6246ac2ceb8cec5"
+}

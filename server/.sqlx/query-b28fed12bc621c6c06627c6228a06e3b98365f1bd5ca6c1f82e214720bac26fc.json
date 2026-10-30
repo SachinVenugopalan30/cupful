@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT phrase_norm, food_id, grams FROM user_portions\n         WHERE user_id = ? ORDER BY phrase_norm",
+  "describe": {
+    "columns": [
+      {
+        "name": "phrase_norm",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "user_portions",
+            "name": "phrase_norm"
+          }
+        }
+      },
+      {
+        "name": "food_id",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_portions",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "grams",
+        "ordinal": 2,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "user_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b28fed12bc621c6c06627c6228a06e3b98365f1bd5ca6c1f82e214720bac26fc"
+}

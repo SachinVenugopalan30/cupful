@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO food_portions (food_id, unit, grams) VALUES (?, ?, ?)\n             ON CONFLICT (food_id, unit) DO UPDATE SET grams = excluded.grams",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "2308be7c1f199108cf7b7c6bfde6771cd4edd14fa42a730e9d50050079d21c98"
+}

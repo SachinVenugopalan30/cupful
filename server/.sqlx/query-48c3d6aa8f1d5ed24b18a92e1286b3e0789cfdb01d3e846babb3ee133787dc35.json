@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM food_aliases WHERE user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "48c3d6aa8f1d5ed24b18a92e1286b3e0789cfdb01d3e846babb3ee133787dc35"
+}

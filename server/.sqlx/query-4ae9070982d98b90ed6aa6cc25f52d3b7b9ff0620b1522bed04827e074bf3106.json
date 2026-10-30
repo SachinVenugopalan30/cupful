@@ -1,0 +1,110 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT i.meal_id, i.position, i.name, i.portion_text, i.kcal, i.protein_g, i.carbs_g,\n                i.fat_g\n         FROM meal_items i JOIN meals m ON m.id = i.meal_id\n         WHERE m.user_id = ? AND m.deleted_at IS NULL\n         ORDER BY i.meal_id, i.position",
+  "describe": {
+    "columns": [
+      {
+        "name": "meal_id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "meal_id"
+          }
+        }
+      },
+      {
+        "name": "position",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "position"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "portion_text",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "portion_text"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "protein_g",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "protein_g"
+          }
+        }
+      },
+      {
+        "name": "carbs_g",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "carbs_g"
+          }
+        }
+      },
+      {
+        "name": "fat_g",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "fat_g"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4ae9070982d98b90ed6aa6cc25f52d3b7b9ff0620b1522bed04827e074bf3106"
+}
