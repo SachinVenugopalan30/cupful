@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { ApiError, auth, errorMessage } from '#lib/api.ts';
+	import { onMount } from 'svelte';
+	import { ApiError, auth, errorMessage, health, type Health } from '#lib/api.ts';
 	import { loadSession, session } from '#lib/session.svelte.ts';
 	import { clearUser, countFor } from '#lib/offline/queue.ts';
 	import { clearPreviousUser, loadPreviousUser } from '#lib/offline/session-cache.ts';
@@ -10,6 +11,8 @@
 	let password = $state('');
 	let error = $state('');
 	let busy = $state(false);
+	/** Running version and AGPL source offer. Absent when the server cannot be reached. */
+	let server = $state<Health | null>(null);
 	/** A previous account with unsynced changes; logging in as someone else would lose them. */
 	let switchFrom = $state<{ userId: number; username: string; waiting: number } | null>(null);
 	const switchWarning = $derived.by(() => {
@@ -18,6 +21,18 @@
 		return `${n} ${n === 1 ? 'change' : 'changes'} from ${switchFrom.username} ${
 			n === 1 ? 'hasn’t' : 'haven’t'
 		} synced. Logging in as ${username} discards ${n === 1 ? 'it' : 'them'}.`;
+	});
+
+	onMount(() => {
+		let active = true;
+		health()
+			.then((h) => {
+				if (active) server = h;
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
 	});
 
 	async function login(discard = false) {
@@ -95,4 +110,12 @@
 		<button class="btn btn-primary btn-block" disabled={busy}>{busy ? 'Logging in…' : 'Log in'}</button>
 	</form>
 	<p class="muted small">Forgot your password? The server admin can reset it with <code>cupful reset-password</code>.</p>
+	{#if server}
+		<p class="muted small">
+			Cupful <span class="num">{server.version}</span> ·
+			<a href={server.source_url} rel="noopener">Source code</a> (AGPL-3.0-or-later)
+		</p>
+	{:else}
+		<p class="muted small">Free software under AGPL-3.0-or-later.</p>
+	{/if}
 </div>

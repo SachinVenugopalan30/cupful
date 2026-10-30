@@ -114,14 +114,19 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # GHCR rejects uppercase names, and github.repository keeps the owner's case.
+      - if: startsWith(github.ref, 'refs/tags/v')
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
       - if: startsWith(github.ref, 'refs/tags/v')
         id: meta
         uses: docker/metadata-action@v6.2.0
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ steps.image.outputs.name }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
       - if: startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v7.4.0
         with:
