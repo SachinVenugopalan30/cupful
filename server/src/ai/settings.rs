@@ -300,10 +300,8 @@ pub async fn test(State(s): State<AppState>, _: Admin, Path(id): Path<i64>) -> R
             json!({"ok": true, "message": "Connected. The provider answered with valid JSON."})
         }
         Err(e) => {
-            let Error::Coded(_, code, msg) = Error::from(e) else {
-                unreachable!("provider errors are coded")
-            };
-            json!({"ok": false, "code": code, "message": msg})
+            // Admin-only: keeps the upstream detail the user-facing conversion drops.
+            json!({"ok": false, "code": e.code(), "message": e.detail()})
         }
     }))
 }

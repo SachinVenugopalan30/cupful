@@ -384,3 +384,49 @@ async fn extra_headers_are_sent() {
     );
     assert_eq!(prov.complete_json(request()).await, Ok(json!({"ok": true})));
 }
+
+#[tokio::test]
+async fn app_client_does_not_follow_redirects() {
+    let server = MockServer::start().await;
+    let other = MockServer::start().await;
+    Mock::given(path("/v1/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(302).insert_header("location", format!("{}/x", other.uri())),
+        )
+        .mount(&server)
+        .await;
+    let http = cupful::AppState::new(cupful::db::memory().await, cupful::Config::default()).ai_http;
+    let prov = ai::build(
+        ProviderConfig {
+            kind: Kind::OpenaiCompatible,
+            base_url: format!("{}/v1", server.uri()),
+            model: "m".into(),
+            api_key: Some(Secret::new(KEY.into())),
+            extra_headers: vec![],
+            vision: false,
+            mode: Mode::Native,
+        },
+        http,
+        timeouts(),
+    );
+    assert!(prov.complete_json(request()).await.is_err());
+    assert!(other.received_requests().await.unwrap().is_empty());
+}
+
+#[test]
+fn user_facing_provider_errors_hide_upstream_detail() {
+    use cupful::error::Error;
+    for e in [
+        ProviderError::Unreachable("http://10.0.0.5:8080 refused".into()),
+        ProviderError::Auth("bad key sk-secret".into()),
+    ] {
+        assert!(e.detail().contains(": "), "admin detail kept");
+        let Error::Coded(_, _, msg) = Error::from(e) else {
+            panic!("coded")
+        };
+        assert!(
+            !msg.contains("10.0.0.5") && !msg.contains("sk-secret"),
+            "{msg}"
+        );
+    }
+}

@@ -59,6 +59,8 @@ impl AppState {
     pub fn new(db: SqlitePool, config: Config) -> Self {
         let ai_http = reqwest::Client::builder()
             .connect_timeout(config.ai_timeouts.connect)
+            // A redirect would forward x-api-key and extra headers to another host.
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .expect("build HTTP client");
         Self {
