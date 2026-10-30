@@ -17,6 +17,7 @@ pub mod profile;
 mod reads;
 pub mod sync;
 mod time;
+mod transfer;
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -111,6 +112,20 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/meals", User, get(reads::meals)),
         ("GET", "/api/budget/{date}", User, get(reads::budget)),
         ("GET", "/api/trends", User, get(reads::trends)),
+        ("GET", "/api/export.csv", User, get(transfer::export_csv)),
+        (
+            "POST",
+            "/api/import/fuel-ledger",
+            User,
+            post(transfer::import_csv).layer(DefaultBodyLimit::max(10 << 20)),
+        ),
+        ("GET", "/api/backup", User, get(transfer::backup)),
+        (
+            "POST",
+            "/api/restore",
+            User,
+            post(transfer::restore).layer(DefaultBodyLimit::max(32 << 20)),
+        ),
         ("GET", "/api/ingest-tokens", User, get(ingest::list)),
         ("POST", "/api/ingest-tokens", User, post(ingest::create)),
         (

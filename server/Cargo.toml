@@ -12,6 +12,7 @@ async-trait = "0.1.92"
 axum = { version = "0.8", features = ["multipart"] }
 base64 = "0.22"
 chacha20poly1305 = "0.11"
+csv = "1"
 jiff = { version = "0.2", features = ["serde", "tzdb-bundle-always"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls"] }
 rust-embed = { version = "8", features = ["mime-guess"] }
@@ -23,7 +24,7 @@ tokio = { version = "1", features = ["full"] }
 tower-sessions = "0.15"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-uuid = { version = "1.29", features = ["v7"] }
+uuid = { version = "1.29", features = ["v7", "v5"] }
 
 [dev-dependencies]
 http-body-util = "0.1.5"

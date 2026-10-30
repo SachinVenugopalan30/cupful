@@ -113,6 +113,40 @@ impl Client {
     ) -> (StatusCode, serde_json::Value) {
         self.req("PUT", uri, Some(body)).await
     }
+
+    /// Posts a text body (CSV import) with the CSRF header; the reply is parsed as JSON.
+    pub async fn post_text(&mut self, uri: &str, body: &str) -> (StatusCode, serde_json::Value) {
+        let (status, _, bytes) = self.post_raw(uri, "text/csv", body.to_string()).await;
+        (
+            status,
+            serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null),
+        )
+    }
+
+    /// Posts any body with an explicit content type and the CSRF header; returns the raw reply.
+    pub async fn post_raw(
+        &mut self,
+        uri: &str,
+        content_type: &str,
+        body: impl Into<Body>,
+    ) -> (StatusCode, HeaderMap, Bytes) {
+        let mut b = Request::post(uri)
+            .header("x-cupful", "1")
+            .header("content-type", content_type);
+        if let Some(c) = &self.cookie {
+            b = b.header("cookie", c);
+        }
+        send(&self.app, b.body(body.into()).unwrap()).await
+    }
+
+    /// GET without JSON parsing (exports and backups).
+    pub async fn get_bytes(&mut self, uri: &str) -> (StatusCode, HeaderMap, Bytes) {
+        let mut b = Request::get(uri);
+        if let Some(c) = &self.cookie {
+            b = b.header("cookie", c);
+        }
+        send(&self.app, b.body(Body::empty()).unwrap()).await
+    }
 }
 
 pub const PASSWORD: &str = "correct horse battery";
