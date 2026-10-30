@@ -9,7 +9,8 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 ## Status
 
 - **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette. M4 (Activity, ingest tokens + Shortcut endpoint, Trends with LayerChart, seed-demo, Google Health v4 steps sync moved up from v0.2; owner connected Google live). M5 (CSV export, Fuel Ledger import, JSON backup/restore, Settings → Data, `docs/import-export.md` and `docs/backups.md`; backend, Vitest and Playwright suites green).
-- **Next:** M6 (PWA and offline).
+- **M6 implemented; validation pending:** PWA manifest and app shell, service worker with the update prompt, per-user IndexedDB read cache, queue-first logged-data writes with the flush identity guard, Settings → Sync detail, `docs/offline.md`; headless Chromium covers offline mechanics.
+- **Next:** M7 (release v0.1.0: invites, Tailscale identity mode, `docs/self-hosting.md`, tag and published image).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout
@@ -51,6 +52,9 @@ web/                    SvelteKit app (adapter-static, SPA fallback); routes: / 
   src/lib/{format,date,theme}.ts, session.svelte.ts   formatting, dates, theme preference, session/day state
   src/lib/styles/       tokens.css (design tokens, light-dark()), global.css (shared classes)
   src/lib/{today,products,settings,activity,trends}/   screen components (activity/: ActivitySection + form helpers; trends/: Charts.svelte (LayerChart, lazy-loaded), ChartCard, logic.ts; settings/TokensSection: ingest tokens) (products/PhraseLinks.svelte: phrases that resolve to a product) (props documented in each file's header)
+  src/service-worker.ts  SvelteKit built-in service worker: app-shell precache, navigation fallback, cache-first immutable assets, SKIP_WAITING
+  src/lib/offline/       IndexedDB offline layer: db (queue/cache/meta), queue (flush, identity guard), cache (allowlisted reads), overlay, session-cache, state, update prompt
+  static/manifest.webmanifest, static/icons/   PWA manifest and install icons
   e2e/, playwright.config.ts   Playwright against the real server
 docs/design.md          design direction, tokens, component rules
 fixtures/                shared test vectors and samples (budget_cases.json; M5 import/backup fixtures)
@@ -62,6 +66,7 @@ docs/google-health.md   Google Cloud setup for the optional Google Health steps 
 docs/shortcuts.md       sending steps from iOS Shortcuts / Android with an ingest token
 docs/import-export.md   CSV export and Fuel Ledger import: format, ids, merge semantics
 docs/backups.md         JSON backup/restore and the nightly SQLite copy
+docs/offline.md         offline scope, write queue and identity guard, read cache, PWA install
 docs/decisions.md       one line per deviation/notable choice
 ```
 
@@ -82,7 +87,7 @@ mkdir -p ../.cupful && export DATABASE_URL=sqlite://$PWD/../.cupful/dev.db && sq
 # frontend (from web/)
 npm run dev        # :5173, proxies /api -> :8080
 npm test           # Vitest
-npm run test:e2e   # Playwright (builds web, starts the Rust server); once: npx playwright install chromium
+npm run test:e2e   # Playwright (builds web, starts the Rust server; offline specs spawn their own); once: npx playwright install chromium
 npm run check
 npm run build
 ```
