@@ -347,7 +347,9 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 			break;
 		}
 		if (outcome.kind === 'error') {
-			connection.paused = 'offline';
+			// The request reached the server; this is not an offline pause. The ops stay
+			// visible as failed so Settings → Sync can explain and let the user retry.
+			connection.paused = null;
 			for (const item of chunk) {
 				if (item.status === 'failed') continue;
 				await putQueueItem({
