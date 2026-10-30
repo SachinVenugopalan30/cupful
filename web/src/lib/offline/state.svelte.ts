@@ -19,10 +19,6 @@ export const queueState = $state({ ops: [] as QueuedOp[] });
 /** Bumped after the queue changes or a sync completes, so reads re-fetch and overlays refresh. */
 export const dataVersion = $state({ n: 0 });
 
-export function bumpDataVersion(): void {
-	dataVersion.n++;
-}
-
 let listening = false;
 
 /** Subscribes to browser online/offline events once. The layout calls this on mount. */

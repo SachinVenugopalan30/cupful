@@ -13,6 +13,12 @@ const authKey = (userId: number) => `auth:${userId}`;
 const profileKey = (userId: number) => `profile:${userId}`;
 const healthKey = (userId: number) => `health:${userId}`;
 
+/** The active user id, or null when none is stored (or the marker is not an integer). */
+async function activeUserId(): Promise<number | null> {
+	const userId = await getMeta<unknown>(ACTIVE_USER);
+	return typeof userId === 'number' && Number.isInteger(userId) ? userId : null;
+}
+
 /** Marks `userId` active and stores just their auth state and profile. */
 export async function saveSession(
 	userId: number,
@@ -26,8 +32,8 @@ export async function saveSession(
 
 /** The active user's cached session, or null when there is none (or it is inconsistent). */
 export async function loadSessionCache(): Promise<CachedSession | null> {
-	const userId = await getMeta<unknown>(ACTIVE_USER);
-	if (typeof userId !== 'number' || !Number.isInteger(userId)) return null;
+	const userId = await activeUserId();
+	if (userId === null) return null;
 
 	const auth = await getMeta<AuthState>(authKey(userId));
 	const profile = await getMeta<Profile>(profileKey(userId));
@@ -56,14 +62,14 @@ export async function clearSessionCache(userId?: number): Promise<void> {
 
 /** Caches the last health/version answer for the active user (Settings shows the version offline). */
 export async function saveHealth(health: Health): Promise<void> {
-	const userId = await getMeta<unknown>(ACTIVE_USER);
-	if (typeof userId !== 'number') return;
+	const userId = await activeUserId();
+	if (userId === null) return;
 	await putMeta(healthKey(userId), health);
 }
 
 export async function loadHealth(): Promise<Health | null> {
-	const userId = await getMeta<unknown>(ACTIVE_USER);
-	if (typeof userId !== 'number') return null;
+	const userId = await activeUserId();
+	if (userId === null) return null;
 	return (await getMeta<Health>(healthKey(userId))) ?? null;
 }
 
