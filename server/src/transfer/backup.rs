@@ -17,7 +17,7 @@ use axum::response::{IntoResponse, Response};
 use jiff::civil::Date;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, SqliteConnection};
+use sqlx::SqliteConnection;
 
 use crate::AppState;
 use crate::auth::{User, validate_timezone};
@@ -226,122 +226,149 @@ struct ProductRow {
     last_used_at: i64,
 }
 
-/// Food ids visible to the user that this backup must carry: private foods, their own label
-/// entries, and everything referenced by a live meal item, alias, portion or product.
-/// Another user's private food can never match.
-const EXPORT_FOODS_SQL: &str = "
-    SELECT f.id, f.source, f.source_ref, f.user_id, f.name, f.name_norm, f.brand, f.barcode,
-           f.is_prepared, f.kcal, f.protein_g, f.carbs_g, f.fat_g, f.default_portion_g,
-           f.serving_g, f.serving_text, f.fetched_at
-    FROM foods f
-    WHERE (f.user_id IS NULL OR f.user_id = ?)
-      AND (
-        f.user_id = ?
-        OR (f.source = 'user' AND f.user_id IS NULL AND f.source_ref = ?)
-        OR f.id IN (
-            SELECT i.food_id FROM meal_items i JOIN meals m ON m.id = i.meal_id
-            WHERE m.user_id = ? AND m.deleted_at IS NULL AND i.food_id IS NOT NULL
-            UNION SELECT food_id FROM food_aliases WHERE user_id = ?
-            UNION SELECT food_id FROM user_portions WHERE user_id = ?
-            UNION SELECT food_id FROM user_products WHERE user_id = ?
-        )
-      )
-    ORDER BY f.id";
-
 pub async fn export(s: AppState, user: User) -> Result<Response> {
     let db = &s.db;
     let id = user.id;
     let id_str = id.to_string();
     let today = user_today(db, id).await?;
 
-    let profile = sqlx::query_as::<_, ProfileRow>(
+    let profile = sqlx::query_as!(
+        ProfileRow,
         "SELECT timezone, weight_unit, height_unit FROM profiles WHERE user_id = ?",
+        id
     )
-    .bind(id)
     .fetch_one(db)
     .await?;
-    let versions = sqlx::query_as::<_, VersionRow>(
+    let versions = sqlx::query_as!(
+        VersionRow,
         "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,
                 pace_kg_per_week, typical_steps
          FROM profile_versions WHERE user_id = ? ORDER BY effective_from, id",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let days = sqlx::query_as::<_, DayRow>(
+    let days = sqlx::query_as!(
+        DayRow,
         "SELECT date, steps, steps_source, steps_updated_at, gym_minutes, gym_source,
                 gym_updated_at, trained, trained_updated_at, weight_kg, weight_updated_at
          FROM days WHERE user_id = ? ORDER BY date",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let meals = sqlx::query_as::<_, MealRow>(
+    let meals = sqlx::query_as!(
+        MealRow,
         "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,
                 provider_id, updated_at, received_at
          FROM meals WHERE user_id = ? AND deleted_at IS NULL ORDER BY date, id",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let items = sqlx::query_as::<_, ItemRow>(
+    let items = sqlx::query_as!(
+        ItemRow,
         "SELECT i.meal_id, i.id, i.position, i.name, i.portion_text, i.grams, i.kcal,
                 i.protein_g, i.carbs_g, i.fat_g, i.food_id, i.origin
          FROM meal_items i JOIN meals m ON m.id = i.meal_id
          WHERE m.user_id = ? AND m.deleted_at IS NULL
          ORDER BY i.meal_id, i.position, i.id",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let foods = sqlx::query_as::<_, FoodRow>(EXPORT_FOODS_SQL)
-        .bind(id)
-        .bind(id)
-        .bind(&id_str)
-        .bind(id)
-        .bind(id)
-        .bind(id)
-        .bind(id)
-        .fetch_all(db)
-        .await?;
+    // Food ids visible to the user that this backup must carry: private foods, their own label
+    // entries, and everything referenced by a live meal item, alias, portion or product.
+    // Another user's private food can never match.
+    let foods = sqlx::query_as!(
+        FoodRow,
+        "SELECT f.id, f.source, f.source_ref, f.user_id, f.name, f.name_norm, f.brand, f.barcode,
+               f.is_prepared, f.kcal, f.protein_g, f.carbs_g, f.fat_g, f.default_portion_g,
+               f.serving_g, f.serving_text, f.fetched_at
+        FROM foods f
+        WHERE (f.user_id IS NULL OR f.user_id = ?)
+          AND (
+            f.user_id = ?
+            OR (f.source = 'user' AND f.user_id IS NULL AND f.source_ref = ?)
+            OR f.id IN (
+                SELECT i.food_id FROM meal_items i JOIN meals m ON m.id = i.meal_id
+                WHERE m.user_id = ? AND m.deleted_at IS NULL AND i.food_id IS NOT NULL
+                UNION SELECT food_id FROM food_aliases WHERE user_id = ?
+                UNION SELECT food_id FROM user_portions WHERE user_id = ?
+                UNION SELECT food_id FROM user_products WHERE user_id = ?
+            )
+          )
+        ORDER BY f.id",
+        id,
+        id,
+        &id_str,
+        id,
+        id,
+        id,
+        id
+    )
+    .fetch_all(db)
+    .await?;
     let mut portions_by_food: HashMap<i64, Vec<PortionRow>> = HashMap::new();
     if !foods.is_empty() {
-        let food_ids: Vec<i64> = foods.iter().map(|f| f.id).collect();
-        let marks = vec!["?"; food_ids.len()].join(", ");
-        let mut q = sqlx::query_as::<_, PortionRow>(AssertSqlSafe(format!(
-            "SELECT food_id, unit, grams FROM food_portions
-             WHERE food_id IN ({marks}) ORDER BY food_id, unit"
-        )));
-        for food_id in &food_ids {
-            q = q.bind(food_id);
-        }
-        for p in q.fetch_all(db).await? {
+        let portions = sqlx::query_as!(
+            PortionRow,
+            "SELECT p.food_id, p.unit, p.grams FROM food_portions p
+             WHERE p.food_id IN (
+                 SELECT f.id FROM foods f
+                 WHERE (f.user_id IS NULL OR f.user_id = ?)
+                   AND (
+                     f.user_id = ?
+                     OR (f.source = 'user' AND f.user_id IS NULL AND f.source_ref = ?)
+                     OR f.id IN (
+                         SELECT i.food_id FROM meal_items i JOIN meals m ON m.id = i.meal_id
+                         WHERE m.user_id = ? AND m.deleted_at IS NULL AND i.food_id IS NOT NULL
+                         UNION SELECT food_id FROM food_aliases WHERE user_id = ?
+                         UNION SELECT food_id FROM user_portions WHERE user_id = ?
+                         UNION SELECT food_id FROM user_products WHERE user_id = ?
+                     )
+                   )
+             )
+             ORDER BY p.food_id, p.unit",
+            id,
+            id,
+            &id_str,
+            id,
+            id,
+            id,
+            id
+        )
+        .fetch_all(db)
+        .await?;
+        for p in portions {
             portions_by_food.entry(p.food_id).or_default().push(p);
         }
     }
-    let aliases = sqlx::query_as::<_, AliasRow>(
+    let aliases = sqlx::query_as!(
+        AliasRow,
         "SELECT id, food_id, alias, alias_norm FROM food_aliases
          WHERE user_id = ? ORDER BY id",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let user_portions = sqlx::query_as::<_, UserPortionRow>(
+    let user_portions = sqlx::query_as!(
+        UserPortionRow,
         "SELECT phrase_norm, food_id, grams FROM user_portions
          WHERE user_id = ? ORDER BY phrase_norm",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let products = sqlx::query_as::<_, ProductRow>(
+    let products = sqlx::query_as!(
+        ProductRow,
         "SELECT food_id, last_servings, last_used_at FROM user_products
          WHERE user_id = ? ORDER BY food_id",
+        id
     )
-    .bind(id)
     .fetch_all(db)
     .await?;
-    let username = sqlx::query_scalar::<_, String>("SELECT username FROM users WHERE id = ?")
-        .bind(id)
+    let username = sqlx::query_scalar!("SELECT username FROM users WHERE id = ?", id)
         .fetch_one(db)
         .await?;
 
@@ -1017,58 +1044,59 @@ async fn insert_private_food(
 ) -> Result<i64> {
     let name = f.name.trim().to_string();
     let norm = normalize(&name);
-    let existing = sqlx::query_scalar::<_, i64>(
+    let existing = sqlx::query_scalar!(
         "SELECT id FROM foods WHERE user_id = ? AND name_norm = ? AND barcode IS ? LIMIT 1",
+        user_id,
+        &norm,
+        &f.barcode
     )
-    .bind(user_id)
-    .bind(&norm)
-    .bind(&f.barcode)
     .fetch_optional(&mut *conn)
     .await?;
-    let id =
-        match existing {
-            Some(id) => id,
-            None => sqlx::query_scalar::<_, i64>(
+    let id = match existing {
+        Some(id) => id,
+        None => {
+            sqlx::query_scalar!(
                 "INSERT INTO foods (source, source_ref, user_id, name, name_norm, brand, barcode,
                      is_prepared, kcal, protein_g, carbs_g, fat_g, default_portion_g, serving_g,
                      serving_text, fetched_at)
                  VALUES ('user', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  RETURNING id",
+                user_id.to_string(),
+                user_id,
+                &name,
+                &norm,
+                &f.brand,
+                &f.barcode,
+                i64::from(f.is_prepared),
+                f.kcal,
+                f.protein_g,
+                f.carbs_g,
+                f.fat_g,
+                f.default_portion_g,
+                f.serving_g,
+                &f.serving_text,
+                f.fetched_at.as_ref().map(|t| {
+                    match t {
+                        Ts::Millis(ms) => *ms,
+                        Ts::Text(s) => s
+                            .parse::<jiff::Timestamp>()
+                            .expect("validated timestamp")
+                            .as_millisecond(),
+                    }
+                })
             )
-            .bind(user_id.to_string())
-            .bind(user_id)
-            .bind(&name)
-            .bind(&norm)
-            .bind(&f.brand)
-            .bind(&f.barcode)
-            .bind(i64::from(f.is_prepared))
-            .bind(f.kcal)
-            .bind(f.protein_g)
-            .bind(f.carbs_g)
-            .bind(f.fat_g)
-            .bind(f.default_portion_g)
-            .bind(f.serving_g)
-            .bind(&f.serving_text)
-            .bind(f.fetched_at.as_ref().map(|t| {
-                match t {
-                    Ts::Millis(ms) => *ms,
-                    Ts::Text(s) => s
-                        .parse::<jiff::Timestamp>()
-                        .expect("validated timestamp")
-                        .as_millisecond(),
-                }
-            }))
             .fetch_one(&mut *conn)
-            .await?,
-        };
+            .await?
+        }
+    };
     for p in &f.portions {
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO food_portions (food_id, unit, grams) VALUES (?, ?, ?)
              ON CONFLICT (food_id, unit) DO UPDATE SET grams = excluded.grams",
+            id,
+            &p.unit,
+            p.grams
         )
-        .bind(id)
-        .bind(&p.unit)
-        .bind(p.grams)
         .execute(&mut *conn)
         .await?;
     }
@@ -1081,13 +1109,13 @@ async fn resolve_food(conn: &mut SqliteConnection, user_id: i64, f: &FoodDoc) ->
         // A label entry: the owner's shared row for this barcode, if it still exists.
         match &f.barcode {
             Some(b) => {
-                sqlx::query_scalar::<_, i64>(
+                sqlx::query_scalar!(
                     "SELECT id FROM foods
                      WHERE barcode = ? AND source = 'user' AND source_ref = ? AND user_id IS NULL
                      LIMIT 1",
+                    b,
+                    user_id.to_string()
                 )
-                .bind(b)
-                .bind(user_id.to_string())
                 .fetch_optional(&mut *conn)
                 .await?
             }
@@ -1098,12 +1126,12 @@ async fn resolve_food(conn: &mut SqliteConnection, user_id: i64, f: &FoodDoc) ->
     } else {
         match &f.source_ref {
             Some(sr) => {
-                sqlx::query_scalar::<_, i64>(
+                sqlx::query_scalar!(
                     "SELECT id FROM foods
                      WHERE source = ? AND source_ref = ? AND user_id IS NULL LIMIT 1",
+                    &f.source,
+                    sr
                 )
-                .bind(&f.source)
-                .bind(sr)
                 .fetch_optional(&mut *conn)
                 .await?
             }
@@ -1149,8 +1177,7 @@ pub async fn restore(
 
     // Ids owned by another account are a conflict, never an overwrite. Checked before any delete.
     for id in &meal_ids {
-        let owner = sqlx::query_scalar::<_, i64>("SELECT user_id FROM meals WHERE id = ?")
-            .bind(id)
+        let owner = sqlx::query_scalar!("SELECT user_id FROM meals WHERE id = ?", id)
             .fetch_optional(&mut *tx)
             .await?;
         if owner.is_some_and(|o| o != user.id) {
@@ -1160,10 +1187,10 @@ pub async fn restore(
         }
     }
     for id in &item_ids {
-        let owner = sqlx::query_scalar::<_, i64>(
+        let owner = sqlx::query_scalar!(
             "SELECT m.user_id FROM meal_items i JOIN meals m ON m.id = i.meal_id WHERE i.id = ?",
+            id
         )
-        .bind(id)
         .fetch_optional(&mut *tx)
         .await?;
         if owner.is_some_and(|o| o != user.id) {
@@ -1174,50 +1201,56 @@ pub async fn restore(
     }
 
     // Full replacement of this user's logged data and private foods only.
-    sqlx::query("DELETE FROM meals WHERE user_id = ?")
-        .bind(user.id)
+    sqlx::query!("DELETE FROM meals WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
-    for sql in [
-        "DELETE FROM days WHERE user_id = ?",
-        "DELETE FROM food_aliases WHERE user_id = ?",
-        "DELETE FROM user_portions WHERE user_id = ?",
-        "DELETE FROM user_products WHERE user_id = ?",
-        "DELETE FROM profile_versions WHERE user_id = ?",
-        "DELETE FROM sync_ops WHERE user_id = ?",
-    ] {
-        sqlx::query(sql).bind(user.id).execute(&mut *tx).await?;
-    }
-    sqlx::query("DELETE FROM foods WHERE user_id = ?")
-        .bind(user.id)
+    sqlx::query!("DELETE FROM days WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM food_aliases WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM user_portions WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM user_products WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM profile_versions WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM sync_ops WHERE user_id = ?", user.id)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM foods WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
 
-    sqlx::query(
+    sqlx::query!(
         "UPDATE profiles SET timezone = ?, weight_unit = ?, height_unit = ? WHERE user_id = ?",
+        &doc.profile.timezone,
+        &doc.profile.weight_unit,
+        &doc.profile.height_unit,
+        user.id
     )
-    .bind(&doc.profile.timezone)
-    .bind(&doc.profile.weight_unit)
-    .bind(&doc.profile.height_unit)
-    .bind(user.id)
     .execute(&mut *tx)
     .await?;
 
     for v in &doc.profile_versions {
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,
                  start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            user.id,
+            &v.effective_from,
+            &v.sex,
+            v.birth_year,
+            v.height_cm,
+            v.start_weight_kg,
+            v.goal_kg,
+            v.pace_kg_per_week,
+            v.typical_steps
         )
-        .bind(user.id)
-        .bind(&v.effective_from)
-        .bind(&v.sex)
-        .bind(v.birth_year)
-        .bind(v.height_cm)
-        .bind(v.start_weight_kg)
-        .bind(v.goal_kg)
-        .bind(v.pace_kg_per_week)
-        .bind(v.typical_steps)
         .execute(&mut *tx)
         .await?;
     }
@@ -1235,24 +1268,24 @@ pub async fn restore(
             .trained
             .as_ref()
             .map(|t| serde_json::to_string(t).expect("strings serialize"));
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO days (user_id, date, steps, steps_source, steps_updated_at, gym_minutes,
                  gym_source, gym_updated_at, trained, trained_updated_at, weight_kg,
                  weight_updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            user.id,
+            &d.date,
+            d.steps,
+            &d.steps_source,
+            opt_ts_ms(&d.steps_updated_at, "steps_updated_at")?,
+            d.gym_minutes,
+            &d.gym_source,
+            opt_ts_ms(&d.gym_updated_at, "gym_updated_at")?,
+            &trained,
+            opt_ts_ms(&d.trained_updated_at, "trained_updated_at")?,
+            d.weight_kg,
+            opt_ts_ms(&d.weight_updated_at, "weight_updated_at")?
         )
-        .bind(user.id)
-        .bind(&d.date)
-        .bind(d.steps)
-        .bind(&d.steps_source)
-        .bind(opt_ts_ms(&d.steps_updated_at, "steps_updated_at")?)
-        .bind(d.gym_minutes)
-        .bind(&d.gym_source)
-        .bind(opt_ts_ms(&d.gym_updated_at, "gym_updated_at")?)
-        .bind(&trained)
-        .bind(opt_ts_ms(&d.trained_updated_at, "trained_updated_at")?)
-        .bind(d.weight_kg)
-        .bind(opt_ts_ms(&d.weight_updated_at, "weight_updated_at")?)
         .execute(&mut *tx)
         .await?;
     }
@@ -1304,45 +1337,44 @@ pub async fn restore(
     }
 
     // `write_meal_on` records barcoded items as products; the backup is the source of truth.
-    sqlx::query("DELETE FROM user_products WHERE user_id = ?")
-        .bind(user.id)
+    sqlx::query!("DELETE FROM user_products WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
 
     for a in &doc.aliases {
         let alias = a.alias.trim();
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO food_aliases (food_id, alias, alias_norm, user_id) VALUES (?, ?, ?, ?)",
+            food_map[&a.food_id],
+            alias,
+            normalize(alias),
+            user.id
         )
-        .bind(food_map[&a.food_id])
-        .bind(alias)
-        .bind(normalize(alias))
-        .bind(user.id)
         .execute(&mut *tx)
         .await?;
     }
 
     for p in &doc.portions {
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO user_portions (user_id, phrase_norm, food_id, grams) VALUES (?, ?, ?, ?)",
+            user.id,
+            p.phrase_norm.trim(),
+            food_map[&p.food_id],
+            p.grams
         )
-        .bind(user.id)
-        .bind(p.phrase_norm.trim())
-        .bind(food_map[&p.food_id])
-        .bind(p.grams)
         .execute(&mut *tx)
         .await?;
     }
 
     for p in &doc.products {
-        sqlx::query(
+        sqlx::query!(
             "INSERT INTO user_products (user_id, food_id, last_servings, last_used_at)
              VALUES (?, ?, ?, ?)",
+            user.id,
+            food_map[&p.food_id],
+            p.last_servings,
+            ts_ms(&p.last_used_at, "product last_used_at")?
         )
-        .bind(user.id)
-        .bind(food_map[&p.food_id])
-        .bind(p.last_servings)
-        .bind(ts_ms(&p.last_used_at, "product last_used_at")?)
         .execute(&mut *tx)
         .await?;
     }

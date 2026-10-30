@@ -1,0 +1,74 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date, steps, gym_minutes, trained, weight_kg FROM days\n         WHERE user_id = ? AND (steps IS NOT NULL OR gym_minutes IS NOT NULL\n             OR trained IS NOT NULL OR weight_kg IS NOT NULL)\n         ORDER BY date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "steps",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps"
+          }
+        }
+      },
+      {
+        "name": "gym_minutes",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_minutes"
+          }
+        }
+      },
+      {
+        "name": "trained",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "trained"
+          }
+        }
+      },
+      {
+        "name": "weight_kg",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_kg"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "ed5c326d466d793b539a999a9f8e06d2be0072dd1d46eb52efa633cdc6f301dd"
+}

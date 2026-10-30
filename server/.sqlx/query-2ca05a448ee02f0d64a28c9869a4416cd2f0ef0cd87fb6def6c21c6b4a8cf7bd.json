@@ -1,0 +1,146 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,\n                provider_id, updated_at, received_at\n         FROM meals WHERE user_id = ? AND deleted_at IS NULL ORDER BY date, id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "meal_type",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "meal_type"
+          }
+        }
+      },
+      {
+        "name": "description",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "name": "scale",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "scale"
+          }
+        }
+      },
+      {
+        "name": "assumptions",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "assumptions"
+          }
+        }
+      },
+      {
+        "name": "confidence",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "confidence"
+          }
+        }
+      },
+      {
+        "name": "source",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "source"
+          }
+        }
+      },
+      {
+        "name": "provider_id",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "provider_id"
+          }
+        }
+      },
+      {
+        "name": "updated_at",
+        "ordinal": 9,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "updated_at"
+          }
+        }
+      },
+      {
+        "name": "received_at",
+        "ordinal": 10,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "received_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "2ca05a448ee02f0d64a28c9869a4416cd2f0ef0cd87fb6def6c21c6b4a8cf7bd"
+}

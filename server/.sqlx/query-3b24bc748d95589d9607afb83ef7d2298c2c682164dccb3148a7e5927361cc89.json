@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO foods (source, source_ref, user_id, name, name_norm, brand, barcode,\n                     is_prepared, kcal, protein_g, carbs_g, fat_g, default_portion_g, serving_g,\n                     serving_text, fetched_at)\n                 VALUES ('user', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n                 RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "foods",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 15
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3b24bc748d95589d9607afb83ef7d2298c2c682164dccb3148a7e5927361cc89"
+}

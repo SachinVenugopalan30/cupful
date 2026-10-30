@@ -1,0 +1,134 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, name, portion_text, grams, kcal, protein_g, carbs_g, fat_g,\n                        food_id, origin\n                 FROM meal_items WHERE meal_id = ? ORDER BY position",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "portion_text",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "portion_text"
+          }
+        }
+      },
+      {
+        "name": "grams",
+        "ordinal": 3,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "grams"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "protein_g",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "protein_g"
+          }
+        }
+      },
+      {
+        "name": "carbs_g",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "carbs_g"
+          }
+        }
+      },
+      {
+        "name": "fat_g",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "fat_g"
+          }
+        }
+      },
+      {
+        "name": "food_id",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "origin",
+        "ordinal": 9,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meal_items",
+            "name": "origin"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "5dc7862a4b3f6a6c4a30feead3536f3292342ca87cf4eeb05267cef4b25db769"
+}

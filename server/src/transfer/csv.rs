@@ -45,42 +45,69 @@ const MAX_ITEMS: usize = 100;
 const MAX_NAME: usize = 200;
 const MAX_PORTION: usize = 200;
 
-type ExportMeal = (String, String, String, String);
-type ExportItem = (String, i64, String, String, f64, f64, f64, f64);
-type ExportDay = (
-    String,
-    Option<i64>,
-    Option<i64>,
-    Option<String>,
-    Option<f64>,
-);
-/// date, meal_type, description, scale, assumptions, confidence, source, provider_id, deleted_at
-type StoredMeal = (
-    String,
-    String,
-    String,
-    f64,
-    Option<String>,
-    Option<String>,
-    String,
-    Option<i64>,
-    Option<i64>,
-);
-/// id, position, name, portion_text, grams, kcal, protein_g, carbs_g, fat_g, food_id, origin
-type StoredItem = (
-    String,
-    i64,
-    String,
-    String,
-    Option<f64>,
-    f64,
-    f64,
-    f64,
-    f64,
-    Option<i64>,
-    String,
-);
-type StoredDay = (Option<i64>, Option<i64>, Option<String>, Option<f64>);
+#[derive(sqlx::FromRow)]
+struct ExportMeal {
+    id: String,
+    date: String,
+    meal_type: String,
+    description: String,
+}
+
+#[derive(sqlx::FromRow)]
+struct ExportItem {
+    meal_id: String,
+    position: i64,
+    name: String,
+    portion_text: String,
+    kcal: f64,
+    protein_g: f64,
+    carbs_g: f64,
+    fat_g: f64,
+}
+
+#[derive(sqlx::FromRow)]
+struct ExportDay {
+    date: String,
+    steps: Option<i64>,
+    gym_minutes: Option<i64>,
+    trained: Option<String>,
+    weight_kg: Option<f64>,
+}
+
+#[derive(sqlx::FromRow)]
+struct StoredMeal {
+    date: String,
+    meal_type: String,
+    description: String,
+    scale: f64,
+    assumptions: Option<String>,
+    confidence: Option<String>,
+    source: String,
+    provider_id: Option<i64>,
+    deleted_at: Option<i64>,
+}
+
+#[derive(sqlx::FromRow)]
+struct StoredItem {
+    id: String,
+    name: String,
+    portion_text: String,
+    grams: Option<f64>,
+    kcal: f64,
+    protein_g: f64,
+    carbs_g: f64,
+    fat_g: f64,
+    food_id: Option<i64>,
+    origin: String,
+}
+
+#[derive(sqlx::FromRow)]
+struct StoredDay {
+    steps: Option<i64>,
+    gym_minutes: Option<i64>,
+    trained: Option<String>,
+    weight_kg: Option<f64>,
+}
 
 // ---- export ----
 
@@ -142,66 +169,75 @@ fn trained_text(json: Option<&str>) -> String {
 pub async fn export(s: AppState, user: User) -> Result<Response> {
     let today = user_today(&s.db, user.id).await?;
 
-    let meals: Vec<ExportMeal> = sqlx::query_as(
+    let meals: Vec<ExportMeal> = sqlx::query_as!(
+        ExportMeal,
         "SELECT id, date, meal_type, description FROM meals
          WHERE user_id = ? AND deleted_at IS NULL ORDER BY date, id",
+        user.id
     )
-    .bind(user.id)
     .fetch_all(&s.db)
     .await?;
 
-    let items: Vec<ExportItem> = sqlx::query_as(
+    let items: Vec<ExportItem> = sqlx::query_as!(
+        ExportItem,
         "SELECT i.meal_id, i.position, i.name, i.portion_text, i.kcal, i.protein_g, i.carbs_g,
                 i.fat_g
          FROM meal_items i JOIN meals m ON m.id = i.meal_id
          WHERE m.user_id = ? AND m.deleted_at IS NULL
          ORDER BY i.meal_id, i.position",
+        user.id
     )
-    .bind(user.id)
     .fetch_all(&s.db)
     .await?;
 
-    let days: Vec<ExportDay> = sqlx::query_as(
+    let days: Vec<ExportDay> = sqlx::query_as!(
+        ExportDay,
         "SELECT date, steps, gym_minutes, trained, weight_kg FROM days
          WHERE user_id = ? AND (steps IS NOT NULL OR gym_minutes IS NOT NULL
              OR trained IS NOT NULL OR weight_kg IS NOT NULL)
          ORDER BY date",
+        user.id
     )
-    .bind(user.id)
     .fetch_all(&s.db)
     .await?;
 
     let mut items_by_meal: HashMap<&str, Vec<ItemRow>> = HashMap::new();
-    for (meal_id, position, name, portion_text, kcal, protein_g, carbs_g, fat_g) in &items {
-        items_by_meal.entry(meal_id).or_default().push(ItemRow {
-            position: *position,
-            name: name.clone(),
-            portion_text: portion_text.clone(),
-            kcal: *kcal,
-            protein_g: *protein_g,
-            carbs_g: *carbs_g,
-            fat_g: *fat_g,
-        });
+    for item in &items {
+        items_by_meal
+            .entry(item.meal_id.as_str())
+            .or_default()
+            .push(ItemRow {
+                position: item.position,
+                name: item.name.clone(),
+                portion_text: item.portion_text.clone(),
+                kcal: item.kcal,
+                protein_g: item.protein_g,
+                carbs_g: item.carbs_g,
+                fat_g: item.fat_g,
+            });
     }
 
     let mut meals_by_date: BTreeMap<&str, Vec<MealRow>> = BTreeMap::new();
-    for (id, date, meal_type, description) in &meals {
-        meals_by_date.entry(date).or_default().push(MealRow {
-            id: id.clone(),
-            meal_type: meal_type.clone(),
-            description: description.clone(),
-        });
+    for meal in &meals {
+        meals_by_date
+            .entry(meal.date.as_str())
+            .or_default()
+            .push(MealRow {
+                id: meal.id.clone(),
+                meal_type: meal.meal_type.clone(),
+                description: meal.description.clone(),
+            });
     }
 
     let mut days_by_date: BTreeMap<&str, DayRow> = BTreeMap::new();
-    for (date, steps, gym_minutes, trained, weight_kg) in &days {
+    for day in &days {
         days_by_date.insert(
-            date,
+            day.date.as_str(),
             DayRow {
-                steps: *steps,
-                gym_minutes: *gym_minutes,
-                trained: trained.clone(),
-                weight_kg: *weight_kg,
+                steps: day.steps,
+                gym_minutes: day.gym_minutes,
+                trained: day.trained.clone(),
+                weight_kg: day.weight_kg,
             },
         );
     }
@@ -743,11 +779,12 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
         } else {
             match Uuid::parse_str(&d.raw_id) {
                 Ok(u) => {
-                    let owner: Option<i64> =
-                        sqlx::query_scalar("SELECT user_id FROM meals WHERE id = ?")
-                            .bind(u.to_string())
-                            .fetch_optional(&mut *tx)
-                            .await?;
+                    let owner = sqlx::query_scalar!(
+                        "SELECT user_id FROM meals WHERE id = ?",
+                        u.to_string()
+                    )
+                    .fetch_optional(&mut *tx)
+                    .await?;
                     if owner == Some(user_id) {
                         u
                     } else {
@@ -759,36 +796,42 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
         };
         let meal_id = uuid.to_string();
 
-        let existing: Option<StoredMeal> = sqlx::query_as(
+        let existing: Option<StoredMeal> = sqlx::query_as!(
+            StoredMeal,
             "SELECT date, meal_type, description, scale, assumptions, confidence, source,
                     provider_id, deleted_at
              FROM meals WHERE id = ? AND user_id = ?",
+            &meal_id,
+            user_id
         )
-        .bind(&meal_id)
-        .bind(user_id)
         .fetch_optional(&mut *tx)
         .await?;
 
         let existing_items: Vec<StoredItem> = if existing.is_some() {
-            sqlx::query_as(
-                "SELECT id, position, name, portion_text, grams, kcal, protein_g, carbs_g, fat_g,
+            sqlx::query_as!(
+                StoredItem,
+                "SELECT id, name, portion_text, grams, kcal, protein_g, carbs_g, fat_g,
                         food_id, origin
                  FROM meal_items WHERE meal_id = ? ORDER BY position",
+                &meal_id
             )
-            .bind(&meal_id)
             .fetch_all(&mut *tx)
             .await?
         } else {
             Vec::new()
         };
 
-        let live = existing
-            .as_ref()
-            .is_some_and(|(_, _, _, _, _, _, _, _, deleted)| deleted.is_none());
+        let live = existing.as_ref().is_some_and(|e| e.deleted_at.is_none());
         let mut items = Vec::with_capacity(d.items.len());
         let (source, scale, assumptions, confidence, provider_id) = if live {
             let e = existing.as_ref().unwrap();
-            (e.6.clone(), e.3, e.4.clone(), e.5.clone(), e.7)
+            (
+                e.source.clone(),
+                e.scale,
+                e.assumptions.clone(),
+                e.confidence.clone(),
+                e.provider_id,
+            )
         } else {
             ("import".to_string(), 1.0, None, None, None)
         };
@@ -803,16 +846,16 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
             };
             match matched {
                 Some(e) => items.push(ItemIn {
-                    id: e.0.clone(),
+                    id: e.id.clone(),
                     name: it.name.clone(),
                     portion_text: it.portion.clone(),
-                    grams: e.4,
+                    grams: e.grams,
                     kcal: it.kcal,
                     protein_g: it.protein_g,
                     carbs_g: it.carbs_g,
                     fat_g: it.fat_g,
-                    food_id: e.9,
-                    origin: e.10.clone(),
+                    food_id: e.food_id,
+                    origin: e.origin.clone(),
                 }),
                 None => items.push(ItemIn {
                     id: Uuid::new_v5(&uuid, it.index.to_string().as_bytes()).to_string(),
@@ -845,26 +888,26 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
 
         if live {
             let e = existing.as_ref().unwrap();
-            let same_meal = e.0 == d.date.to_string()
-                && e.1 == meal.meal_type
-                && e.2 == meal.description
-                && e.3 == meal.scale
-                && e.4 == meal.assumptions
-                && e.5 == meal.confidence
-                && e.6 == meal.source
-                && e.7 == meal.provider_id;
+            let same_meal = e.date == d.date.to_string()
+                && e.meal_type == meal.meal_type
+                && e.description == meal.description
+                && e.scale == meal.scale
+                && e.assumptions == meal.assumptions
+                && e.confidence == meal.confidence
+                && e.source == meal.source
+                && e.provider_id == meal.provider_id;
             let same_items = existing_items.len() == meal.items.len()
                 && existing_items.iter().zip(&meal.items).all(|(a, b)| {
-                    a.0 == b.id
-                        && a.2 == b.name
-                        && a.3 == b.portion_text
-                        && a.4 == b.grams
-                        && a.5 == b.kcal
-                        && a.6 == b.protein_g
-                        && a.7 == b.carbs_g
-                        && a.8 == b.fat_g
-                        && a.9 == b.food_id
-                        && a.10 == b.origin
+                    a.id == b.id
+                        && a.name == b.name
+                        && a.portion_text == b.portion_text
+                        && a.grams == b.grams
+                        && a.kcal == b.kcal
+                        && a.protein_g == b.protein_g
+                        && a.carbs_g == b.carbs_g
+                        && a.fat_g == b.fat_g
+                        && a.food_id == b.food_id
+                        && a.origin == b.origin
                 });
             if same_meal && same_items {
                 unchanged += 1;
@@ -875,11 +918,13 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
 
         if existing.is_some() && !live {
             // A tombstoned id is revived by a fresh import.
-            sqlx::query("UPDATE meals SET deleted_at = NULL WHERE id = ? AND user_id = ?")
-                .bind(&meal_id)
-                .bind(user_id)
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "UPDATE meals SET deleted_at = NULL WHERE id = ? AND user_id = ?",
+                &meal_id,
+                user_id
+            )
+            .execute(&mut *tx)
+            .await?;
         }
         match write_meal_on(&mut tx, user_id, &meal, now, now, WriteMode::Import).await? {
             crate::sync::Outcome::Applied => {
@@ -902,15 +947,18 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
     let mut day_count = 0i64;
     for (date, acc) in &days {
         let date = date.parse::<Date>().expect("parsed above");
-        let stored: Option<StoredDay> = sqlx::query_as(
+        let stored: Option<StoredDay> = sqlx::query_as!(
+            StoredDay,
             "SELECT steps, gym_minutes, trained, weight_kg FROM days
                  WHERE user_id = ? AND date = ?",
+            user_id,
+            date.to_string()
         )
-        .bind(user_id)
-        .bind(date.to_string())
         .fetch_optional(&mut *tx)
         .await?;
-        let (s_steps, s_gym, s_trained, s_weight) = stored.unwrap_or((None, None, None, None));
+        let (s_steps, s_gym, s_trained, s_weight) = stored
+            .map(|d| (d.steps, d.gym_minutes, d.trained, d.weight_kg))
+            .unwrap_or((None, None, None, None));
         let mut patch = DayPatch::default();
 
         if let Some((v, _)) = acc.steps

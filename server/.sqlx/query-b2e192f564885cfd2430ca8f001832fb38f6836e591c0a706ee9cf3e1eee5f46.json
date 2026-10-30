@@ -1,0 +1,146 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date, steps, steps_source, steps_updated_at, gym_minutes, gym_source,\n                gym_updated_at, trained, trained_updated_at, weight_kg, weight_updated_at\n         FROM days WHERE user_id = ? ORDER BY date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "steps",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps"
+          }
+        }
+      },
+      {
+        "name": "steps_source",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps_source"
+          }
+        }
+      },
+      {
+        "name": "steps_updated_at",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "steps_updated_at"
+          }
+        }
+      },
+      {
+        "name": "gym_minutes",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_minutes"
+          }
+        }
+      },
+      {
+        "name": "gym_source",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_source"
+          }
+        }
+      },
+      {
+        "name": "gym_updated_at",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "gym_updated_at"
+          }
+        }
+      },
+      {
+        "name": "trained",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "trained"
+          }
+        }
+      },
+      {
+        "name": "trained_updated_at",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "trained_updated_at"
+          }
+        }
+      },
+      {
+        "name": "weight_kg",
+        "ordinal": 9,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_kg"
+          }
+        }
+      },
+      {
+        "name": "weight_updated_at",
+        "ordinal": 10,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "weight_updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "b2e192f564885cfd2430ca8f001832fb38f6836e591c0a706ee9cf3e1eee5f46"
+}
