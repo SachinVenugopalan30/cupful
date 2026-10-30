@@ -31,7 +31,7 @@ server/                 Rust crate `cupful`
   src/demo.rs           `seed-demo`: deterministic demo user and history
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
-  src/transfer/         GET /api/export.csv, POST /api/import/fuel-ledger, GET /api/backup, POST /api/restore: backup/{doc,export,validate,restore}.rs, csv/{export,parse,import}.rs
+  src/transfer/         GET /api/export.csv, POST /api/import/fuel-ledger, GET /api/backup, POST /api/restore: backup/{doc,export,validate,restore}.rs, csv/{export,parse}.rs, csv/import/{mod,rows,drafts,write}.rs
   src/products/         mod.rs (shared helpers, set_portions, item_logged), off.rs (Open Food Facts lookup), label.rs (label entry, private to the user), saved.rs (saved products)
   src/ai/mod.rs         Provider trait, ProviderError, for_user/by_id, daily cap, config
   src/ai/http.rs        HttpProvider: retries, timeouts, scrubbing, reply parsing (no redirects followed)
@@ -43,11 +43,11 @@ server/                 Rust crate `cupful`
   src/lib.rs            AppState, route table (`route_table()`), router
   migrations/           sqlx migrations (never edit a released one)
   .sqlx/                committed offline query metadata
-  tests/                integration tests (oneshot against the Router, in-memory SQLite)
-  tests/isolation.rs    user A vs user B for every `Access::User` route
-  tests/products.rs     barcode lookups against wiremock
+  tests/                integration tests (oneshot against the Router, in-memory SQLite); large areas use a directory with `main.rs`
+  tests/isolation/      user A vs user B for every `Access::User` route
+  tests/products/       barcode lookups against wiremock
 web/                    SvelteKit app (adapter-static, SPA fallback); routes: / (Today), /activity (phone tab), /trends, /settings, /login, /setup
-  src/lib/api.ts        API client, types for every endpoint, ApiError, errorMessage(e, context)
+  src/lib/api.ts        API client barrel; `src/lib/api/` holds types and endpoints grouped by resource
   src/lib/sync/         uuidv7, op builders, sendOps (the only logged-data write path), scaleItems
   src/lib/{format,date,theme}.ts, session.svelte.ts   formatting, dates, theme preference, session/day state
   src/lib/styles/       tokens.css (design tokens, light-dark()), global.css (shared classes)
@@ -100,7 +100,8 @@ npm run build
 - JSON Schemas sent to AI providers: `additionalProperties: false` and full `required` on every object.
 - Logged data (meals, days) is written **only** through `POST /api/sync`, except the import and restore endpoints that PLAN.md §6 lists under configuration writes. Config/account data uses plain REST, online only.
 - Every mutating request needs header `X-Cupful: 1` (CSRF).
-- Every user-owned route needs an isolation test; `tests/isolation.rs` fails if a route is not listed. `Access::Admin` routes use the `auth::Admin` extractor and are checked for 403/401 there too.
+- Every user-owned route needs an isolation test; `tests/isolation/` fails if a route is not listed. `Access::Admin` routes use the `auth::Admin` extractor and are checked for 403/401 there too.
+- Keep source and test files under 500 lines. Split by behaviour into a directory with a small entry module; never a `utils` bucket or one-function fragments.
 - Budget is computed only on the server (`budget.rs`); f64 throughout, round on serialize.
 - Dates are the user's local date (profile timezone), TEXT `YYYY-MM-DD`. Times are INTEGER unix milliseconds in the DB; RFC 3339 on the wire.
 - New routes go in `routes()` in `lib.rs` with their `Access`. Request bodies use `error::JsonBody`, queries `error::Query`, so errors are always `{"error": ...}`.
