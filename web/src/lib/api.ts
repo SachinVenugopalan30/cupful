@@ -4,6 +4,7 @@
 // reads and online-only config REST.
 
 import type { WeightUnit, HeightUnit } from './format';
+import { fallbackFilename, responseFilename } from './settings/data.ts';
 
 export class ApiError extends Error {
 	constructor(
@@ -28,15 +29,27 @@ export async function parseError(res: Response): Promise<ApiError> {
 	return new ApiError(res.status, `The server answered with an error (${res.status}).`);
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+export type ResponseType = 'json' | 'blob' | 'text';
+
+/** Sends the request and returns the response when it's 2xx; throws an ApiError otherwise. */
+async function send(
+	method: string,
+	path: string,
+	body?: unknown,
+	contentType = 'application/json'
+): Promise<Response> {
 	const headers = new Headers();
 	if (method !== 'GET') headers.set('X-Cupful', '1');
-	if (body !== undefined && !(body instanceof FormData)) headers.set('Content-Type', 'application/json');
+	if (body !== undefined && !(body instanceof FormData)) headers.set('Content-Type', contentType);
+	const payload =
+		body === undefined || body instanceof FormData || typeof body === 'string'
+			? (body as BodyInit | undefined)
+			: JSON.stringify(body);
 	const res = await fetch(path, {
 		method,
 		headers,
 		credentials: 'same-origin',
-		body: body === undefined || body instanceof FormData ? body : JSON.stringify(body)
+		body: payload
 	});
 	if (!res.ok) {
 		// Session gone: back to login. Auth routes answer 401 for a wrong password; the page shows that.
@@ -45,6 +58,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 		}
 		throw await parseError(res);
 	}
+	return res;
+}
+
+async function request<T>(
+	method: string,
+	path: string,
+	body?: unknown,
+	responseType: ResponseType = 'json',
+	contentType = 'application/json'
+): Promise<T> {
+	const res = await send(method, path, body, contentType);
+	if (responseType === 'blob') return (await res.blob()) as T;
+	if (responseType === 'text') return (await res.text()) as T;
 	return res.json() as Promise<T>;
 }
 
@@ -56,6 +82,27 @@ export const api = {
 	/** Multipart POST; the browser sets the boundary. */
 	postForm: <T>(path: string, form: FormData) => request<T>('POST', path, form)
 };
+
+/** GET a binary attachment. Throws ApiError like the JSON calls. */
+export const getBlob = (path: string) => request<Blob>('GET', path, undefined, 'blob');
+
+/** POST a text body (text/csv). The reply is JSON. */
+export const postText = <T>(path: string, body: string) =>
+	request<T>('POST', path, body, 'json', 'text/csv');
+
+/**
+ * GET an attachment, taking its filename from Content-Disposition and falling back to a local-date
+ * name. `Settings → Data` turns the blob into a temporary object URL to download it.
+ */
+export async function download(path: string): Promise<{ blob: Blob; filename: string }> {
+	const res = await send('GET', path);
+	const localDate = new Date().toLocaleDateString('en-CA');
+	return {
+		blob: await res.blob(),
+		filename:
+			responseFilename(res.headers.get('Content-Disposition')) ?? fallbackFilename(path, localDate)
+	};
+}
 
 // ---- types (server JSON) ----
 
@@ -259,6 +306,27 @@ export type TrendDay = {
 
 export type IngestToken = { id: number; label: string; created_at: string; last_used_at: string | null };
 
+/** POST /api/import/fuel-ledger answer. `meals_unchanged` were already identical. */
+export type ImportSummary = {
+	meals_created: number;
+	meals_updated: number;
+	meals_unchanged: number;
+	items: number;
+	days: number;
+};
+
+/** POST /api/restore answer: how many rows of each kind the backup replaced. */
+export type RestoreSummary = {
+	profile_versions: number;
+	days: number;
+	meals: number;
+	items: number;
+	foods: number;
+	aliases: number;
+	portions: number;
+	products: number;
+};
+
 // ---- endpoints ----
 
 const enc = encodeURIComponent;
@@ -295,6 +363,13 @@ export const ingestTokens = {
 
 export const getMeals = (date: string) =>
 	api.get<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`).then((r) => r.meals);
+
+/** Import a Fuel Ledger CSV. Re-importing the same file changes nothing. */
+export const importCsv = (text: string) => postText<ImportSummary>('/api/import/fuel-ledger', text);
+
+/** Replace this account's logged data with a parsed backup document. */
+export const restoreBackup = (backup: unknown) =>
+	api.post<RestoreSummary>('/api/restore', { confirm: true, backup });
 
 /** POST /api/estimate. `photo` should already be re-encoded through a canvas (strips EXIF). */
 export function estimate(description: string, photo?: Blob): Promise<Estimate> {
