@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // "Update available" prompt for a waiting service worker (registerType: 'prompt').
 
-/** `available` means a new version is installed and waiting; `offlineReady` is informational. */
-export const updateState = $state({ available: false, offlineReady: false });
+/** True once a new version is installed and waiting for the reload button. */
+export const updateState = $state({ available: false });
 
 let initialized = false;
 let reloading = false;

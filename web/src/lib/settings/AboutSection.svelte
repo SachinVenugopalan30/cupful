@@ -16,25 +16,15 @@
 
 	async function load() {
 		error = '';
-		if (!connection.online) {
-			server = null;
+		server = null;
+		if (connection.online) {
 			try {
-				cached = await loadHealth();
-			} catch {
-				cached = null;
-			}
-			return;
-		}
-		try {
-			server = await health();
-		} catch (e) {
-			error = errorMessage(e);
-			try {
-				cached = await loadHealth();
-			} catch {
-				cached = null;
+				server = await health();
+			} catch (e) {
+				error = errorMessage(e);
 			}
 		}
+		cached = server ? null : await loadHealth().catch(() => null);
 	}
 
 	$effect(() => {

@@ -29,10 +29,6 @@ function isOnline(): boolean {
 	return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
-function emptyResults(): Map<string, OpResult> {
-	return new Map();
-}
-
 function cancelBackoff(): void {
 	if (backoffTimer !== null) clearTimeout(backoffTimer);
 	backoffTimer = null;
@@ -62,17 +58,6 @@ async function refresh(userId = connection.activeUserId): Promise<void> {
 	connection.failed = ops.filter(
 		(o) => o.status === 'stale' || o.status === 'rejected' || o.status === 'failed'
 	).length;
-}
-
-function queued(op: Op, userId: number, queued_at = Date.now()): QueuedOp {
-	return {
-		op_id: op.op_id,
-		user_id: userId,
-		op,
-		status: 'pending',
-		queued_at,
-		attempts: 0,
-	};
 }
 
 /** Loads a user's queue and starts flushing. Call after login and on boot with a cached user. */
@@ -112,15 +97,9 @@ export function stop(): void {
 // ---- direct post (storage fallback) ----
 
 async function postDirect(ops: Op[]): Promise<OpResult[]> {
-	const res = await fetch('/api/sync', {
-		method: 'POST',
-		credentials: 'same-origin',
-		headers: { 'X-Cupful': '1', 'Content-Type': 'application/json' },
-		body: JSON.stringify({ ops }),
-	});
-	if (!res.ok) throw new Error(`Could not save the change (${res.status}).`);
-	const body = (await res.json()) as { results?: OpResult[] };
-	return body.results ?? [];
+	const outcome = await postChunk(ops);
+	if (outcome.kind !== 'ok') throw new Error('Could not save the change.');
+	return outcome.results;
 }
 
 /**
@@ -131,12 +110,18 @@ async function postDirect(ops: Op[]): Promise<OpResult[]> {
 export async function enqueue(ops: Op[], userId: number): Promise<OpResult[] | null> {
 	if (!ops.length) return null;
 	const now = Date.now();
-	const items = ops.map((op) => queued(op, userId, now));
+	const items: QueuedOp[] = ops.map((op) => ({
+		op_id: op.op_id,
+		user_id: userId,
+		op,
+		status: 'pending',
+		queued_at: now,
+		attempts: 0
+	}));
 
 	try {
 		for (const item of items) await putQueueItem(item);
 	} catch {
-		connection.storageAvailable = false;
 		if (!isOnline()) {
 			throw new Error(
 				'This device has no room to store the change offline. Free some space and try again.'
@@ -201,14 +186,10 @@ async function writeThrough(userId: number, item: QueuedOp): Promise<void> {
 	await updateMeals(userId, item);
 }
 
-/** The list inside a cached body, whether the server wrapped it in a named field or not. */
+/** The list inside a cached body's named field. */
 function listFrom<T>(body: unknown, field: string): T[] | null {
-	if (Array.isArray(body)) return body as T[];
-	if (body && typeof body === 'object') {
-		const inner = (body as Record<string, unknown>)[field];
-		if (Array.isArray(inner)) return inner as T[];
-	}
-	return null;
+	const inner = (body as Record<string, unknown> | null)?.[field];
+	return Array.isArray(inner) ? (inner as T[]) : null;
 }
 
 async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
@@ -227,12 +208,7 @@ async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
 		const day = new URL(entry.path, 'http://cupful.invalid').searchParams.get('date') ?? upsertDate;
 		if (item.op.kind === 'meal.upsert' && day !== item.op.payload.date) continue;
 		const next = overlayMeals(list, [pending], day);
-		const body = entry.body as unknown;
-		await putCachedBody(
-			userId,
-			entry.path,
-			Array.isArray(body) ? next : { ...(body as object), meals: next }
-		);
+		await putCachedBody(userId, entry.path, { ...(entry.body as object), meals: next });
 	}
 }
 
@@ -257,12 +233,7 @@ async function updateDays(userId: number, item: QueuedOp, date: string): Promise
 		const list = listFrom<Day>(entry.body, 'days');
 		if (list === null) continue;
 		const next = list.map((d) => (d.date === date ? overlayDay(d, [pending], date) : d));
-		const body = entry.body as unknown;
-		await putCachedBody(
-			userId,
-			entry.path,
-			Array.isArray(body) ? next : { ...(body as object), days: next }
-		);
+		await putCachedBody(userId, entry.path, { ...(entry.body as object), days: next });
 	}
 }
 
@@ -302,7 +273,7 @@ async function postChunk(ops: Op[]): Promise<SendOutcome> {
 }
 
 async function doFlush(userId: number): Promise<Map<string, OpResult>> {
-	const results = emptyResults();
+	const results = new Map<string, OpResult>();
 	if (!isOnline()) {
 		connection.paused = 'offline';
 		await refresh(userId);
@@ -409,7 +380,7 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
  */
 export async function flush(userId?: number): Promise<Map<string, OpResult>> {
 	const uid = userId ?? connection.activeUserId;
-	if (uid === null) return emptyResults();
+	if (uid === null) return new Map();
 	return withLock(() => doFlush(uid));
 }
 

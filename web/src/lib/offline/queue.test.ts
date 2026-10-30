@@ -141,7 +141,6 @@ async function boot(userId: number): Promise<void> {
 
 beforeEach(() => {
 	vi.stubGlobal('navigator', { onLine: false });
-	connection.storageAvailable = true;
 });
 
 afterEach(async () => {

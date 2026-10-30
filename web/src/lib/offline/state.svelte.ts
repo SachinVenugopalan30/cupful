@@ -10,7 +10,6 @@ export const connection = $state({
 	paused: null as Pause,
 	pending: 0,
 	failed: 0,
-	storageAvailable: true,
 	activeUserId: null as number | null
 });
 

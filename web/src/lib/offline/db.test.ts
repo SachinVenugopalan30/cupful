@@ -7,7 +7,6 @@ import {
 	deleteQueueItem,
 	getCacheEntry,
 	getMeta,
-	getQueueItem,
 	putCacheEntry,
 	putMeta,
 	putQueueItem
@@ -32,12 +31,12 @@ function queued(user_id: number, queued_at = Date.now(), id = opId()): QueuedOp 
 }
 
 describe('offline db', () => {
-	it('puts, gets and deletes a queue item', async () => {
+	it('puts and deletes a queue item', async () => {
 		const item = queued(9001);
 		await putQueueItem(item);
-		expect(await getQueueItem(item.op_id)).toEqual(item);
+		expect(await allQueueForUser(9001)).toEqual([item]);
 		await deleteQueueItem(item.op_id);
-		expect(await getQueueItem(item.op_id)).toBeUndefined();
+		expect(await allQueueForUser(9001)).toEqual([]);
 	});
 
 	it('lists one user’s queue oldest first and keeps users apart', async () => {

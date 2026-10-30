@@ -107,8 +107,7 @@ export async function sendOps(ops: Op[]): Promise<OpResult[]> {
 				}
 		);
 	}
-	const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-	const results = offline ? new Map() : await flush(userId);
+	const results = await flush(userId);
 	return ops.map(
 		(op) => results.get(op.op_id) ?? { op_id: op.op_id, status: 'queued' as const }
 	);

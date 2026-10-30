@@ -29,7 +29,6 @@ const CACHEABLE_EXACT = ['/api/products', '/api/profile'];
  * ingest tokens, aliases, Google/health settings) is online-only.
  */
 export function isCacheable(path: string): boolean {
-	if (path.includes('#')) path = path.slice(0, path.indexOf('#'));
 	const queryAt = path.indexOf('?');
 	const route = queryAt === -1 ? path : path.slice(0, queryAt);
 	const hasQuery = queryAt !== -1;
@@ -40,10 +39,6 @@ export function isCacheable(path: string): boolean {
 	if (route.startsWith('/api/budget/')) return true;
 	if (route === '/api/trends') return hasQuery;
 	return CACHEABLE_EXACT.includes(path);
-}
-
-async function bodyOf(res: Response): Promise<unknown> {
-	return res.json();
 }
 
 /**
@@ -62,7 +57,7 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 			headers: { Accept: 'application/json' }
 		});
 		if (res.ok) {
-			const body = await bodyOf(res);
+			const body = await res.json();
 			if (cacheable) await putCachedBody(userId, path, body);
 			return body as T;
 		}
@@ -82,13 +77,9 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 	throw networkError ?? new Error('The request failed and nothing was cached.');
 }
 
-async function entry(userId: number, path: string): Promise<CacheEntry | undefined> {
-	return getCacheEntry(userId, path);
-}
-
 /** The cached body for this user and path, or undefined. */
 export async function getCachedBody<T>(userId: number, path: string): Promise<T | undefined> {
-	const found = await entry(userId, path);
+	const found: CacheEntry | undefined = await getCacheEntry(userId, path);
 	return found?.body as T | undefined;
 }
 

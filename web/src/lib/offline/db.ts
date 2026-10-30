@@ -86,11 +86,6 @@ export async function putQueueItem(item: QueuedOp): Promise<void> {
 	await (await getDb()).put('queue', item);
 }
 
-export async function getQueueItem(opId: string): Promise<QueuedOp | undefined> {
-	if (!hasIndexedDB()) return undefined;
-	return (await getDb()).get('queue', opId);
-}
-
 export async function deleteQueueItem(opId: string): Promise<void> {
 	if (!hasIndexedDB()) return;
 	await (await getDb()).delete('queue', opId);
