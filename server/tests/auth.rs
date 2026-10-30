@@ -10,7 +10,10 @@ async fn state_reports_setup_needed_until_an_admin_exists() {
     let (app, _) = app().await;
     let mut anon = Client::new(&app);
     let (_, s) = anon.get("/api/auth/state").await;
-    assert_eq!(s, json!({"needs_setup": true, "user": null}));
+    assert_eq!(
+        s,
+        json!({"needs_setup": true, "user": null, "identity_mode": null})
+    );
 
     let mut a = admin(&app).await;
     let (_, s) = a.get("/api/auth/state").await;

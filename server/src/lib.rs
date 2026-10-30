@@ -218,6 +218,11 @@ pub fn router(state: AppState) -> Router {
         r = r.route(path, handler);
     }
     r.fallback(assets::serve)
+        // Request order: csrf → session → identify → handler.
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::tailscale::identify,
+        ))
         .layer(auth::session_layer(
             state.db.clone(),
             state.config.secure_cookies,

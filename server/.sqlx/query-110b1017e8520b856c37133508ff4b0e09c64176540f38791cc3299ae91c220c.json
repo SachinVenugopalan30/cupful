@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO profiles (user_id, timezone) VALUES (?, 'UTC')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "110b1017e8520b856c37133508ff4b0e09c64176540f38791cc3299ae91c220c"
+}

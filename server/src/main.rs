@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use cupful::{AppState, Config};
 
-const USAGE: &str = "usage: cupful [serve | reset-password <username> | import-foods <fdc.json> | seed-demo [--days N] [--seed N] [--force] | eval --provider <id>]";
+const USAGE: &str = "usage: cupful [serve | reset-password <username> | bind-tailscale <username> <login> | import-foods <fdc.json> | seed-demo [--days N] [--seed N] [--force] | eval --provider <id>]";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -17,6 +17,7 @@ async fn main() -> ExitCode {
     let result = match args.first().map(String::as_str) {
         None | Some("serve") => serve().await,
         Some("reset-password") if args.len() == 2 => reset_password(&args[1]).await,
+        Some("bind-tailscale") if args.len() == 3 => bind_tailscale(&args[1], &args[2]).await,
         Some("import-foods") if args.len() == 2 => import_foods(&args[1]).await,
         Some("seed-demo") => seed_demo(&args[1..]).await,
         Some("eval") if args.len() == 3 && args[1] == "--provider" => match args[2].parse() {
@@ -61,6 +62,17 @@ async fn import_foods(path: &str) -> Result<(), String> {
     let (imported, skipped) =
         cupful::nutrition::foods::import_usda(&db, std::path::Path::new(path)).await?;
     eprintln!("Imported {imported} USDA foods ({skipped} skipped: missing or implausible values).");
+    Ok(())
+}
+
+/// Maps an existing user to their tailnet login so Serve can sign them in.
+async fn bind_tailscale(username: &str, login: &str) -> Result<(), String> {
+    let db = open_db(&Config::from_env()?).await?;
+    cupful::auth::tailscale::bind_tailscale(&db, username, login).await?;
+    eprintln!(
+        "Bound {username} to Tailscale login {}.",
+        login.trim().to_lowercase()
+    );
     Ok(())
 }
 
@@ -135,6 +147,7 @@ async fn eval(provider_id: i64) -> Result<(), String> {
 
 async fn serve() -> Result<(), String> {
     let config = Config::from_env()?;
+    cupful::config::validate_identity(&config)?;
     let db = open_db(&config).await?;
     let env_key = std::env::var("CUPFUL_SECRET_KEY")
         .ok()
