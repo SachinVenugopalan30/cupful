@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id FROM foods\n                     WHERE source = ? AND source_ref = ? AND user_id IS NULL LIMIT 1",
+  "query": "SELECT id FROM foods\n                 WHERE source = ? AND source_ref = ? AND user_id IS NULL LIMIT 1",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "119e6eb1b7be84de684d4fd97455846591efd06f45e76d2827f34e8ef34ce3f1"
+  "hash": "6967c36b20d96ae78acf8bb3624b189602d5aa3b95443f1bd70244315aea88a4"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT m.user_id FROM meal_items i JOIN meals m ON m.id = i.meal_id WHERE i.id = ?",
+  "query": "SELECT m.user_id FROM meal_items i JOIN meals m ON m.id = i.meal_id\n                 WHERE i.id = ?",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "fb5bac7abecbde294d09a2e5d3b219914322abebaf65671c616fac2c97f71590"
+  "hash": "dd2534a321e736c5c0d037bb5ac1555ce26f0976aaefcf653f8b9a39199a4545"
 }

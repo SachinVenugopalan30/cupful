@@ -126,7 +126,7 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
             "POST",
             "/api/restore",
             User,
-            post(transfer::restore).layer(DefaultBodyLimit::max(32 << 20)),
+            post(transfer::restore).layer(DefaultBodyLimit::max(10 << 20)),
         ),
         ("GET", "/api/ingest-tokens", User, get(ingest::list)),
         ("POST", "/api/ingest-tokens", User, post(ingest::create)),

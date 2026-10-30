@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT food_id, unit, grams FROM food_portions\n         WHERE food_id IN (SELECT value FROM json_each(?)) ORDER BY food_id, unit",
+  "describe": {
+    "columns": [
+      {
+        "name": "food_id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "unit",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "unit"
+          }
+        }
+      },
+      {
+        "name": "grams",
+        "ordinal": 2,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7ab0e3e1ab0523dc506da7928bdfcdf4238d2340a40794ec9274a11f4d9391bc"
+}

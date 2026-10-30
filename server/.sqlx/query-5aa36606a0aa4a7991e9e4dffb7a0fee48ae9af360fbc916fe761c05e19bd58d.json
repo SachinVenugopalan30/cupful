@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT food_id, last_servings, last_used_at FROM user_products\n         WHERE user_id = ? ORDER BY food_id",
+  "query": "SELECT food_id, last_servings, last_used_at AS \"last_used_at: Ts\" FROM user_products\n         WHERE user_id = ? ORDER BY food_id",
   "describe": {
     "columns": [
       {
@@ -26,7 +26,7 @@
         }
       },
       {
-        "name": "last_used_at",
+        "name": "last_used_at: Ts",
         "ordinal": 2,
         "type_info": "Integer",
         "origin": {
@@ -46,5 +46,5 @@
       false
     ]
   },
-  "hash": "0d376cd04cf58ef3b9df69d86c1f339a43a8ce2957ccc685e69a7b3b429fd6d9"
+  "hash": "5aa36606a0aa4a7991e9e4dffb7a0fee48ae9af360fbc916fe761c05e19bd58d"
 }
