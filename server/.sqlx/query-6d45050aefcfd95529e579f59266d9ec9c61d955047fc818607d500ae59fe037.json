@@ -1,27 +1,27 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, source, name, brand, barcode, kcal, protein_g, carbs_g, fat_g, serving_g,\n                serving_text, fetched_at\n         FROM foods\n         WHERE barcode = ? AND source IN ('user', 'off') AND (user_id IS NULL OR user_id = ?)\n         ORDER BY CASE WHEN source = 'off' THEN 2 WHEN source_ref = ? THEN 0 ELSE 1 END, id DESC\n         LIMIT 1",
+  "query": "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g, i.carbs_g,\n                i.fat_g, i.food_id, i.origin\n         FROM meal_items i JOIN meals m ON m.id = i.meal_id\n         WHERE m.user_id = ? AND m.date = ? AND m.deleted_at IS NULL\n         ORDER BY i.meal_id, i.position",
   "describe": {
     "columns": [
       {
-        "name": "id",
+        "name": "meal_id",
         "ordinal": 0,
-        "type_info": "Integer",
+        "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "id"
+            "table": "meal_items",
+            "name": "meal_id"
           }
         }
       },
       {
-        "name": "source",
+        "name": "id",
         "ordinal": 1,
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "source"
+            "table": "meal_items",
+            "name": "id"
           }
         }
       },
@@ -31,30 +31,30 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "foods",
+            "table": "meal_items",
             "name": "name"
           }
         }
       },
       {
-        "name": "brand",
+        "name": "portion_text",
         "ordinal": 3,
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "brand"
+            "table": "meal_items",
+            "name": "portion_text"
           }
         }
       },
       {
-        "name": "barcode",
+        "name": "grams",
         "ordinal": 4,
-        "type_info": "Text",
+        "type_info": "Float",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "barcode"
+            "table": "meal_items",
+            "name": "grams"
           }
         }
       },
@@ -64,7 +64,7 @@
         "type_info": "Float",
         "origin": {
           "Table": {
-            "table": "foods",
+            "table": "meal_items",
             "name": "kcal"
           }
         }
@@ -75,7 +75,7 @@
         "type_info": "Float",
         "origin": {
           "Table": {
-            "table": "foods",
+            "table": "meal_items",
             "name": "protein_g"
           }
         }
@@ -86,7 +86,7 @@
         "type_info": "Float",
         "origin": {
           "Table": {
-            "table": "foods",
+            "table": "meal_items",
             "name": "carbs_g"
           }
         }
@@ -97,62 +97,50 @@
         "type_info": "Float",
         "origin": {
           "Table": {
-            "table": "foods",
+            "table": "meal_items",
             "name": "fat_g"
           }
         }
       },
       {
-        "name": "serving_g",
+        "name": "food_id",
         "ordinal": 9,
-        "type_info": "Float",
+        "type_info": "Integer",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "serving_g"
+            "table": "meal_items",
+            "name": "food_id"
           }
         }
       },
       {
-        "name": "serving_text",
+        "name": "origin",
         "ordinal": 10,
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "foods",
-            "name": "serving_text"
-          }
-        }
-      },
-      {
-        "name": "fetched_at",
-        "ordinal": 11,
-        "type_info": "Integer",
-        "origin": {
-          "Table": {
-            "table": "foods",
-            "name": "fetched_at"
+            "table": "meal_items",
+            "name": "origin"
           }
         }
       }
     ],
     "parameters": {
-      "Right": 3
+      "Right": 2
     },
     "nullable": [
       false,
       false,
       false,
-      true,
+      false,
       true,
       false,
       false,
       false,
       false,
       true,
-      true,
-      true
+      false
     ]
   },
-  "hash": "c2ebaddf967d76cb317f16d43746efca10a150a9227acdf92393e0ab8d99fd85"
+  "hash": "6d45050aefcfd95529e579f59266d9ec9c61d955047fc818607d500ae59fe037"
 }
