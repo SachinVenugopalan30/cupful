@@ -793,9 +793,11 @@ pub async fn import(s: AppState, user: User, body: TextBody) -> Result<Json<Valu
             ("import".to_string(), 1.0, None, None, None)
         };
 
-        for it in &d.items {
+        // Match by position, not the raw column: a 1-based Fuel Ledger file still maps onto the
+        // item created at that ordinal by an earlier import.
+        for (ordinal, it) in d.items.iter().enumerate() {
             let matched = if live {
-                existing_items.iter().find(|e| e.1 == it.index as i64)
+                existing_items.get(ordinal)
             } else {
                 None
             };

@@ -158,7 +158,7 @@ test.describe('Settings → Data', () => {
 		const backupPath = await (await backupEvent).path();
 		expect(backupPath).not.toBeNull();
 		const backup = JSON.parse(readFileSync(backupPath!, 'utf8'));
-		expect(backup).toBeTypeOf('object');
+		expect(typeof backup).toBe('object');
 
 		// Restore asks first, then reports what it replaced.
 		let asked = '';
