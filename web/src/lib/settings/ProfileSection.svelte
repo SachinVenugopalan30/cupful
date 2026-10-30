@@ -6,6 +6,7 @@
 <script lang="ts">
 	import { errorMessage, profile } from '#lib/api.ts';
 	import { loadSession } from '#lib/session.svelte.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { fromForm, setHeightUnit, setWeightUnit, toForm, type ProfileErrors, type ProfileForm } from './profile.ts';
 
 	const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -19,7 +20,6 @@
 	let status = $state('');
 	let saveError = $state('');
 	let busy = $state(false);
-	let online = $state(typeof navigator === 'undefined' || navigator.onLine);
 
 	async function load() {
 		loadError = '';
@@ -58,8 +58,6 @@
 		[hint, errors[k] && `${k}-err`].filter(Boolean).join(' ') || undefined;
 </script>
 
-<svelte:window ononline={() => (online = true)} onoffline={() => (online = false)} />
-
 <section class="card stack" aria-labelledby="profile-h">
 	<h2 id="profile-h">Profile and targets</h2>
 	{#if loadError}
@@ -75,11 +73,11 @@
 		{#if isNew}
 			<p class="notice notice-info">Fill this in to get your daily budget. Everything stays on this server.</p>
 		{/if}
-		{#if !online}
+		{#if !connection.online}
 			<p class="notice notice-warning">You're offline. Profile changes need a connection.</p>
 		{/if}
 		<form class="stack" onsubmit={save} novalidate>
-			<fieldset class="stack" disabled={!online || busy}>
+			<fieldset class="stack" disabled={!connection.online || busy}>
 				<legend class="visually-hidden">Profile</legend>
 				<div class="field">
 					<label for="p-tz">Time zone</label>
@@ -193,7 +191,7 @@
 			<p class="hint">Changes apply from today; past days keep their old targets.</p>
 			{#if saveError}<p class="notice notice-error" role="alert">{saveError}</p>{/if}
 			<p class="status" role="status">{status}</p>
-			<button class="btn btn-primary btn-block" disabled={!online || busy}>{busy ? 'Saving…' : 'Save profile'}</button>
+			<button class="btn btn-primary btn-block" disabled={!connection.online || busy}>{busy ? 'Saving…' : 'Save profile'}</button>
 		</form>
 	{/if}
 </section>

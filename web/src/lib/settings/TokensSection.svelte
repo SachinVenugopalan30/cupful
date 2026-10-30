@@ -7,6 +7,7 @@
 <script lang="ts">
 	import { errorMessage, ingestTokens, type IngestToken } from '#lib/api.ts';
 	import { today } from '#lib/session.svelte.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 
 	let list = $state<IngestToken[] | null>(null);
 	let listError = $state('');
@@ -79,6 +80,9 @@
 		read anything or overwrite a value you typed yourself. Setup steps are in
 		<code>docs/shortcuts.md</code> in the source code.
 	</p>
+	{#if !connection.online}
+		<p class="notice notice-warning">Settings need a connection. Token changes are disabled offline.</p>
+	{/if}
 	{#if listError}<p class="notice notice-error" role="alert">{listError}</p>{/if}
 	<p class="status small" role="status">{status}</p>
 
@@ -101,13 +105,13 @@
 						<div class="notice notice-warning" role="group" aria-label="Confirm revoke">
 							<p>Revoke “{t.label}”? Automations using it stop working.</p>
 							<div class="row">
-								<button class="btn btn-danger" onclick={() => revoke(t)}>Revoke token</button>
+								<button class="btn btn-danger" onclick={() => revoke(t)} disabled={!connection.online}>Revoke token</button>
 								<button class="btn btn-quiet" onclick={() => (confirming = null)}>Keep it</button>
 							</div>
 						</div>
 					{:else}
 						<div class="row">
-							<button class="btn btn-quiet danger" onclick={() => (confirming = t.id)} aria-label="Revoke {t.label}">Revoke</button>
+							<button class="btn btn-quiet danger" onclick={() => (confirming = t.id)} disabled={!connection.online} aria-label="Revoke {t.label}">Revoke</button>
 						</div>
 					{/if}
 				</li>
@@ -139,7 +143,7 @@
 			<input id="token-label" bind:value={label} maxlength="100" placeholder="iPhone Shortcut" />
 		</div>
 		{#if formError}<p class="notice notice-error" role="alert">{formError}</p>{/if}
-		<p><button class="btn btn-primary" disabled={busy}>Create token</button></p>
+		<p><button class="btn btn-primary" disabled={busy || !connection.online}>Create token</button></p>
 	</form>
 </section>
 

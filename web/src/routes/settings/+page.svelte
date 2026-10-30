@@ -5,9 +5,13 @@
 	import TokensSection from '#lib/settings/TokensSection.svelte';
 	import GoogleHealth from '#lib/settings/GoogleHealth.svelte';
 	import DataSection from '#lib/settings/DataSection.svelte';
+	import SyncSection from '#lib/settings/SyncSection.svelte';
 	import AboutSection from '#lib/settings/AboutSection.svelte';
 	import { auth, errorMessage } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
+	import { clearUser, countFor } from '#lib/offline/queue.ts';
+	import { clearSessionCache } from '#lib/offline/session-cache.ts';
 	import { loadTheme, saveTheme, type ThemePref } from '#lib/theme.ts';
 
 	let theme = $state<ThemePref>(loadTheme());
@@ -17,6 +21,16 @@
 	async function logout() {
 		logoutError = '';
 		try {
+			const userId = connection.activeUserId;
+			if (userId !== null) {
+				const waiting = await countFor(userId);
+				if (waiting > 0) {
+					const ok = confirm(`${waiting} changes haven’t synced. Log out and discard them?`);
+					if (!ok) return;
+				}
+				await clearUser(userId);
+				await clearSessionCache(userId);
+			}
 			await auth.logout();
 			// Full reload: no state from this account survives into the next one.
 			location.assign('/login');
@@ -49,6 +63,7 @@
 	<GoogleHealth />
 	<ProvidersSection isAdmin={session.user?.is_admin ?? false} />
 	<DataSection />
+	<SyncSection />
 	<AboutSection />
 
 	<section class="card stack" aria-labelledby="account-h">
