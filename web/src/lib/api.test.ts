@@ -8,6 +8,7 @@ import {
 	getDay,
 	getMeals,
 	getTrends,
+	importCsv,
 	parseError,
 	products,
 	profile,
@@ -101,6 +102,29 @@ describe('request', () => {
 			status: 404,
 			code: 'product_not_found'
 		});
+	});
+
+	it('sends the user to login on 401, except from auth routes', async () => {
+		const assign = vi.fn();
+		vi.stubGlobal('location', { assign });
+
+		stub(json({ error: 'session expired' }, 401));
+		await expect(api.get('/api/meals')).rejects.toMatchObject({ status: 401 });
+		expect(assign).toHaveBeenCalledWith('/login');
+
+		assign.mockClear();
+		stub(json({ error: 'wrong password' }, 401));
+		await expect(api.post('/api/auth/login', {})).rejects.toMatchObject({ status: 401 });
+		expect(assign).not.toHaveBeenCalled();
+	});
+
+	it('posts a CSV text body for import', async () => {
+		const call = stub(json({ meals_created: 1 }));
+		await importCsv('date,description\n2026-10-29,rice');
+		const [url, init] = call();
+		expect(url).toBe('/api/import/fuel-ledger');
+		expect(new Headers(init.headers).get('Content-Type')).toBe('text/csv');
+		expect(init.body).toContain('rice');
 	});
 });
 
