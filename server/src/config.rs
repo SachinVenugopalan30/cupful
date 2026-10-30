@@ -11,6 +11,9 @@ pub struct Config {
     pub secure_cookies: bool,
     /// Only requests from this address may set the client IP through `X-Forwarded-For`.
     pub trusted_proxy: Option<IpAddr>,
+    /// Trust the `Tailscale-User-*` headers from a local Tailscale sidecar.
+    /// Only valid with a loopback bind; see [`validate_identity`].
+    pub trust_tailscale: bool,
     /// AGPL §13: where users of this instance can get its source.
     pub source_url: String,
     /// Barcode lookups at Open Food Facts. Off: stored products and label entry only.
@@ -42,6 +45,7 @@ impl Default for Config {
             data_dir: ".cupful".into(),
             secure_cookies: true,
             trusted_proxy: None,
+            trust_tailscale: false,
             source_url: "https://github.com/SachinVenugopalan30/cupful".into(),
             product_lookup: true,
             off_base_url: "https://world.openfoodfacts.org".into(),
@@ -78,6 +82,9 @@ impl Config {
                     .map_err(|e| format!("CUPFUL_TRUSTED_PROXY={v}: {e}"))?,
             );
         }
+        if let Some(v) = var("CUPFUL_TRUST_TAILSCALE") {
+            c.trust_tailscale = v != "false" && v != "0";
+        }
         if let Some(v) = var("CUPFUL_SOURCE_URL") {
             c.source_url = v;
         }
@@ -94,4 +101,18 @@ impl Config {
         c.public_url = var("CUPFUL_PUBLIC_URL").map(|u| u.trim_end_matches('/').to_string());
         Ok(c)
     }
+}
+
+/// Checks that are about the whole configuration, not one env var. Called by `serve` only, so CLI
+/// subcommands still work with a config that would not be safe to serve.
+pub fn validate_identity(c: &Config) -> Result<(), String> {
+    if c.trust_tailscale && !c.bind.ip().is_loopback() {
+        return Err(format!(
+            "CUPFUL_TRUST_TAILSCALE is on but CUPFUL_BIND is {} (not loopback). \
+             Bind to 127.0.0.1:8080 (or [::1]:8080) and let the Tailscale sidecar proxy the port; \
+             a wider bind trusts Tailscale-User-* headers from every client that can reach it.",
+            c.bind
+        ));
+    }
+    Ok(())
 }

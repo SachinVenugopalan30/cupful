@@ -6,6 +6,7 @@ use std::time::Instant;
 mod limits;
 mod password;
 mod session;
+pub mod tailscale;
 
 pub use limits::{ClientIp, RateLimiter, client_ip, csrf};
 pub use session::{SqliteStore, session_layer};
@@ -199,7 +200,10 @@ pub async fn auth_state(State(s): State<AppState>, session: Session) -> Result<J
         .map(|u| json!({"id": u.id, "username": u.username, "is_admin": u.is_admin})),
         None => None,
     };
-    Ok(Json(json!({ "needs_setup": needs_setup, "user": user })))
+    let identity_mode = s.config.trust_tailscale.then_some("tailscale");
+    Ok(Json(
+        json!({ "needs_setup": needs_setup, "user": user, "identity_mode": identity_mode }),
+    ))
 }
 
 #[derive(Deserialize)]

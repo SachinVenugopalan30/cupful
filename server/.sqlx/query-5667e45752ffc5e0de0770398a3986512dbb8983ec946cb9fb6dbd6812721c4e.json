@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT username FROM users WHERE tailscale_login = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "username",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "username"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5667e45752ffc5e0de0770398a3986512dbb8983ec946cb9fb6dbd6812721c4e"
+}
