@@ -6,9 +6,8 @@
     title: string       card heading
     summary: string     plain-words description of the data; the chart itself is hidden from
                         assistive tech (role="img") and this is its label
-    readout: string     the tapped day's values; empty shows the hint
+    readout: string     the tapped day's values; empty shows the tap hint
     empty: string       when set, replaces the chart with this sentence
-    hint: string        shown above the chart until a day is tapped
     children (the chart), legend snippets
   Maps LayerChart's color variables onto the app tokens so every chart follows light and dark.
 -->
@@ -20,7 +19,6 @@
 		summary,
 		readout = '',
 		empty = '',
-		hint = 'Tap a day to see its values.',
 		legend,
 		note,
 		children
@@ -29,7 +27,6 @@
 		summary: string;
 		readout?: string;
 		empty?: string;
-		hint?: string;
 		legend?: Snippet;
 		note?: string;
 		children: Snippet;
@@ -43,7 +40,7 @@
 		<p class="empty">{empty}</p>
 	{:else}
 		{#if legend}<p class="legend small">{@render legend()}</p>{/if}
-		<p class="readout num" aria-live="polite">{readout || hint}</p>
+		<p class="readout num" aria-live="polite">{readout || 'Tap a day to see its values.'}</p>
 		<div class="plot" role="img" aria-label={summary}>{@render children()}</div>
 		{#if note}<p class="hint">{note}</p>{/if}
 	{/if}

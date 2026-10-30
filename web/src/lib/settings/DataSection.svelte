@@ -21,9 +21,9 @@
 	// A parsed backup waiting for the user's yes.
 	let pending = $state<Record<string, unknown> | null>(null);
 
-	async function saveFile(path: string) {
+	async function saveFile(path: string, kind: 'csv' | 'backup') {
 		status = error = '';
-		busy = path.endsWith('.csv') ? 'csv' : 'backup';
+		busy = kind;
 		try {
 			const { blob, filename } = await download(path);
 			const url = URL.createObjectURL(blob);
@@ -43,10 +43,16 @@
 		}
 	}
 
-	async function onImport(e: Event) {
+	/** The chosen file, with the input reset so picking the same file again still fires change. */
+	function takeFile(e: Event): File | null {
 		const input = e.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
+		const file = input.files?.[0] ?? null;
 		input.value = '';
+		return file;
+	}
+
+	async function onImport(e: Event) {
+		const file = takeFile(e);
 		if (!file) return;
 		status = error = '';
 		busy = 'import';
@@ -60,19 +66,14 @@
 	}
 
 	async function onRestore(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		input.value = '';
+		const file = takeFile(e);
 		if (!file) return;
 		status = error = '';
-		let doc: Record<string, unknown>;
 		try {
-			doc = parseBackup(await file.text());
+			pending = parseBackup(await file.text());
 		} catch (err) {
 			error = errorMessage(err);
-			return;
 		}
-		pending = doc;
 	}
 
 	async function restore() {
@@ -114,10 +115,10 @@
 		<h3>Export</h3>
 		<p class="small muted">Save a copy of your log, or a full backup you can restore later.</p>
 		<div class="row">
-			<button class="btn" disabled={blocked} onclick={() => saveFile('/api/export.csv')}>
+			<button class="btn" disabled={blocked} onclick={() => saveFile('/api/export.csv', 'csv')}>
 				{busy === 'csv' ? 'Downloading…' : 'Download CSV'}
 			</button>
-			<button class="btn" disabled={blocked} onclick={() => saveFile('/api/backup')}>
+			<button class="btn" disabled={blocked} onclick={() => saveFile('/api/backup', 'backup')}>
 				{busy === 'backup' ? 'Downloading…' : 'Download backup'}
 			</button>
 		</div>

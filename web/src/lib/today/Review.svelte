@@ -23,6 +23,7 @@
 		MEAL_TYPES,
 		MULTIPLIERS,
 		blankItem,
+		capitalize,
 		choose,
 		itemReady,
 		mealFromDraft,
@@ -34,6 +35,7 @@
 		type Draft,
 		type NumKey
 	} from './meal';
+	import { MACROS, aliasFailure, rememberAliases } from './review';
 
 	let {
 		draft,
@@ -120,13 +122,10 @@
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
-			const wanted = d.items.filter((i) => i.remember && i.food_id !== null && i.phrase.trim());
-			const results = await Promise.allSettled(wanted.map((i) => foods.alias(i.phrase.trim(), i.food_id!)));
-			const failed = wanted.filter((_, k) => results[k].status === 'rejected');
-			for (const i of wanted) if (!failed.includes(i)) i.remember = false;
+			const failed = await rememberAliases(d.items, foods.alias);
 			onSaved();
 			if (failed.length) {
-				error = `The meal is saved, but I couldn't remember ${failed.map((i) => `"${i.phrase}"`).join(', ')}. Save again to retry, or close.`;
+				error = aliasFailure(failed);
 				return;
 			}
 			dialog.close();
@@ -136,14 +135,6 @@
 			saving = false;
 		}
 	}
-
-	const MACROS: [NumKey, string][] = [
-		['kcal', 'kcal'],
-		['protein_g', 'Protein g'],
-		['carbs_g', 'Carbs g'],
-		['fat_g', 'Fat g']
-	];
-	const label = (t: string) => t[0].toUpperCase() + t.slice(1);
 </script>
 
 <dialog class="sheet review" bind:this={dialog} onclose={onClose} aria-labelledby="review-title-{uid}">
@@ -155,7 +146,7 @@
 
 		<fieldset class="segmented" aria-label="Meal">
 			{#each MEAL_TYPES as t (t)}
-				<label><input type="radio" name="review-type-{uid}" value={t} bind:group={d.meal_type} />{label(t)}</label>
+				<label><input type="radio" name="review-type-{uid}" value={t} bind:group={d.meal_type} />{capitalize(t)}</label>
 			{/each}
 		</fieldset>
 
@@ -232,7 +223,7 @@
 					{/if}
 
 					<div class="nums">
-						<div class="field grams">
+						<div class="field">
 							<label for="grams-{item.id}">Grams</label>
 							<input
 								id="grams-{item.id}"

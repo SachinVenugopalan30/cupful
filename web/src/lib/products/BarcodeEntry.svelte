@@ -27,11 +27,12 @@
 	let view = $state<View | null>(null);
 	let announce = $state('');
 
-	const title = $derived(
-		view?.name === 'product'
-			? view.product.name
-			: { scan: 'Scan barcode', label: 'Enter from the label', saved: 'Saved products' }[view?.name ?? 'scan']
-	);
+	const TITLES = {
+		scan: 'Scan barcode',
+		label: 'Enter from the label',
+		saved: 'Saved products'
+	} as const;
+	const title = $derived(view?.name === 'product' ? view.product.name : TITLES[view?.name ?? 'scan']);
 
 	async function show(v: View) {
 		view = v;

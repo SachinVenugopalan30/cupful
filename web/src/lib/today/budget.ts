@@ -48,22 +48,22 @@ export function macroRows(b: Budget, e: Macros): MacroRow[] {
 	});
 }
 
-const n = (x: number) => x.toLocaleString('en-US');
+const num = (x: number) => x.toLocaleString('en-US');
 
 /** Every term of the server's calculation, in order, with a one-line explanation. */
 export function breakdown(b: Budget, unit: WeightUnit = 'kg') {
 	return [
 		{ label: 'Weight used', value: formatWeight(b.weight_kg, unit), note: 'Your latest weigh-in on or before this day, else your start weight.' },
 		{ label: 'Age', value: String(b.age), note: 'This year minus your birth year (can be a year off).' },
-		{ label: 'BMR', value: `${n(b.bmr)} kcal`, note: 'Energy at rest, from the Mifflin–St Jeor formula.' },
-		{ label: 'Base', value: `${n(b.base)} kcal`, note: 'BMR × 1.2, for everyday light movement.' },
-		{ label: 'Steps used', value: n(b.steps), note: "This day's steps, or your typical steps if none are logged." },
-		{ label: 'Steps kcal', value: `${n(b.steps_kcal)} kcal`, note: 'Extra burn from steps beyond the first 2,500.' },
+		{ label: 'BMR', value: `${num(b.bmr)} kcal`, note: 'Energy at rest, from the Mifflin–St Jeor formula.' },
+		{ label: 'Base', value: `${num(b.base)} kcal`, note: 'BMR × 1.2, for everyday light movement.' },
+		{ label: 'Steps used', value: num(b.steps), note: "This day's steps, or your typical steps if none are logged." },
+		{ label: 'Steps kcal', value: `${num(b.steps_kcal)} kcal`, note: 'Extra burn from steps beyond the first 2,500.' },
 		{ label: 'MET', value: String(b.met), note: 'Workout intensity: 5 for weight training, 7 for cardio only.' },
-		{ label: 'Gym kcal', value: `${n(b.gym_kcal)} kcal`, note: 'Extra burn from gym minutes at that intensity.' },
-		{ label: 'Maintenance', value: `${n(b.maintenance)} kcal`, note: 'Base + steps + gym: what keeps your weight steady.' },
-		{ label: 'Deficit', value: `${n(b.deficit)} kcal`, note: 'Your weekly pace as a daily cut, at most 25 % of maintenance.' },
-		{ label: 'Floor', value: `${n(b.floor)} kcal`, note: 'A conventional minimum the budget never goes below.' },
-		{ label: 'Budget', value: `${n(b.budget)} kcal`, note: 'Maintenance minus the deficit, kept at or above the floor.' }
+		{ label: 'Gym kcal', value: `${num(b.gym_kcal)} kcal`, note: 'Extra burn from gym minutes at that intensity.' },
+		{ label: 'Maintenance', value: `${num(b.maintenance)} kcal`, note: 'Base + steps + gym: what keeps your weight steady.' },
+		{ label: 'Deficit', value: `${num(b.deficit)} kcal`, note: 'Your weekly pace as a daily cut, at most 25 % of maintenance.' },
+		{ label: 'Floor', value: `${num(b.floor)} kcal`, note: 'A conventional minimum the budget never goes below.' },
+		{ label: 'Budget', value: `${num(b.budget)} kcal`, note: 'Maintenance minus the deficit, kept at or above the floor.' }
 	];
 }

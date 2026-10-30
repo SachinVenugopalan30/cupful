@@ -21,6 +21,11 @@
 	let confirmingLogout = $state(false);
 	let waiting = $state(0);
 	let loggingOut = $state(false);
+	const logoutWarning = $derived(
+		`${waiting} ${waiting === 1 ? 'change hasn’t' : 'changes haven’t'} synced. Logging out discards ${
+			waiting === 1 ? 'it' : 'them'
+		} from this device.`
+	);
 
 	async function askLogout() {
 		logoutError = '';
@@ -98,10 +103,7 @@
 		{#if logoutError}<p class="notice notice-error" role="alert">{logoutError}</p>{/if}
 		{#if confirmingLogout}
 			<div class="notice notice-warning" role="group" aria-label="Confirm logout">
-				<p>
-					{waiting} {waiting === 1 ? 'change hasn’t' : 'changes haven’t'} synced. Logging out discards
-					{waiting === 1 ? ' it' : ' them'} from this device.
-				</p>
+				<p>{logoutWarning}</p>
 				<div class="row">
 					<button class="btn btn-danger" onclick={logout} disabled={loggingOut}>
 						Log out and discard

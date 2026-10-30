@@ -29,17 +29,13 @@
 	);
 
 	type BarState = 'offline' | 'signin' | 'identity' | 'attention' | 'pending';
-	const barState = $derived<BarState>(
-		connection.paused === 'identity'
-			? 'identity'
-			: connection.paused === 'auth'
-				? 'signin'
-				: offline
-					? 'offline'
-					: attention
-						? 'attention'
-						: 'pending'
-	);
+	const barState = $derived.by((): BarState => {
+		if (connection.paused === 'identity') return 'identity';
+		if (connection.paused === 'auth') return 'signin';
+		if (offline) return 'offline';
+		if (attention) return 'attention';
+		return 'pending';
+	});
 </script>
 
 {#if show}

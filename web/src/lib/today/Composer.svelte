@@ -15,6 +15,7 @@
 	import {
 		MAX_DESCRIPTION,
 		MEAL_TYPES,
+		capitalize,
 		draftFromEstimate,
 		manualDraft,
 		reencodePhoto,
@@ -89,7 +90,6 @@
 		onSaved();
 	}
 
-	const label = (t: string) => t[0].toUpperCase() + t.slice(1);
 </script>
 
 <section class="card composer" aria-labelledby="composer-title">
@@ -97,7 +97,7 @@
 		<h2 id="composer-title">Log a meal</h2>
 		<fieldset class="segmented" aria-label="Meal">
 			{#each MEAL_TYPES as t (t)}
-				<label><input type="radio" name="composer-type" value={t} bind:group={mealType} />{label(t)}</label>
+				<label><input type="radio" name="composer-type" value={t} bind:group={mealType} />{capitalize(t)}</label>
 			{/each}
 		</fieldset>
 

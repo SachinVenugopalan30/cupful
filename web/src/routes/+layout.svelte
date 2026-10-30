@@ -38,6 +38,8 @@
 	});
 	const ready = $derived(session.auth !== null && target === null);
 	const path = $derived(page.url.pathname);
+	/** `aria-current` for a nav link pointing at `href`. */
+	const current = (href: string) => (path === href ? 'page' : undefined);
 </script>
 
 <svelte:head>
@@ -56,22 +58,22 @@
 	{#if session.user}
 		<nav class="tabs" aria-label="Main">
 			<span class="brand" aria-hidden="true">Cupful</span>
-			<a href="/" aria-current={path === '/' ? 'page' : undefined}>
+			<a href="/" aria-current={current('/')}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"
 					><path d="M4 7h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" /></svg
 				>
 				<span>Today</span>
 			</a>
 			<!-- On wide screens Today shows the Activity section itself. -->
-			<a href="/activity" class="activity-tab" aria-current={path === '/activity' ? 'page' : undefined}>
+			<a href="/activity" class="activity-tab" aria-current={current('/activity')}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4" /></svg>
 				<span>Activity</span>
 			</a>
-			<a href="/trends" aria-current={path === '/trends' ? 'page' : undefined}>
+			<a href="/trends" aria-current={current('/trends')}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
 				<span>Trends</span>
 			</a>
-			<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>
+			<a href="/settings" aria-current={current('/settings')}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"
 					><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle
 						cx="9"
