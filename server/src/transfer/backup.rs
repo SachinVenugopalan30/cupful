@@ -11,8 +11,9 @@
 use std::collections::{HashMap, HashSet};
 
 use axum::Json;
-use axum::http::HeaderValue;
+use axum::extract::{Request, State};
 use axum::http::header::{CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_TYPE};
+use axum::http::{HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use jiff::civil::Date;
 use serde::Deserialize;
@@ -21,7 +22,7 @@ use sqlx::SqliteConnection;
 
 use crate::AppState;
 use crate::auth::{User, validate_timezone};
-use crate::error::{Error, JsonBody, Result};
+use crate::error::{Error, Result};
 use crate::nutrition::foods::normalize;
 use crate::sync::{BODY_PARTS, ItemIn, MealIn, Outcome, WriteMode};
 use crate::time::{now_ms, rfc3339, today_in, user_today};
@@ -564,8 +565,11 @@ pub async fn export(s: AppState, user: User) -> Result<Response> {
 #[derive(Deserialize)]
 struct Envelope {
     confirm: bool,
-    backup: Value,
+    backup: BackupDoc,
 }
+
+/// A backup is a whole account; anything bigger than this is not one.
+const MAX_BODY: usize = 10 << 20;
 
 #[derive(Deserialize)]
 struct BackupDoc {
@@ -1045,10 +1049,15 @@ async fn insert_private_food(
     let name = f.name.trim().to_string();
     let norm = normalize(&name);
     let existing = sqlx::query_scalar!(
-        "SELECT id FROM foods WHERE user_id = ? AND name_norm = ? AND barcode IS ? LIMIT 1",
+        "SELECT id FROM foods WHERE user_id = ? AND name_norm = ? AND barcode IS ?
+           AND kcal = ? AND protein_g = ? AND carbs_g = ? AND fat_g = ? LIMIT 1",
         user_id,
         &norm,
-        &f.barcode
+        &f.barcode,
+        f.kcal,
+        f.protein_g,
+        f.carbs_g,
+        f.fat_g
     )
     .fetch_optional(&mut *conn)
     .await?;
@@ -1144,16 +1153,16 @@ async fn resolve_food(conn: &mut SqliteConnection, user_id: i64, f: &FoodDoc) ->
     }
 }
 
-pub async fn restore(
-    s: AppState,
-    user: User,
-    JsonBody(body): JsonBody<Value>,
-) -> Result<Json<Value>> {
+pub async fn restore(State(s): State<AppState>, user: User, req: Request) -> Result<Json<Value>> {
+    // Parsed straight into the typed document: no intermediate `Value` copy.
+    let bytes = axum::body::to_bytes(req.into_body(), MAX_BODY)
+        .await
+        .map_err(|_| Error::Status(StatusCode::PAYLOAD_TOO_LARGE, "backup is over 10 MB".into()))?;
     let env: Envelope =
-        serde_json::from_value(body).map_err(|e| bad(format!("invalid request body: {e}")))?;
+        serde_json::from_slice(&bytes).map_err(|e| bad(format!("invalid backup request: {e}")))?;
+    drop(bytes);
     check(env.confirm, "confirm must be true")?;
-    let doc: BackupDoc =
-        serde_json::from_value(env.backup).map_err(|e| bad(format!("invalid backup: {e}")))?;
+    let doc = env.backup;
     let Checked {
         doc,
         meal_ids,
@@ -1201,9 +1210,15 @@ pub async fn restore(
     }
 
     // Full replacement of this user's logged data and private foods only.
-    sqlx::query!("DELETE FROM meals WHERE user_id = ?", user.id)
-        .execute(&mut *tx)
-        .await?;
+    // Tombstones and `sync_ops` stay: a device replaying its offline queue after a restore must
+    // not resurrect deleted meals, and old op ids stay duplicates. A backed-up meal whose id is
+    // tombstoned here wins (restore is "go back to the snapshot") and is revived below.
+    sqlx::query!(
+        "DELETE FROM meals WHERE user_id = ? AND deleted_at IS NULL",
+        user.id
+    )
+    .execute(&mut *tx)
+    .await?;
     sqlx::query!("DELETE FROM days WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
@@ -1217,9 +1232,6 @@ pub async fn restore(
         .execute(&mut *tx)
         .await?;
     sqlx::query!("DELETE FROM profile_versions WHERE user_id = ?", user.id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query!("DELETE FROM sync_ops WHERE user_id = ?", user.id)
         .execute(&mut *tx)
         .await?;
     sqlx::query!("DELETE FROM foods WHERE user_id = ?", user.id)
@@ -1334,6 +1346,9 @@ pub async fn restore(
         if outcome != Outcome::Applied {
             return Err(bad("a meal in the backup could not be restored"));
         }
+        sqlx::query!("UPDATE meals SET deleted_at = NULL WHERE id = ?", m.id)
+            .execute(&mut *tx)
+            .await?;
     }
 
     // `write_meal_on` records barcoded items as products; the backup is the source of truth.

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM meals WHERE user_id = ? AND deleted_at IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "ea10b22f189392b01e7bcd8112293564f0a0113fe0c9a7ebb5a9db0bbb6c71e6"
+}

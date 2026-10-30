@@ -11,7 +11,7 @@ use serde_json::Value;
 
 use crate::AppState;
 use crate::auth::User;
-use crate::error::{JsonBody, Result, TextBody};
+use crate::error::{Result, TextBody};
 
 pub async fn export_csv(State(s): State<AppState>, user: User) -> Result<Response> {
     csv::export(s, user).await
@@ -29,10 +29,4 @@ pub async fn backup(State(s): State<AppState>, user: User) -> Result<Response> {
     backup::export(s, user).await
 }
 
-pub async fn restore(
-    State(s): State<AppState>,
-    user: User,
-    body: JsonBody<Value>,
-) -> Result<Json<Value>> {
-    backup::restore(s, user, body).await
-}
+pub use backup::restore;

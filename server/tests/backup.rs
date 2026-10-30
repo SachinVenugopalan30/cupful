@@ -908,3 +908,111 @@ async fn backups_are_isolated_between_users() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(meals["meals"][0]["id"], f.meal_id.as_str());
 }
+
+#[tokio::test]
+async fn restore_keeps_tombstones_and_sync_ops() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    rich_data(&app, &state, &mut a).await;
+    let doc = export(&mut a).await;
+    let tombstones = || async {
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM meals WHERE deleted_at IS NOT NULL")
+            .fetch_one(&state.db)
+            .await
+            .unwrap()
+    };
+    assert_eq!(tombstones().await, 1);
+    let ops_before: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_ops")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert!(ops_before > 0);
+
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(tombstones().await, 1, "tombstone survives restore");
+    let ops_after: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_ops")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert_eq!(ops_before, ops_after, "sync_ops survive restore");
+
+    // An offline device replaying its queue cannot resurrect the deleted meal, and an
+    // already-applied op id is a duplicate.
+    let gone: String = sqlx::query_scalar("SELECT id FROM meals WHERE deleted_at IS NOT NULL")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let day = today(TZ).to_string();
+    let replay = op(
+        "meal.upsert",
+        &at(-8),
+        meal(&gone, &day, json!([item(&uuid(), 10.0)])),
+    );
+    assert_eq!(a.sync(vec![replay]).await, ["stale"]);
+    let old_op: String = sqlx::query_scalar("SELECT op_id FROM sync_ops LIMIT 1")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    let mut dup = op("day.patch", &at(-1), json!({"date": day, "steps": 1}));
+    dup["op_id"] = json!(old_op);
+    assert_eq!(a.sync(vec![dup]).await, ["duplicate"]);
+}
+
+#[tokio::test]
+async fn backup_meal_wins_over_a_target_tombstone() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let fx = rich_data(&app, &state, &mut a).await;
+    let doc = export(&mut a).await;
+    assert_eq!(
+        a.sync(vec![op("meal.delete", &at(-1), json!({"id": fx.meal_id}))])
+            .await,
+        ["applied"]
+    );
+    assert!(export(&mut a).await["meals"].as_array().unwrap().is_empty());
+
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let got = export(&mut a).await;
+    assert_eq!(got["meals"].as_array().unwrap().len(), 1);
+    assert_eq!(got["meals"][0]["id"], json!(fx.meal_id));
+    assert_eq!(got["meals"][0]["items"].as_array().unwrap().len(), 5);
+}
+
+#[tokio::test]
+async fn same_named_private_foods_stay_distinct() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    let fx = rich_data(&app, &state, &mut a).await;
+    let mut doc = export(&mut a).await;
+    let mut twin = find_food(&doc, fx.private_food).clone();
+    twin["id"] = json!(900_001);
+    twin["kcal"] = json!(123.0);
+    twin["protein_g"] = json!(1.0);
+    doc["foods"].as_array_mut().unwrap().push(twin);
+
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let kcals: Vec<f64> = sqlx::query_scalar(
+        "SELECT kcal FROM foods WHERE name = 'My protein scoop' AND user_id IS NOT NULL ORDER BY kcal",
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap();
+    assert_eq!(kcals, [123.0, 400.0]);
+}
+
+#[tokio::test]
+async fn oversized_restore_body_is_rejected() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let big = "x".repeat(11 << 20);
+    let (status, _) = a
+        .post(
+            "/api/restore",
+            json!({"confirm": true, "backup": {"pad": big}}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+}

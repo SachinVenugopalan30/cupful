@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id FROM foods WHERE user_id = ? AND name_norm = ? AND barcode IS ? LIMIT 1",
+  "query": "SELECT id FROM foods WHERE user_id = ? AND name_norm = ? AND barcode IS ?\n           AND kcal = ? AND protein_g = ? AND carbs_g = ? AND fat_g = ? LIMIT 1",
   "describe": {
     "columns": [
       {
@@ -16,11 +16,11 @@
       }
     ],
     "parameters": {
-      "Right": 3
+      "Right": 7
     },
     "nullable": [
       false
     ]
   },
-  "hash": "6339fb1226a409bd77b466519578db32fc6f9e5512a50d1e9e2719e651070c86"
+  "hash": "76674a38b1022ffa7547b49ae7883e362ba08fa8028ef51268793e51559a4ba5"
 }

@@ -41,15 +41,16 @@ curl -b cookies.txt https://cupful.example.ts.net/api/backup -o cupful-backup.js
     --data-binary @-
 ```
 
-The request body is JSON, capped at 32 MB, and must contain `confirm: true`; without it the restore is refused. The endpoint requires the CSRF header like every other mutating request.
+The request body is JSON, capped at 10 MB, and must contain `confirm: true`; without it the restore is refused. The endpoint requires the CSRF header like every other mutating request.
 
 A restore is a **full replacement of this account's logs and private foods**, not a merge:
 
-- The account's meals (including tombstones), day rows, profile versions and private foods are deleted and replaced by the snapshot. Meals and days that are not in the backup are gone.
+- The account's live meals, day rows, profile versions and private foods are deleted and replaced by the snapshot. Meals and days that are not in the backup are gone. Deleted-meal tombstones are kept, so a phone replaying its offline queue after a restore cannot bring deleted meals back. If the backup holds a meal whose id is tombstoned here, the backup wins: the meal is revived with the backed-up content.
 - The profile's timezone and unit preferences are replaced too. "Today" and the dates in the restored data are then interpreted in the backup's timezone.
 - The user's own aliases and remembered portions are replaced, as are the saved-product list and its last-used values.
 - **Shared foods are read-only.** A restore never modifies a staple, USDA, Open Food Facts or shared label row, and never changes another user's food. If a food referenced by the backup is missing on this instance, restore creates a private copy owned by the user, preserving its name and nutrients. Meal items, aliases, portions and products point at that copy.
-- Remembered sync op ids for the user are cleared, so pre-restore write bookkeeping does not interfere with the restored state.
+- Remembered sync op ids are kept, so ops a device already sent still answer `duplicate` after a restore.
+- Two private foods in the backup with the same name collapse into one only if their barcode and nutrients also match.
 - The whole restore runs in one transaction. If any part fails (malformed document, invalid value, a missing referenced row), it rolls back and the account is exactly as it was before.
 
 Restoring the same backup twice gives the same result: the second restore replaces the first with identical data. Restoring an older backup is also allowed and is how you go back in time; it discards everything logged since that snapshot.
