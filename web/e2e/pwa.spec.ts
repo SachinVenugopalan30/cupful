@@ -33,6 +33,11 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 	await page.reload();
 	await waitForController(page);
 
+	// Chrome's own install criteria: manifest, icons, start_url, display and a service worker.
+	const cdp = await page.context().newCDPSession(page);
+	const { installabilityErrors } = await cdp.send('Page.getInstallabilityErrors');
+	expect(installabilityErrors).toEqual([]);
+
 	const cached = await page.evaluate(async () => {
 		const name = (await caches.keys()).find((key) => key.startsWith('cupful-'));
 		if (!name) return [];

@@ -199,7 +199,11 @@ Account switching and stale tabs:
 Install manually:
 
 - **Android (Chrome):** open the instance over HTTPS, then Chrome menu → **Install app** (or **Add to
-  Home screen**). Cupful opens standalone.
+  Home screen**). Cupful opens standalone. Chrome mints a WebAPK through Google Play services; if
+  "Installing" finishes with no icon, check the app drawer and `chrome://webapks`, since the minting
+  step fails silently when Play services or its network is unavailable.
+- **Android (Brave):** "Add to Home screen" is a shortcut, not a WebAPK, and may open with browser
+  chrome.
 - **iOS (Safari):** open the instance, Share → **Add to Home Screen**. iOS uses Safari's own install
   path, not the Chrome prompt.
 
