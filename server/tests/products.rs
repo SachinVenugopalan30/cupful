@@ -399,7 +399,7 @@ async fn invalid_barcodes_are_rejected() {
 }
 
 #[tokio::test]
-async fn label_entry_per_serving_is_converted_and_shared() {
+async fn label_entry_per_serving_is_converted_and_private() {
     let (_, app, state, mut a) = setup(false).await;
     let (status, p) = a
         .post(
@@ -421,11 +421,21 @@ async fn label_entry_per_serving_is_converted_and_shared() {
     let (_, list) = a.get("/api/products").await;
     assert_eq!(list["products"][0]["food_id"], p["food_id"]);
 
-    // Shared on this instance: another user's scan finds it.
+    // Private: another user's scan does not find it.
     let mut b = user(&app, &state, "bob").await;
-    let (status, found) = lookup(&mut b, BC).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(found["food_id"], p["food_id"]);
+    let (status, _) = lookup(&mut b, BC).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let id = p["food_id"].as_i64().unwrap();
+    let bob = sqlx::query_scalar::<_, i64>("SELECT id FROM users WHERE username = 'bob'")
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+    assert!(
+        cupful::nutrition::foods::visible(&state.db, bob, id)
+            .await
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[tokio::test]
@@ -466,7 +476,7 @@ async fn label_entry_is_validated() {
 }
 
 #[tokio::test]
-async fn own_label_entry_beats_others_and_off() {
+async fn own_label_entry_beats_off_and_others_stay_private() {
     let (off, app, state, mut a) = setup(true).await;
     off_returns(parle(nutriments())).mount(&off).await;
     let (_, from_off) = lookup(&mut a, BC).await;
@@ -480,11 +490,11 @@ async fn own_label_entry_beats_others_and_off() {
     assert_eq!(p["food_id"], mine["food_id"]);
     let (_, p) = lookup(&mut b, BC).await;
     assert_eq!(p["food_id"], bobs["food_id"]);
-    // A third user has no entry of their own: a shared label entry still beats Open Food Facts.
+    // A third user has no entry of their own: they get Open Food Facts, never someone's label.
     let mut c = user(&app, &state, "carol").await;
     let (_, p) = lookup(&mut c, BC).await;
-    assert_eq!(p["source"], "user");
-    assert_eq!(off.received_requests().await.unwrap().len(), 1);
+    assert_eq!(p["food_id"], from_off["food_id"]);
+    assert_eq!(p["source"], "off");
 }
 
 #[tokio::test]

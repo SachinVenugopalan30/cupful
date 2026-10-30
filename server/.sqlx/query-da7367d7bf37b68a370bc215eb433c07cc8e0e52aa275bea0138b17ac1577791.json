@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id FROM foods\n         WHERE barcode = ? AND source = 'user' AND source_ref = ? AND user_id IS NULL",
+  "query": "SELECT id FROM foods\n         WHERE barcode = ? AND source = 'user' AND user_id = ?",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "30bff99504c3d921bc8be21c9ed8671977e0faad199598c9dc16140b9a6dec0c"
+  "hash": "da7367d7bf37b68a370bc215eb433c07cc8e0e52aa275bea0138b17ac1577791"
 }
