@@ -77,7 +77,7 @@
 				onChanged();
 				return;
 			}
-			status = done;
+			status = r.status === 'queued' ? `${done} Waiting to sync.` : done;
 			onChanged();
 		} catch (e) {
 			error = errorMessage(e);

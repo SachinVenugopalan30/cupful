@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // The write contract (PLAN.md §6). Every write of logged data (meals, days) goes through
-// `sendOps`. M6 puts an IndexedDB queue in front of this exact function, so never post to
-// /api/sync any other way.
+// `sendOps`. With an active user it enqueues first and flushes (online) through the IndexedDB
+// queue; before an account is loaded it keeps the direct post. Never post to /api/sync any other
+// way.
 
 import { api, type Confidence, type MealItem, type MealSource, type MealType } from '../api';
+import { enqueue, flush } from '../offline/queue.ts';
+import { connection } from '../offline/state.svelte.ts';
 
 // ---- UUIDv7 (RFC 9562): 48-bit ms timestamp, version 7, 12-bit counter, variant, 62 random bits ----
 
@@ -63,7 +66,8 @@ export type Op =
 
 export type OpResult = {
 	op_id: string;
-	status: 'applied' | 'duplicate' | 'stale' | 'rejected';
+	/** `queued` is client-side only: the op is stored but has not reached the server yet. */
+	status: 'applied' | 'duplicate' | 'stale' | 'rejected' | 'queued';
 	/** Set when rejected. */
 	error?: string;
 };
@@ -82,9 +86,32 @@ export function dayPatch(date: string, fields: DayFields): Op {
 	return { ...stamp(), kind: 'day.patch', payload };
 }
 
-/** POSTs ops to /api/sync; one result per op, in order. Throws ApiError if the request fails. */
+/**
+ * Queues ops for the active user and flushes when online. Returns the server's result per op;
+ * anything not yet sent (offline, paused, backing off) comes back as `queued`. With no active
+ * user this keeps the old direct POST, which throws ApiError when the request fails.
+ */
 export async function sendOps(ops: Op[]): Promise<OpResult[]> {
-	return (await api.post<{ results: OpResult[] }>('/api/sync', { ops })).results;
+	const userId = connection.activeUserId;
+	if (userId === null) {
+		return (await api.post<{ results: OpResult[] }>('/api/sync', { ops })).results;
+	}
+
+	const direct = await enqueue(ops, userId);
+	if (direct) {
+		return ops.map(
+			(op) =>
+				direct.find((r) => r.op_id === op.op_id) ?? {
+					op_id: op.op_id,
+					status: 'queued' as const,
+				}
+		);
+	}
+	const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+	const results = offline ? new Map() : await flush(userId);
+	return ops.map(
+		(op) => results.get(op.op_id) ?? { op_id: op.op_id, status: 'queued' as const }
+	);
 }
 
 // ---- item helpers ----
