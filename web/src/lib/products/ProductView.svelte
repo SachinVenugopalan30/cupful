@@ -45,7 +45,9 @@
 		error = '';
 		try {
 			const [r] = await sendOps([mealUpsert(buildMeal(p, amount, date, mealType))]);
-			if (r.status === 'applied' || r.status === 'duplicate') return onAdded();
+			if (r.status === 'applied' || r.status === 'duplicate' || r.status === 'queued') {
+				return onAdded();
+			}
 			error = r.error ? `Not saved: ${r.error}` : `Not saved (${r.status}).`;
 		} catch (e) {
 			error = errorMessage(e);

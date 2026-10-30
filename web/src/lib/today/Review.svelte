@@ -7,12 +7,14 @@
     onClose: () => void     the sheet closed (saved or not); unmount it
     onSaved: () => void     the meal was saved
     onStale?: () => void    a newer write already won; refetch (nothing was saved)
-  Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft), then
-  the "always use this" aliases (REST; a failure leaves the meal saved and says so).
+  Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft). A write
+  that lands in the offline queue counts as saved; then the "always use this" aliases (REST) run
+  when online (a failure leaves the meal saved and says so), and are skipped when queued/offline.
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { errorMessage, foods, products, type SavedProduct } from '#lib/api.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { filterSaved } from '#lib/products/logic.ts';
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
@@ -109,6 +111,12 @@
 			if (r.status === 'stale') {
 				error = staleNotice('meal');
 				onStale?.();
+				return;
+			}
+			// Queued is saved. Aliases are online-only configuration, so close without writing them.
+			if (r.status === 'queued' || !connection.online) {
+				onSaved();
+				dialog.close();
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
