@@ -3,7 +3,7 @@
 <script lang="ts">
 	import { ApiError, errorMessage, products, type Product } from '../api';
 	import { cameraProblem, normalizeScan } from './logic';
-	import { applyContinuousFocus, cameraConstraints, makeDetector, scanLoop } from './scanner';
+	import { startFocus, cameraConstraints, makeDetector, scanLoop } from './scanner';
 
 	let {
 		onFound,
@@ -16,6 +16,8 @@
 	let camError = $state('');
 	let status = $state('');
 	let video = $state<HTMLVideoElement>();
+	/** Restarts the lens focus: on tap, and on a timer while nothing has been read. */
+	let refocus: (() => Promise<void>) | null = null;
 
 	let typed = $state('');
 	let typedError = $state('');
@@ -28,6 +30,7 @@
 		const v = video;
 		const ac = new AbortController();
 		let stream: MediaStream | undefined;
+		let refocusTimer: ReturnType<typeof setInterval> | undefined;
 		const fail = (msg: string) => {
 			if (ac.signal.aborted) return;
 			camError = msg;
@@ -55,10 +58,20 @@
 			if (ac.signal.aborted) return stream.getTracks().forEach((t) => t.stop());
 			v.srcObject = stream;
 			await v.play().catch(() => {});
-			// Some Android cameras only start autofocusing once asked after the stream is live.
+			// Some Android cameras sit at infinity until focus is set once the stream is live.
 			const track = stream.getVideoTracks()[0];
-			if (track) void applyContinuousFocus(track);
 			status = 'Point the camera at the barcode.';
+			if (track) {
+				const again = async () => {
+					if ((await startFocus(track)) === 'none') {
+						status = "This camera can't autofocus here. Hold the barcode about 20 cm away, or type it below.";
+					}
+				};
+				refocus = again;
+				void again();
+				// Still nothing read: the lens may be stuck out of focus, so start it again.
+				refocusTimer = setInterval(() => void again(), 5000);
+			}
 			const code = await scanLoop(v, detect, ac.signal);
 			if (code) {
 				camera = false; // re-runs this effect's cleanup: the camera stops
@@ -67,6 +80,8 @@
 		})();
 		return () => {
 			ac.abort();
+			clearInterval(refocusTimer);
+			refocus = null;
 			stream?.getTracks().forEach((t) => t.stop());
 			v.srcObject = null;
 		};
@@ -101,7 +116,8 @@
 
 <div class="stack">
 	{#if camera}
-		<div class="viewfinder">
+		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+		<div class="viewfinder" onclick={() => void refocus?.()}>
 			<video
 				bind:this={video}
 				muted

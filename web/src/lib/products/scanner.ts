@@ -24,18 +24,48 @@ export function cameraConstraints(): MediaStreamConstraints {
 	};
 }
 
-/** Turns on continuous autofocus after the stream starts, where the camera exposes the mode. */
-export async function applyContinuousFocus(track: MediaStreamTrack): Promise<boolean> {
-	const caps = track.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined;
-	if (!caps?.focusMode?.includes('continuous')) return false;
+type FocusCaps = MediaTrackCapabilities & {
+	focusMode?: string[];
+	focusDistance?: { min: number; max: number };
+};
+const focus = (c: Record<string, unknown>) => ({ advanced: [c as MediaTrackConstraintSet] });
+
+/** 20 cm: where a hand-held product sits when you scan it, within what the lens can reach. */
+export function nearFocusDistance({ min, max }: { min: number; max: number }): number {
+	return Math.min(Math.max(0.2, min), max);
+}
+
+/**
+ * Gets the lens off infinity. Some Android cameras report continuous autofocus yet start parked at
+ * infinity, so only a far-away barcode is sharp. Moving the lens near first, then handing over to
+ * continuous autofocus, restarts it from a useful place; where continuous isn't offered, a fixed
+ * near focus is the next best thing. `none`: the camera exposes no focus control at all. Safe to
+ * call again to refocus.
+ */
+export async function startFocus(
+	track: MediaStreamTrack,
+	wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))
+): Promise<'auto' | 'near' | 'none'> {
+	const caps = track.getCapabilities?.() as FocusCaps | undefined;
+	const modes = caps?.focusMode ?? [];
+	const near = caps?.focusDistance && modes.includes('manual') ? nearFocusDistance(caps.focusDistance) : null;
 	try {
-		await track.applyConstraints({
-			advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet]
-		});
-		return true;
+		if (modes.includes('continuous')) {
+			if (near !== null) {
+				await track.applyConstraints(focus({ focusMode: 'manual', focusDistance: near }));
+				await wait(500);
+			}
+			await track.applyConstraints(focus({ focusMode: 'continuous' }));
+			return 'auto';
+		}
+		if (near !== null) {
+			await track.applyConstraints(focus({ focusMode: 'manual', focusDistance: near }));
+			return 'near';
+		}
 	} catch {
-		return false;
+		// A camera that refuses these constraints keeps whatever focus it has.
 	}
+	return 'none';
 }
 
 // Not in TypeScript's DOM lib yet.
