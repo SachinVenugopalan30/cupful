@@ -99,6 +99,8 @@ export async function allQueueForUser(userId: number): Promise<QueuedOp[]> {
 
 // ---- API read cache ----
 
+// ponytail: no eviction or byte budget, logout is the only cleanup; add a per-user LRU or a quota
+// check when long-lived accounts fill a phone's storage.
 export async function putCacheEntry(entry: CacheEntry): Promise<void> {
 	if (!hasIndexedDB()) return;
 	await (await getDb()).put('cache', entry);
