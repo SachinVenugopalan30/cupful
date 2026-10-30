@@ -41,10 +41,9 @@
 
 {#if show}
 	<div
-		class="notice bar"
-		class:notice-warning={barState === 'offline' || barState === 'identity'}
+		class="notice notice-bar"
+		class:notice-warning={barState === 'identity' || barState === 'signin' || barState === 'attention'}
 		class:notice-info={barState === 'pending'}
-		class:notice-error={barState === 'signin' || barState === 'attention'}
 		role="status"
 		data-testid="sync-bar"
 		data-state={barState}
@@ -77,22 +76,3 @@
 		{/if}
 	</div>
 {/if}
-
-<style>
-	.bar {
-		flex-direction: row;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-3);
-		padding: var(--space-2) var(--space-3);
-		margin-bottom: var(--space-4);
-	}
-	.bar p {
-		margin: 0;
-	}
-	.bar .btn {
-		min-height: 2.25rem;
-		padding: 0 var(--space-3);
-	}
-</style>

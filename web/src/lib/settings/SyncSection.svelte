@@ -33,11 +33,17 @@
 			const description = op.payload.description?.trim() || 'Meal';
 			return `${description} on ${op.payload.date}`;
 		}
-		if (op.kind === 'meal.delete') return `Delete meal ${op.payload.id}`;
+		if (op.kind === 'meal.delete') return 'Delete a logged meal';
 		const fields = Object.keys(op.payload)
 			.filter((key) => key !== 'date')
 			.map((key) => FIELD[key] ?? key);
 		return `Day ${op.payload.date}: ${fields.length > 0 ? fields.join(', ') : 'no changes'}`;
+	}
+
+	function chipClass(status: QueueStatus): string {
+		if (status === 'stale') return 'chip chip-warning';
+		if (status === 'rejected' || status === 'failed') return 'chip chip-error';
+		return 'chip';
 	}
 
 	function age(ms: number): string {
@@ -111,12 +117,12 @@
 					<div class="stack details">
 						<div class="row">
 							<strong class="break">{summaryText}</strong>
-							<span class="chip" class:chip-warning={entry.status !== 'pending' && entry.status !== 'sending'}>
+							<span class={chipClass(entry.status)}>
 								{STATUS[entry.status]}
 							</span>
 						</div>
 						<p class="small muted">
-							<span class="kind">{entry.op.kind}</span> · queued
+							Queued
 							<time datetime={new Date(entry.queued_at).toISOString()} title={new Date(entry.queued_at).toLocaleString()}>
 								{age(entry.queued_at)}
 							</time>
@@ -135,7 +141,7 @@
 							Retry
 						</button>
 						<button
-							class="btn btn-quiet danger"
+							class="btn btn-danger"
 							onclick={() => act(entry.op_id, discard)}
 							disabled={busy}
 							aria-label="Discard {summaryText}"
@@ -168,17 +174,7 @@
 	.break {
 		overflow-wrap: anywhere;
 	}
-	.kind {
-		font-family: var(--font-numeric);
-	}
 	.error {
-		color: var(--error);
-	}
-	.danger {
-		color: var(--error);
-	}
-	.danger:hover {
-		background: var(--error-soft);
 		color: var(--error);
 	}
 </style>

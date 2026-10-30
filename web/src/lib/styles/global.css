@@ -374,6 +374,10 @@ textarea:focus-visible {
 	background: var(--warning-soft);
 	color: var(--warning);
 }
+.chip-error {
+	background: var(--error-soft);
+	color: var(--error);
+}
 .chip-over {
 	background: var(--over-soft);
 	color: var(--over);
@@ -440,6 +444,24 @@ textarea:focus-visible {
 .notice a {
 	color: inherit;
 	font-weight: var(--weight-medium);
+}
+
+/* A one-line notice: message plus an action, used by the sync and update bars. */
+.notice-bar {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--space-1) var(--space-3);
+	padding: var(--space-2) var(--space-3);
+	margin-bottom: var(--space-4);
+}
+.notice-bar p {
+	margin: 0;
+}
+.notice-bar .btn {
+	min-height: var(--touch);
+	padding: 0 var(--space-3);
 }
 
 /* Empty: one sentence of what to do next, optionally one button. */
