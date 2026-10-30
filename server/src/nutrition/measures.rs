@@ -145,11 +145,3 @@ pub(super) fn uses_oil(cooking: &str) -> bool {
     .iter()
     .any(|m| c.contains(m))
 }
-
-pub(super) fn fmt_amount(a: f64) -> String {
-    if a.fract() == 0.0 {
-        format!("{a:.0}")
-    } else {
-        format!("{a}")
-    }
-}

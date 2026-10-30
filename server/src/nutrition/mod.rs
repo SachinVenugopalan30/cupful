@@ -22,9 +22,7 @@ use sqlx::SqlitePool;
 use crate::ai::{Image, JsonRequest, Provider, ProviderError};
 use crate::error::{Error, Result};
 use foods::{Food, Match, normalize};
-use measures::{
-    fmt_amount, food_portion, has, is_weight, spoon_grams, unit_grams, uses_oil, without_sizes,
-};
+use measures::{food_portion, has, is_weight, spoon_grams, unit_grams, uses_oil, without_sizes};
 use prompt::{INSTRUCTION, schema};
 
 pub const MAX_ITEMS: usize = 15;
@@ -352,7 +350,7 @@ pub async fn estimate(
         let portion_text = if unit_norm.is_empty() && raw.amount.is_none() {
             format!("{} g", r1(grams))
         } else {
-            format!("{} {unit}", fmt_amount(amount)).trim().to_string()
+            format!("{amount} {unit}").trim().to_string()
         };
         let mut item = Item {
             name: raw.food.clone(),
@@ -426,7 +424,7 @@ pub async fn estimate(
             let m = Macros::from(&f).scale(grams / 100.0);
             items.push(Item {
                 name: "Cooking oil".into(),
-                portion_text: format!("{} tsp", fmt_amount(2.0 * oil_portions)),
+                portion_text: format!("{} tsp", 2.0 * oil_portions),
                 grams: r1(grams),
                 kcal: Some(r1(m.kcal)),
                 protein_g: Some(r1(m.protein)),

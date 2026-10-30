@@ -92,10 +92,6 @@ impl Rng {
     }
 }
 
-fn round1(v: f64) -> f64 {
-    (v * 10.0).round() / 10.0
-}
-
 /// Creates the `demo` user with `days` days of history ending on `today` and returns their
 /// password. Refuses if `demo` exists, unless `force`, which deletes that user (and so only their
 /// data) first. The password is random, not derived from `seed`.
@@ -204,9 +200,11 @@ async fn seed_rows(
             serde_json::to_string(SPLITS[(sessions - 1) % SPLITS.len()]).expect("strings serialize")
         });
         // About half a kilo a week down, plus morning noise.
-        let weight = rng
-            .chance(0.85)
-            .then(|| round1(85.0 - 0.5 / 7.0 * i as f64 + (rng.unit() + rng.unit() - 1.0) * 0.6));
+        let weight = rng.chance(0.85).then(|| {
+            crate::nutrition::r1(
+                85.0 - 0.5 / 7.0 * i as f64 + (rng.unit() + rng.unit() - 1.0) * 0.6,
+            )
+        });
         if steps.is_none() && gym.is_none() && weight.is_none() {
             continue;
         }
@@ -274,7 +272,7 @@ async fn insert_meal(
         let grams = (food.default_portion_g.unwrap_or(100.0)
             * rng.pick(&[1.0, 1.5, 1.5, 2.0, 2.0]))
         .round();
-        let per = |v: f64| round1(v * grams / 100.0);
+        let per = |v: f64| crate::nutrition::r1(v * grams / 100.0);
         let item_id = uuid::Uuid::from_u64_pair(rng.next(), rng.next()).to_string();
         let portion = format!("{grams} g");
         let (kcal, protein, carbs, fat) = (

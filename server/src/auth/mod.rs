@@ -22,6 +22,7 @@ use tower_sessions::Session;
 
 use crate::AppState;
 use crate::error::{Error, Result};
+use crate::time::now_ms;
 use password::{hash_password, verify_password};
 
 pub(super) const USER_KEY: &str = "user_id";
@@ -51,10 +52,6 @@ pub fn validate_timezone(tz: &str) -> Result<()> {
 }
 
 // ---- users ----
-
-fn now_ms() -> i64 {
-    jiff::Timestamp::now().as_millisecond()
-}
 
 /// Inserts a user and their profile. With `first_only`, inserts only if there are no users yet,
 /// in one statement, so two simultaneous first-run requests can't both succeed.
@@ -123,11 +120,8 @@ pub async fn reset_password(
     username: &str,
     password: &str,
 ) -> std::result::Result<(), String> {
-    let msg = |e: Error| match e {
-        Error::Status(_, m) | Error::Coded(_, _, m) | Error::Internal(m) => m,
-    };
-    validate_password(password).map_err(msg)?;
-    let hash = hash_password(password).await.map_err(msg)?;
+    validate_password(password).map_err(Error::message)?;
+    let hash = hash_password(password).await.map_err(Error::message)?;
     let id = sqlx::query_scalar!(
         "UPDATE users SET password_hash = ? WHERE username = ? RETURNING id",
         hash,

@@ -369,12 +369,9 @@ pub async fn seed_from_env(
         }
         return Ok(());
     }
-    let msg = |e: Error| match e {
-        Error::Status(_, m) | Error::Coded(_, _, m) | Error::Internal(m) => m,
-    };
     save(state, None, &p)
         .await
-        .map_err(|e| format!("CUPFUL_PROVIDER_*: {}", msg(e)))?;
+        .map_err(|e| format!("CUPFUL_PROVIDER_*: {}", e.message()))?;
     tracing::info!("added AI provider {:?} from CUPFUL_PROVIDER_*", p.label);
     Ok(())
 }

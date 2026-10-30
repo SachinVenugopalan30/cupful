@@ -45,7 +45,6 @@ pub(crate) struct ItemIn {
 
 /// How a caller writes a meal: through sync (full conflict rules), a CSV import, or a restore.
 /// `Import` and `Restore` are used by the transfer handlers.
-#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum WriteMode {
     Sync,
