@@ -8,3 +8,8 @@ web/.svelte-kit/
 *.db-shm
 *.db-wal
 .claude/worktrees/
+
+# local coding skills and their lockfile
+.agents/
+.claude/
+skills-lock.json
