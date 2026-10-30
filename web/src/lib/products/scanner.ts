@@ -68,6 +68,15 @@ export async function startFocus(
 	return 'none';
 }
 
+/** Brave's camera often can't focus close up, even with shields off; Chrome can. */
+export async function isBrave(nav: { brave?: { isBrave?: () => Promise<boolean> } }): Promise<boolean> {
+	try {
+		return (await nav.brave?.isBrave?.()) === true;
+	} catch {
+		return false;
+	}
+}
+
 // Not in TypeScript's DOM lib yet.
 type BarcodeDetectorCtor = {
 	new (o: { formats: string[] }): { detect(v: HTMLVideoElement): Promise<Read[]> };

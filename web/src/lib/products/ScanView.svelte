@@ -3,7 +3,7 @@
 <script lang="ts">
 	import { ApiError, errorMessage, products, type Product } from '../api';
 	import { cameraProblem, normalizeScan } from './logic';
-	import { startFocus, cameraConstraints, makeDetector, scanLoop } from './scanner';
+	import { startFocus, cameraConstraints, makeDetector, isBrave, scanLoop } from './scanner';
 
 	let {
 		onFound,
@@ -18,6 +18,9 @@
 	let video = $state<HTMLVideoElement>();
 	/** Restarts the lens focus: on tap, and on a timer while nothing has been read. */
 	let refocus: (() => Promise<void>) | null = null;
+
+	let brave = $state(false);
+	void isBrave(navigator as Parameters<typeof isBrave>[0]).then((b) => (brave = b));
 
 	let typed = $state('');
 	let typedError = $state('');
@@ -133,6 +136,12 @@
 	{/if}
 
 	<p class="small muted" aria-live="polite">{status}</p>
+	{#if brave && camera}
+		<p class="small muted">
+			Brave's camera often can't focus close up. If the barcode stays blurry, open Cupful in Chrome or
+			type the barcode below.
+		</p>
+	{/if}
 
 	{#if error}
 		<div class="notice notice-error" role="alert">

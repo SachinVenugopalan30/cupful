@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it, vi } from 'vitest';
-import { cameraConstraints, nearFocusDistance, startFocus } from './scanner.ts';
+import { cameraConstraints, isBrave, nearFocusDistance, startFocus } from './scanner.ts';
 
 function track(caps: unknown, apply = vi.fn(async (_: MediaTrackConstraints) => {})) {
 	return { getCapabilities: () => caps, applyConstraints: apply } as unknown as MediaStreamTrack;
@@ -63,5 +63,14 @@ describe('startFocus', () => {
 			throw new Error('Overconstrained');
 		});
 		expect(await startFocus(track(caps, apply), noWait)).toBe('none');
+	});
+});
+
+describe('isBrave', () => {
+	it('is true only when the browser says so', async () => {
+		expect(await isBrave({ brave: { isBrave: async () => true } })).toBe(true);
+		expect(await isBrave({ brave: { isBrave: async () => false } })).toBe(false);
+		expect(await isBrave({})).toBe(false);
+		expect(await isBrave({ brave: { isBrave: async () => Promise.reject(new Error('x')) } })).toBe(false);
 	});
 });
