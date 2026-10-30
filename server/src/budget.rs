@@ -71,7 +71,7 @@ fn kcal<S: Serializer>(v: &f64, s: S) -> Result<S::Ok, S::Error> {
 }
 
 fn grams<S: Serializer>(v: &f64, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_f64((v * 10.0).round() / 10.0)
+    s.serialize_f64(crate::nutrition::r1(*v))
 }
 
 /// The profile version in effect on `date`.

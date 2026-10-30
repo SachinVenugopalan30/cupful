@@ -27,6 +27,13 @@ impl Error {
     pub fn not_found() -> Self {
         Error::Status(StatusCode::NOT_FOUND, "not found".into())
     }
+
+    /// The message without its status, for CLI errors.
+    pub fn message(self) -> String {
+        match self {
+            Error::Status(_, m) | Error::Coded(_, _, m) | Error::Internal(m) => m,
+        }
+    }
 }
 
 impl IntoResponse for Error {

@@ -74,6 +74,23 @@ pub(super) fn parse_i64(cell: &str, line: u64, what: &str) -> Result<Option<i64>
         .map_err(|_| line_err(line, format!("{what} must be an integer")))
 }
 
+/// Records one day's value for `what`, rejecting a second, different value on that date.
+pub(super) fn merge<T: PartialEq>(
+    slot: &mut Option<(T, u64)>,
+    value: T,
+    line: u64,
+    what: &str,
+    date: &str,
+) -> Result<()> {
+    if let Some((old, _)) = slot
+        && *old != value
+    {
+        return Err(line_err(line, format!("conflicting {what} for {date}")));
+    }
+    slot.get_or_insert((value, line));
+    Ok(())
+}
+
 pub(super) fn parse_index(cell: &str, line: u64) -> Result<Option<u32>> {
     if cell.is_empty() {
         return Ok(None);
