@@ -89,6 +89,27 @@ describe('cachedGetJson', () => {
 		await expect(cachedGetJson('/api/days/2026-10-29', 9101)).rejects.toThrow(/offline/i);
 	});
 
+	it(
+		'falls back to the cache after a hanging request',
+		async () => {
+			await putCachedBody(9101, '/api/days/2026-10-29', { steps: 654 });
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(
+					(_url: string, init?: RequestInit) =>
+						new Promise((_resolve, reject) => {
+							init?.signal?.addEventListener('abort', () =>
+								reject(new DOMException('Aborted', 'AbortError'))
+							);
+						})
+				)
+			);
+
+			expect(await cachedGetJson('/api/days/2026-10-29', 9101)).toEqual({ steps: 654 });
+		},
+		8_000
+	);
+
 	it('falls back to the cache on a 5xx answer', async () => {
 		await putCachedBody(9101, '/api/days/2026-10-29', { steps: 555 });
 		vi.stubGlobal('fetch', vi.fn(async () => json({ error: 'boom' }, 503)));
