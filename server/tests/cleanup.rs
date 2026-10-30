@@ -31,6 +31,21 @@ async fn cleanup_drops_expired_op_ids_tombstones_and_sessions() {
         .execute(db)
         .await
         .unwrap();
+    for (hash, expires) in [
+        ("old-invite", now - 31 * DAY),
+        ("new-invite", now - 29 * DAY),
+    ] {
+        sqlx::query(
+            "INSERT INTO invites (token_hash, created_by, created_at, expires_at)
+             VALUES (?, 1, ?, ?)",
+        )
+        .bind(hash)
+        .bind(now)
+        .bind(expires)
+        .execute(db)
+        .await
+        .unwrap();
+    }
 
     cupful::cleanup::run(db, now).await.unwrap();
 
@@ -54,4 +69,9 @@ async fn cleanup_drops_expired_op_ids_tombstones_and_sessions() {
         .await
         .unwrap();
     assert_eq!(live, 1, "the admin's live session stays");
+    let invites: Vec<String> = sqlx::query_scalar("SELECT token_hash FROM invites")
+        .fetch_all(db)
+        .await
+        .unwrap();
+    assert_eq!(invites, ["new-invite"]);
 }
