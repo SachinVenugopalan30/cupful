@@ -16,6 +16,8 @@ export const USER_A = { username: 'eater', password: 'correct horse' };
 /** Created with `seed-demo`; the password is random and printed once by the CLI. */
 export const USER_B = { username: 'demo', password: '' };
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
 export type CupfulServer = {
 	proc: ChildProcess;
 	base: string;
@@ -133,7 +135,12 @@ export async function saveProfile(page: Page): Promise<void> {
 }
 
 /** One complete meal through the real sync contract, online. Returns its id. */
-export async function seedMeal(page: Page, date: string, description: string): Promise<string> {
+export async function seedMeal(
+	page: Page,
+	date: string,
+	description: string,
+	mealType: MealType = 'lunch'
+): Promise<string> {
 	const mealId = randomUUID();
 	const res = await page.request.post('/api/sync', {
 		headers: { 'X-Cupful': '1' },
@@ -146,7 +153,7 @@ export async function seedMeal(page: Page, date: string, description: string): P
 					payload: {
 						id: mealId,
 						date,
-						meal_type: 'lunch',
+						meal_type: mealType,
 						description,
 						scale: 1,
 						assumptions: null,
@@ -176,6 +183,30 @@ export async function seedMeal(page: Page, date: string, description: string): P
 	const body = (await res.json()) as { results: { status: string }[] };
 	expect(body.results[0]?.status).toBe('applied');
 	return mealId;
+}
+
+/** A manual day patch (steps, gym, trained, weight) through the real sync contract, online. */
+export async function seedDay(
+	page: Page,
+	date: string,
+	fields: { steps?: number; gym_minutes?: number; trained?: string[]; weight_kg?: number }
+): Promise<void> {
+	const res = await page.request.post('/api/sync', {
+		headers: { 'X-Cupful': '1' },
+		data: {
+			ops: [
+				{
+					op_id: randomUUID(),
+					kind: 'day.patch',
+					at: new Date().toISOString(),
+					payload: { date, ...fields }
+				}
+			]
+		}
+	});
+	expect(res.ok()).toBe(true);
+	const body = (await res.json()) as { results: { status: string }[] };
+	expect(body.results[0]?.status).toBe('applied');
 }
 
 /** The signed-in user's id (the key for the queue and read cache). */
