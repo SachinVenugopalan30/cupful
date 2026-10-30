@@ -7,6 +7,37 @@ import { NATIVE_FORMATS, normalizeScan, pickDecoder } from './logic';
 export type Read = { rawValue: string; format: string };
 export type Detect = (video: HTMLVideoElement) => Promise<Read | null>;
 
+/**
+ * A rear camera at a useful resolution, asking for continuous autofocus where the browser supports
+ * it. Without this some Android cameras start focused at infinity, so only a barcode held far away
+ * is sharp. Browsers ignore the constraint they do not know.
+ */
+export function cameraConstraints(): MediaStreamConstraints {
+	return {
+		audio: false,
+		video: {
+			facingMode: { ideal: 'environment' },
+			width: { ideal: 1920 },
+			height: { ideal: 1080 },
+			advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet]
+		}
+	};
+}
+
+/** Turns on continuous autofocus after the stream starts, where the camera exposes the mode. */
+export async function applyContinuousFocus(track: MediaStreamTrack): Promise<boolean> {
+	const caps = track.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined;
+	if (!caps?.focusMode?.includes('continuous')) return false;
+	try {
+		await track.applyConstraints({
+			advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet]
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 // Not in TypeScript's DOM lib yet.
 type BarcodeDetectorCtor = {
 	new (o: { formats: string[] }): { detect(v: HTMLVideoElement): Promise<Read[]> };

@@ -3,7 +3,7 @@
 <script lang="ts">
 	import { ApiError, errorMessage, products, type Product } from '../api';
 	import { cameraProblem, normalizeScan } from './logic';
-	import { makeDetector, scanLoop } from './scanner';
+	import { applyContinuousFocus, cameraConstraints, makeDetector, scanLoop } from './scanner';
 
 	let {
 		onFound,
@@ -48,16 +48,16 @@
 				return fail("The barcode reader couldn't load. Type the barcode below.");
 			}
 			try {
-				stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: 'environment' },
-					audio: false
-				});
+				stream = await navigator.mediaDevices.getUserMedia(cameraConstraints());
 			} catch (e) {
 				return fail(cameraProblem({ error: e }) ?? '');
 			}
 			if (ac.signal.aborted) return stream.getTracks().forEach((t) => t.stop());
 			v.srcObject = stream;
 			await v.play().catch(() => {});
+			// Some Android cameras only start autofocusing once asked after the stream is live.
+			const track = stream.getVideoTracks()[0];
+			if (track) void applyContinuousFocus(track);
 			status = 'Point the camera at the barcode.';
 			const code = await scanLoop(v, detect, ac.signal);
 			if (code) {
