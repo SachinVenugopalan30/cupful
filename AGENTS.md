@@ -19,24 +19,25 @@ server/                 Rust crate `cupful`
   src/main.rs           CLI: serve (default), reset-password, import-foods, seed-demo, eval
   src/config.rs         env config (CUPFUL_*)
   src/db.rs             pool + SQLite pragmas + migrations
-  src/assets.rs         rust-embed of web/build (debug builds read disk)
-  src/auth.rs           setup, login, logout, sessions store, rate limit, CSRF, client IP
+  src/assets.rs         rust-embed of web/build (debug builds read disk); security headers + CSP with hashes of index.html's inline scripts
+  src/auth/             mod.rs (User/Admin extractors, setup/login/logout), password.rs (argon2 behind a 4-permit semaphore), session.rs (SQLite session store), limits.rs (RateLimiter, CSRF, client IP)
   src/profile.rs        profile + profile_versions REST
   src/budget.rs         budget math, pure functions
-  src/sync.rs           POST /api/sync write contract
+  src/sync/             POST /api/sync write contract: mod.rs (ops, shared validators), meals.rs (MealIn, write_meal_on, tombstones), days.rs (DayPatch, patch_day, Source)
   src/reads.rs          GET days / meals / budget / trends (one `day_budget` shared by budget and trends)
-  src/google.rs         Google Health API v4 steps sync: OAuth (PKCE, state in session), encrypted tokens, /api/google/*, daily task; 404 unless configured
+  src/google/           Google Health API v4 steps sync, 404 unless configured: mod.rs (status, disconnect, daily task), oauth.rs (PKCE, state in session, encrypted tokens), sync.rs (dailyRollUp → days)
   src/ingest.rs         ingest tokens REST (hashed at rest) + POST /api/ingest/activity (bearer token, `Access::Token`, no CSRF header)
   src/demo.rs           `seed-demo`: deterministic demo user and history
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
-  src/transfer/         CSV export, Fuel Ledger import, JSON backup/restore (GET /api/export.csv, POST /api/import/fuel-ledger, GET /api/backup, POST /api/restore)
-  src/products.rs       barcode lookup (Open Food Facts), label entry, saved products
-  src/ai/mod.rs         Provider trait, for_user/by_id, daily cap, HTTP driver (retries, timeouts, scrubbing)
+  src/transfer/         GET /api/export.csv, POST /api/import/fuel-ledger, GET /api/backup, POST /api/restore: backup/{doc,export,validate,restore}.rs, csv/{export,parse,import}.rs
+  src/products/         mod.rs (shared helpers, set_portions, item_logged), off.rs (Open Food Facts lookup), label.rs (label entry, private to the user), saved.rs (saved products)
+  src/ai/mod.rs         Provider trait, ProviderError, for_user/by_id, daily cap, config
+  src/ai/http.rs        HttpProvider: retries, timeouts, scrubbing, reply parsing (no redirects followed)
   src/ai/{openai_compatible,anthropic,gemini}.rs   per-adapter request body and reply text
   src/ai/settings.rs    admin provider REST, Test connection, env seeding
   src/crypto.rs         secrets at rest: key loading, check value, `Secret`
-  src/nutrition/        estimate pipeline: mod.rs (prompt, validation, measures, oil rule), foods.rs (normalize, seeding, USDA import, matching), routes.rs, golden.rs
+  src/nutrition/        estimate pipeline: mod.rs (types, estimate), prompt.rs, measures.rs (units, portions, oil rule), foods/{text,seed,usda,find}.rs, routes.rs, golden.rs
   src/error.rs          API error type; JsonBody/Query extractors that reject with JSON
   src/lib.rs            AppState, route table (`route_table()`), router
   migrations/           sqlx migrations (never edit a released one)
