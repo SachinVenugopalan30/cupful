@@ -21,6 +21,12 @@ Version 0.1.0.
 - CSV import and export for Fuel Ledger. JSON backup per account.
 - One binary with SQLite and an embedded web app.
 
+## Screenshots
+
+| Today, light | Today, dark | Trends |
+| --- | --- | --- |
+| ![Today in light mode](docs/screenshots/today-360-light.png) | ![Today in dark mode](docs/screenshots/today-360-dark.png) | ![Trends on desktop](docs/screenshots/trends-1280.png) |
+
 ## Install with Tailscale
 
 This is the shortest path. Cupful runs behind a Tailscale sidecar and gets HTTPS on your tailnet.

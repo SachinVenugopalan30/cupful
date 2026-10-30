@@ -1,6 +1,6 @@
 # Decisions
 
-One line per deviation from `PLAN.md` or notable choice: date - what - why.
+One line per deviation from the design or notable choice: date - what - why.
 
 - 2026-10-27 - Name `cupful` checked: free on crates.io, no GitHub user or org `cupful`, no Docker Hub repos under `cupful`. The image publishes to `ghcr.io/<owner>/cupful`. - Plan §0.
 - 2026-10-27 - Rust toolchain pinned to 1.99.1 in `rust-toolchain.toml`. - sqlx 0.9 needs rustc 1.94 or newer.

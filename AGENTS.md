@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guide for AI coding agents. Read this before writing code. `PLAN.md` is the original brief and stays until v0.1.0 ships.
+Guide for AI coding agents. Read this before writing code. The v0.1.0 brief was removed after release.
 
 ## What
 
@@ -8,9 +8,9 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 
 ## Status
 
-- M0 to M6 are done. M6 covers PWA install, service worker, IndexedDB read cache, and the offline write queue. The owner verified it on Android.
+- M0 to M7 are done. M7 shipped v0.1.0: one-time invites, Tailscale identity mode, rewritten self-hosting docs, and the multi-arch image on GHCR.
+- M8 is next. Refresh the UI with the design-taste-frontend skill. Keep routes, behavior, API and tests. Check 360 px and desktop, light and dark, contrast, touch targets, screenshots, and a phone pass.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
-- Next: M7, release v0.1.0. Then M8, a UI refresh with the design-taste-frontend skill.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout
@@ -79,6 +79,6 @@ npm run build
 - New routes go in `routes()` in `lib.rs` with their `Access`. Use `error::JsonBody` and `error::Query` so errors are `{"error": ...}`.
 - Outbound HTTP goes only to configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`), and Google when configured and connected. No telemetry.
 - No new dependency for a few lines of code. Mark a deliberate shortcut with `// ponytail: <ceiling>, <upgrade path>`.
-- Record a deviation from `PLAN.md` in `docs/decisions.md`: date, what, why.
+- Record a deviation or notable choice in `docs/decisions.md`: date, what, why.
 - Frontend logic gets a Vitest test next to it. Screens use tokens and `global.css` classes. No CSS framework. Writes go through `sync.sendOps`. Keep `.ts` in `#lib` imports.
 - Update this file and `CLAUDE.md` when a milestone completes or the layout, commands or rules change.

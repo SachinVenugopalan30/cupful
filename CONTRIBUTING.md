@@ -112,7 +112,7 @@ npm run test:e2e
 
 - Write the test first for backend logic and for frontend logic that computes something. See it fail, write the least code that passes, then clean up.
 - Keep it small. Ask whether the code needs to exist, whether existing code or the standard library already does it, and whether an installed dependency does it.
-- Record a deviation. If `PLAN.md` is wrong or an alternative is better, add one line to [docs/decisions.md](docs/decisions.md): date, what changed, why.
+- Record a deviation. If the design is wrong or an alternative is better, add one line to [docs/decisions.md](docs/decisions.md): date, what changed, why.
 - Update the docs. If a change alters commands, layout or conventions, update `AGENTS.md` and the relevant user docs in the same pull request.
 - Keep source and test files under 500 lines. Split by behaviour.
 
