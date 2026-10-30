@@ -104,7 +104,7 @@
 				{@const busy = working[entry.op_id] ?? false}
 				<li
 					class="op stack"
-					data-testid="queue-op"
+					data-testid="sync-op"
 					data-op-id={entry.op_id}
 					data-status={entry.status}
 				>

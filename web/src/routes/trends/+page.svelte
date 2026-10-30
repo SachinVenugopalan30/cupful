@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { errorMessage, getTrends, type TrendDay } from '#lib/api.ts';
 	import { session, today } from '#lib/session.svelte.ts';
+	import { dataVersion } from '#lib/offline/state.svelte.ts';
 	import { averages, loadRange, rangeDates, RANGES, saveRange, type Range } from '#lib/trends/logic.ts';
 
 	let range = $state<Range>(loadRange());
@@ -11,6 +12,7 @@
 
 	$effect(() => {
 		saveRange(range);
+		void dataVersion.n;
 		void retry;
 		const { from, to } = rangeDates(range, today());
 		let stale = false;

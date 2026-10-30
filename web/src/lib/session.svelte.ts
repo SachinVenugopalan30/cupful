@@ -49,12 +49,14 @@ export async function loadSession(): Promise<void> {
 		if (!cached) throw err;
 		connection.activeUserId = cached.userId;
 		connection.online = false;
-		session.auth = cached.auth;
-		session.user = cached.auth.user;
+		// Set the day before session.user: the layout renders DayNav as soon as user is non-null,
+		// and an empty date would format as an invalid Date.
 		session.profile = cached.profile;
+		if (!day.date) day.date = today();
 		// Offline, so start() has nothing to flush.
 		await start(cached.userId);
-		if (!day.date) day.date = today();
+		session.auth = cached.auth;
+		session.user = cached.auth.user;
 		return;
 	}
 

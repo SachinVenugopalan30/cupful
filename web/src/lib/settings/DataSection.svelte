@@ -92,7 +92,7 @@
 		}
 	}
 
-	const blocked = $derived(busy !== '' || pending !== null || !connection.online);
+	const blocked = $derived(busy !== '' || !connection.online);
 </script>
 
 <section class="card stack" aria-labelledby="data-h">

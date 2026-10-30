@@ -47,12 +47,9 @@ async function repeatMeal(page: import('@playwright/test').Page, description: st
 	await meal.getByRole('button', { name: 'Eat this again' }).click();
 }
 
-/**
- * Settings → Sync op rows. The UI contract calls them `sync-op`; the merged M6 UI still ships
- * `queue-op`, so accept either until the contract name lands.
- */
+/** Settings → Sync op rows. */
 const syncOpRows = (page: import('@playwright/test').Page) =>
-	page.locator('[data-testid="sync-op"], [data-testid="queue-op"]');
+	page.locator('[data-testid="sync-op"]');
 
 test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on reconnect', async ({
 	page,
@@ -67,6 +64,7 @@ test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on 
 	await page.getByRole('link', { name: 'Activity' }).click();
 	await expect(page.getByLabel(/Weigh-in/)).toBeVisible();
 	await page.getByRole('link', { name: 'Today' }).click();
+	await page.waitForURL((url) => url.pathname === '/');
 	await waitForController(page);
 	await expect(page.getByTestId('meal').filter({ hasText: 'offline seed bowl' })).toHaveCount(1);
 
@@ -88,6 +86,7 @@ test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on 
 	// Offline reload: the service worker serves the shell, and the cached day + queued overlay
 	// still render.
 	await page.getByRole('link', { name: 'Today' }).click();
+	await page.waitForURL((url) => url.pathname === '/');
 	await page.waitForFunction(() => !!navigator.serviceWorker.controller);
 	await page.reload();
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
@@ -150,11 +149,6 @@ test('another tab logging in as a different account does not flush this tab queu
 	await other.goto('/');
 	await expect(other.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
-	// Per-page offline: the other tab stays online for the account switch.
-	await setPageOffline(page, true);
-	await repeatMeal(page, 'stale tab seed');
-	await expect(page.getByTestId('sync-bar')).toContainText(/1 waiting/);
-
 	// The other tab switches accounts through the API, which (unlike the UI) does not discard the
 	// first tab's queue: that is exactly what the queue's identity check must refuse to flush.
 	expect(
@@ -175,13 +169,23 @@ test('another tab logging in as a different account does not flush this tab queu
 	await other.goto('/');
 	await expect(other.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
+	// Tab 1 still has A in memory but the cookie is now B. Queue a write while offline, then
+	// reconnect: the flush must refuse because the server says the session is B.
+	await context.setOffline(true);
+	await repeatMeal(page, 'stale tab seed');
+	await expect(page.getByTestId('sync-bar')).toContainText(/1 waiting/);
+
 	let syncPosts = 0;
 	await page.route('**/api/sync', async (route) => {
 		if (route.request().method() === 'POST') syncPosts++;
-		await route.abort('blockedbyclient');
+		await route.continue();
 	});
 
-	await setPageOffline(page, false);
+	await context.setOffline(false);
+	await page.evaluate(() => window.dispatchEvent(new Event('online')));
+	await page.getByRole('link', { name: 'Settings' }).click();
+	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	await page.getByTestId('sync-section').getByRole('button', { name: 'Sync now' }).click();
 	await expect(page.getByTestId('sync-bar')).toContainText(
 		'Changes on this device belong to another account.',
 		{ timeout: 30_000 }

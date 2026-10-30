@@ -11,6 +11,7 @@
 	import { ApiError, errorMessage, getBudget, getMeals, type Budget, type Macros } from '#lib/api.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { dataVersion } from '../offline/state.svelte.ts';
 	import { breakdown, flagMessages, leftOver, macroRows } from './budget.ts';
 	import { dayTotals } from './meal.ts';
 
@@ -27,6 +28,7 @@
 	$effect(() => {
 		if (!date) return;
 		void refreshKey;
+		void dataVersion.n;
 		void attempt;
 		// A different day: show the skeleton, not the last day's numbers. Same day: keep them.
 		untrack(() => {

@@ -183,7 +183,9 @@ pub async fn create_alias(
         .await?
         .ok_or_else(Error::not_found)?;
     let norm = normalize(&alias);
-    let mut tx = s.db.begin().await?;
+    // Config writes can overlap a background offline-queue flush; take the write lock up front
+    // so SQLite waits on busy_timeout instead of failing a deferred upgrade with "database is locked".
+    let mut tx = s.db.begin_with("BEGIN IMMEDIATE").await?;
     sqlx::query!(
         "DELETE FROM food_aliases WHERE user_id = ? AND alias_norm = ?",
         user.id,

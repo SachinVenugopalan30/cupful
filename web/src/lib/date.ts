@@ -9,6 +9,7 @@ export function todayIn(tz: string, now = new Date()): string {
 
 /** "Today", "Yesterday", "Tue 20 Oct", or with the year when it isn't this year's. */
 export function dayLabel(date: string, today: string): string {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'Today';
 	if (date === today) return 'Today';
 	if (date === addDays(today, -1)) return 'Yesterday';
 	const [y, m, d] = date.split('-').map(Number);

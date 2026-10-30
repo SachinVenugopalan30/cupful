@@ -12,6 +12,7 @@
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { mealDelete, mealUpsert, sendOps, type Op } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
+	import { dataVersion } from '../offline/state.svelte.ts';
 	import Review from './Review.svelte';
 	import {
 		MEAL_TYPES,
@@ -39,6 +40,7 @@
 	$effect(() => {
 		const d = date;
 		void refreshKey;
+		void dataVersion.n;
 		void retry;
 		if (!d) return;
 		if (d !== shown) meals = null; // a new day shows the skeleton; a refresh keeps the list

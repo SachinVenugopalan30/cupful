@@ -125,7 +125,8 @@ pub async fn put(
         Sex::Male => "male",
         Sex::Female => "female",
     };
-    let mut tx = s.db.begin().await?;
+    // See create_alias: a background queue flush may hold the write lock.
+    let mut tx = s.db.begin_with("BEGIN IMMEDIATE").await?;
     sqlx::query!(
         "UPDATE profiles SET timezone = ?, weight_unit = ?, height_unit = ? WHERE user_id = ?",
         p.timezone,

@@ -15,6 +15,7 @@
 	import { session, today } from '#lib/session.svelte.ts';
 	import { dayPatch, sendOps, type DayFields } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
+	import { dataVersion } from '../offline/state.svelte.ts';
 	import {
 		BODY_PARTS,
 		MAX_GYM,
@@ -47,6 +48,7 @@
 	$effect(() => {
 		const d = date;
 		void refreshKey;
+		void dataVersion.n;
 		void retry;
 		if (!d) return;
 		if (d !== loaded) data = null; // a new day shows the skeleton; a refresh keeps the form

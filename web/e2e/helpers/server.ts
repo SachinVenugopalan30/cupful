@@ -311,6 +311,7 @@ export async function setPageOffline(page: Page, offline: boolean): Promise<void
 		uploadThroughput: offline ? 0 : -1,
 	});
 	await page.evaluate((isOffline) => {
+		Object.defineProperty(navigator, 'onLine', { value: !isOffline, configurable: true });
 		window.dispatchEvent(new Event(isOffline ? 'offline' : 'online'));
 	}, offline);
 }

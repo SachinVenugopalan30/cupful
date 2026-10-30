@@ -57,6 +57,7 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 	try {
 		const res = await fetch(path, {
 			method: 'GET',
+			cache: 'no-store',
 			credentials: 'same-origin',
 			headers: { Accept: 'application/json' }
 		});
