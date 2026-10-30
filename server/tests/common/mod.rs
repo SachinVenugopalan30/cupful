@@ -248,6 +248,23 @@ impl Client {
     }
 }
 
+/// AI provider stub that returns one fixed reply (nutrition estimates).
+pub struct FixedReply(pub serde_json::Value);
+
+#[async_trait::async_trait]
+impl cupful::ai::Provider for FixedReply {
+    async fn complete_json(
+        &self,
+        _: cupful::ai::JsonRequest,
+    ) -> Result<serde_json::Value, cupful::ai::ProviderError> {
+        Ok(self.0.clone())
+    }
+
+    fn capabilities(&self) -> cupful::ai::Capabilities {
+        Default::default()
+    }
+}
+
 /// `POST /api/ingest/activity` as a Shortcut would: bearer token, no cookie, no CSRF header.
 pub async fn ingest(
     app: &Router,
