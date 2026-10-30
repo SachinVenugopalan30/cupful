@@ -15,6 +15,10 @@ Then open `https://cupful.<your-tailnet>.ts.net`. Without Tailscale: `docker run
 
 Steps on iOS: a PWA can't read Apple Health. Enter steps by hand, or use an iOS Shortcuts automation that posts the day's step count to Cupful (see `docs/shortcuts.md`).
 
+## Offline and installing
+
+Open Cupful once while online and it installs as a PWA. Today, Activity, Trends and saved products work offline; meals and day entries queue and sync when the connection returns. Settings, AI estimates, new barcode lookups and import/restore need a connection. On Android use Chrome's **Install app**; on iOS use Safari's Share → **Add to Home Screen**. See `docs/offline.md`.
+
 ## Backups, import and export
 
 Your food log can be exported as CSV and imported from Fuel Ledger (see `docs/import-export.md`). A JSON backup saves one account's data and can be restored elsewhere; for the whole instance, copy the SQLite database (see `docs/backups.md`). CSV is an interchange format, not a Cupful backup.
