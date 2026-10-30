@@ -133,7 +133,7 @@
 							{:else}
 								<div class="row">
 									<button
-										class="btn btn-quiet danger"
+										class="btn btn-danger"
 										onclick={() => (confirming = invite.id)}
 										disabled={!connection.online}
 										aria-label="Revoke invite created {when(invite.created_at)}"
