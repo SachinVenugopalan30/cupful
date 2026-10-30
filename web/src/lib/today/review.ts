@@ -33,5 +33,6 @@ export async function rememberAliases(
 
 /** What the sheet says when some phrases couldn't be remembered. */
 export function aliasFailure(phrases: string[]): string {
-	return `The meal is saved, but I couldn't remember ${phrases.map((p) => `"${p}"`).join(', ')}. Save again to retry, or close.`;
+	const named = phrases.map((p) => `"${p}"`).join(', ');
+	return `The meal is saved, but I couldn't remember ${named}. Save again to retry, or close.`;
 }
