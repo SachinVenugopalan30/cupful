@@ -8,8 +8,8 @@ Self-hosted food/exercise/steps tracker. Rust (Axum + SQLx/SQLite) API serving a
 
 ## Status
 
-- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette. M4 (Activity, ingest tokens + Shortcut endpoint, Trends with LayerChart, seed-demo, Google Health v4 steps sync moved up from v0.2; owner connected Google live).
-- **Next:** M5 (CSV export, Fuel Ledger import, JSON backup/restore).
+- **Done:** M0 (scaffold), M1 (accounts, profile, budget engine, write contract), M2 (AI providers, nutrition pipeline, barcode product lookup; live check on oMLX), M3 (Today screen; owner phone-checked). Since M3: saved products in estimates (phrase aliases, product servings as portions), editable kcal, coral/sage/sand palette. M4 (Activity, ingest tokens + Shortcut endpoint, Trends with LayerChart, seed-demo, Google Health v4 steps sync moved up from v0.2; owner connected Google live). M5 (CSV export, Fuel Ledger import, JSON backup/restore). **M5 implemented; validation pending.**
+- **Next:** M6 (PWA and offline).
 - Open shortcuts: `grep -rn "ponytail:" server web/src`. Deviations from the plan: `docs/decisions.md`.
 
 ## Layout
@@ -30,6 +30,7 @@ server/                 Rust crate `cupful`
   src/demo.rs           `seed-demo`: deterministic demo user and history
   src/time.rs           user-local "today" helpers
   src/cleanup.rs        daily cleanup task
+  src/transfer/         CSV export, Fuel Ledger import, JSON backup/restore (GET /api/export.csv, POST /api/import/fuel-ledger, GET /api/backup, POST /api/restore)
   src/products.rs       barcode lookup (Open Food Facts), label entry, saved products
   src/ai/mod.rs         Provider trait, for_user/by_id, daily cap, HTTP driver (retries, timeouts, scrubbing)
   src/ai/{openai_compatible,anthropic,gemini}.rs   per-adapter request body and reply text
@@ -51,13 +52,15 @@ web/                    SvelteKit app (adapter-static, SPA fallback); routes: / 
   src/lib/{today,products,settings,activity,trends}/   screen components (activity/: ActivitySection + form helpers; trends/: Charts.svelte (LayerChart, lazy-loaded), ChartCard, logic.ts; settings/TokensSection: ingest tokens) (products/PhraseLinks.svelte: phrases that resolve to a product) (props documented in each file's header)
   e2e/, playwright.config.ts   Playwright against the real server
 docs/design.md          design direction, tokens, component rules
-fixtures/budget_cases.json   shared budget test vectors
+fixtures/                shared test vectors and samples (budget_cases.json; M5 import/backup fixtures)
 data/staples.csv, data/aliases.csv, data/portions.csv   shipped food data and USDA portion weights (embedded, seeded at startup)
 data/tools/            build_staples.py + staples_spec.txt: regenerate staples.csv from USDA downloads
 data/golden/            golden estimate cases with recorded model replies
 docs/providers.md       AI provider setup
 docs/google-health.md   Google Cloud setup for the optional Google Health steps sync
 docs/shortcuts.md       sending steps from iOS Shortcuts / Android with an ingest token
+docs/import-export.md   CSV export and Fuel Ledger import: format, ids, merge semantics
+docs/backups.md         JSON backup/restore and the nightly SQLite copy
 docs/decisions.md       one line per deviation/notable choice
 ```
 
@@ -89,7 +92,7 @@ npm run build
 - TDD: failing test first. Backend integration tests use `tower::ServiceExt::oneshot` on the real router with in-memory SQLite (`tests/common/mod.rs` has helpers).
 - SQL through `sqlx::query!`/`query_as!` macros so it's compile-checked; refresh `.sqlx/` after changes. Exception: FTS5 queries use runtime `query_as` (sqlx's describe crashes on virtual tables).
 - JSON Schemas sent to AI providers: `additionalProperties: false` and full `required` on every object.
-- Logged data (meals, days) is written **only** through `POST /api/sync`. Config/account data uses plain REST, online only.
+- Logged data (meals, days) is written **only** through `POST /api/sync`, except the import and restore endpoints that PLAN.md §6 lists under configuration writes. Config/account data uses plain REST, online only.
 - Every mutating request needs header `X-Cupful: 1` (CSRF).
 - Every user-owned route needs an isolation test; `tests/isolation.rs` fails if a route is not listed. `Access::Admin` routes use the `auth::Admin` extractor and are checked for 403/401 there too.
 - Budget is computed only on the server (`budget.rs`); f64 throughout, round on serialize.

@@ -13,7 +13,11 @@ docker compose up -d
 
 Then open `https://cupful.<your-tailnet>.ts.net`. Without Tailscale: `docker run -p 8080:8080 -v cupful-data:/data cupful` behind your own HTTPS reverse proxy.
 
-Steps on iOS: a PWA can't read Apple Health. Enter steps by hand, or use an iOS Shortcuts automation that posts the day's step count to Cupful (guide coming in `docs/shortcuts.md`).
+Steps on iOS: a PWA can't read Apple Health. Enter steps by hand, or use an iOS Shortcuts automation that posts the day's step count to Cupful (see `docs/shortcuts.md`).
+
+## Backups, import and export
+
+Your food log can be exported as CSV and imported from Fuel Ledger (see `docs/import-export.md`). A JSON backup saves one account's data and can be restored elsewhere; for the whole instance, copy the SQLite database (see `docs/backups.md`). CSV is an interchange format, not a Cupful backup.
 
 ## Contributing
 
