@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import { errorMessage, google, type GoogleStatus } from '#lib/api.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { googleResult } from './google.ts';
 
 	let status = $state<GoogleStatus | null>(null);
@@ -73,6 +74,9 @@
 			Reads your daily steps from Google Health into this server. Steps you enter by hand are never
 			overwritten. Nothing is sent to Google except the sign-in and the steps request.
 		</p>
+		{#if !connection.online}
+			<p class="notice notice-warning">Settings need a connection. Google Health changes need a connection.</p>
+		{/if}
 		{#if message}
 			<p class="notice {messageOk ? 'notice-info' : 'notice-error'}" role="status">{message}</p>
 		{/if}
@@ -94,11 +98,11 @@
 			{/if}
 			<div class="row">
 				{#if !status.needs_reconnect}
-					<button class="btn" onclick={syncNow} disabled={busy}>
+					<button class="btn" onclick={syncNow} disabled={busy || !connection.online}>
 						{busy ? 'Syncing…' : 'Sync now'}
 					</button>
 				{/if}
-				<button class="btn btn-quiet" onclick={disconnect} disabled={busy}>Disconnect</button>
+				<button class="btn btn-quiet" onclick={disconnect} disabled={busy || !connection.online}>Disconnect</button>
 			</div>
 		{/if}
 	</section>

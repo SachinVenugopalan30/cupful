@@ -7,6 +7,7 @@
 <script lang="ts">
 	import { download, errorMessage, importCsv, restoreBackup } from '#lib/api.ts';
 	import { day, loadSession, today } from '#lib/session.svelte.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import {
 		formatImportSummary,
 		formatRestoreSummary,
@@ -91,7 +92,7 @@
 		}
 	}
 
-	const blocked = $derived(busy !== '' || pending !== null);
+	const blocked = $derived(busy !== '' || pending !== null || !connection.online);
 </script>
 
 <section class="card stack" aria-labelledby="data-h">
@@ -101,6 +102,10 @@
 		this account's meals, days, profile versions, foods, aliases, portions and products. The CSV is
 		the Fuel Ledger interchange format.
 	</p>
+
+	{#if !connection.online}
+		<p class="notice notice-warning">Settings need a connection. Downloads, imports and restores are disabled offline.</p>
+	{/if}
 
 	{#if error}<p class="notice notice-error" role="alert">{error}</p>{/if}
 	<p class="status small" role="status">{status}</p>
@@ -151,7 +156,7 @@
 					replaced, and this cannot be undone.
 				</p>
 				<div class="row">
-					<button class="btn btn-danger" onclick={restore}>Replace my data</button>
+					<button class="btn btn-danger" onclick={restore} disabled={blocked}>Replace my data</button>
 					<button class="btn btn-quiet" onclick={() => (pending = null)}>Cancel</button>
 				</div>
 			</div>

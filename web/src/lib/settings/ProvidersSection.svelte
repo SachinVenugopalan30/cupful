@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import { ApiError, errorMessage, providers, type Provider } from '#lib/api.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { emptyForm, formFrom, KINDS, setKind, toProviderIn, type ProviderForm } from './providers.ts';
 
 	let { isAdmin }: { isAdmin: boolean } = $props();
@@ -88,6 +89,9 @@
 			are encrypted on this server and never shown again. For Ollama or oMLX with Docker, see
 			<code>docs/providers.md</code> in the source code.
 		</p>
+		{#if !connection.online}
+			<p class="notice notice-warning">Settings need a connection. Provider changes are disabled offline.</p>
+		{/if}
 		{#if listError}<p class="notice notice-error" role="alert">{listError}</p>{/if}
 		<p class="status small" role="status">{status}</p>
 
@@ -113,11 +117,11 @@
 							</span>
 						</div>
 						<div class="row">
-							<button class="btn" onclick={() => test(p)} disabled={t === 'testing'}>
+							<button class="btn" onclick={() => test(p)} disabled={t === 'testing' || !connection.online}>
 								{t === 'testing' ? 'Testing…' : 'Test connection'}
 							</button>
 							<button class="btn btn-quiet" onclick={() => open(p)} aria-label="Edit {p.label}">Edit</button>
-							<button class="btn btn-quiet danger" onclick={() => remove(p)} aria-label="Delete {p.label}">Delete</button>
+							<button class="btn btn-quiet danger" onclick={() => remove(p)} disabled={!connection.online} aria-label="Delete {p.label}">Delete</button>
 						</div>
 						<p class="small" role="status">
 							{#if t && t !== 'testing'}
@@ -192,12 +196,12 @@
 				</fieldset>
 				{#if formError}<p class="notice notice-error" role="alert">{formError}</p>{/if}
 				<div class="row">
-					<button class="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save provider'}</button>
+					<button class="btn btn-primary" disabled={busy || !connection.online}>{busy ? 'Saving…' : 'Save provider'}</button>
 					<button type="button" class="btn btn-quiet" onclick={() => (editing = null)}>Cancel</button>
 				</div>
 			</form>
 		{:else}
-			<p><button class="btn" onclick={() => open(null)}>Add provider</button></p>
+			<p><button class="btn" onclick={() => open(null)} disabled={!connection.online}>Add provider</button></p>
 		{/if}
 	{/if}
 </section>

@@ -3,12 +3,22 @@
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/global.css';
 	import favicon from '#lib/assets/favicon.svg';
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { loadSession, redirectFor, session } from '#lib/session.svelte.ts';
-	import type { LayoutProps } from './$types';
+	import { initConnection } from '#lib/offline/state.svelte.ts';
+	import { initUpdatePrompt } from '#lib/offline/update.svelte.ts';
+	import SyncBar from '#lib/offline/SyncBar.svelte';
+	import UpdateBanner from '#lib/offline/UpdateBanner.svelte';
+	import type { Snippet } from 'svelte';
 
-	let { children }: LayoutProps = $props();
+	let { children }: { children: Snippet } = $props();
+
+	onMount(() => {
+		initConnection();
+		initUpdatePrompt();
+	});
 
 	let loadError = $state(false);
 	async function load() {
@@ -74,6 +84,8 @@
 		</nav>
 	{/if}
 	<main class="page" class:with-tabs={!!session.user}>
+		<UpdateBanner />
+		{#if session.user}<SyncBar />{/if}
 		{@render children()}
 	</main>
 {:else}

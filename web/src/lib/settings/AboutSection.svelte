@@ -1,28 +1,66 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  AboutSection — running version and source link (AGPL network clause), license, Open Food Facts
-  credit and privacy notes. No props.
+  AboutSection — app build, running server version and source link (AGPL network clause), license,
+  Open Food Facts credit and privacy notes. Online it asks /api/health; offline it shows the cached
+  server version if there is one, and always the build version. No props.
 -->
 <script lang="ts">
+	import { version } from '$app/env';
 	import { errorMessage, health, type Health } from '#lib/api.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
+	import { loadHealth } from '#lib/offline/session-cache.ts';
 
-	let info = $state<Health | null>(null);
+	let server = $state<Health | null>(null);
+	let cached = $state<Health | null>(null);
 	let error = $state('');
-	health().then(
-		(h) => (info = h),
-		(e) => (error = errorMessage(e))
-	);
+
+	async function load() {
+		error = '';
+		if (!connection.online) {
+			server = null;
+			try {
+				cached = await loadHealth();
+			} catch {
+				cached = null;
+			}
+			return;
+		}
+		try {
+			server = await health();
+		} catch (e) {
+			error = errorMessage(e);
+			try {
+				cached = await loadHealth();
+			} catch {
+				cached = null;
+			}
+		}
+	}
+
+	$effect(() => {
+		void connection.online;
+		void load();
+	});
 </script>
 
 <section class="card stack" aria-labelledby="about-h">
 	<h2 id="about-h">About</h2>
+	<p>App build <span class="num">{version}</span></p>
+	{#if server}
+		<p>
+			Cupful <span class="num">{server.version}</span>
+			· <a href={server.source_url} rel="noopener">Source code</a>
+		</p>
+	{:else if cached}
+		<p>
+			Cupful <span class="num">{cached.version}</span> (cached)
+			· <a href={cached.source_url} rel="noopener">Source code</a>
+		</p>
+	{:else if !connection.online}
+		<p class="small muted">The server version isn't available offline yet.</p>
+	{/if}
 	{#if error}
 		<p class="notice notice-error" role="alert">{error}</p>
-	{:else}
-		<p aria-busy={!info}>
-			Cupful <span class="num">{info ? info.version : '…'}</span>
-			{#if info}· <a href={info.source_url} rel="noopener">Source code</a>{/if}
-		</p>
 	{/if}
 	<p class="small">
 		Free software under the GNU Affero General Public License, version 3 or later
