@@ -7,6 +7,8 @@
 	import { connection, queueState } from '#lib/offline/state.svelte.ts';
 	import { discard, retry, syncNow } from '#lib/offline/queue.ts';
 	import type { QueueStatus, QueuedOp } from '#lib/offline/types.ts';
+	import { dayLabel } from '#lib/date.ts';
+	import { today } from '#lib/session.svelte.ts';
 
 	let syncing = $state(false);
 	let working = $state<Record<string, boolean>>({});
@@ -31,13 +33,13 @@
 		const op = entry.op;
 		if (op.kind === 'meal.upsert') {
 			const description = op.payload.description?.trim() || 'Meal';
-			return `${description} on ${op.payload.date}`;
+			return `${description} on ${dayLabel(op.payload.date, today())}`;
 		}
 		if (op.kind === 'meal.delete') return 'Delete a logged meal';
 		const fields = Object.keys(op.payload)
 			.filter((key) => key !== 'date')
 			.map((key) => FIELD[key] ?? key);
-		return `Day ${op.payload.date}: ${fields.length > 0 ? fields.join(', ') : 'no changes'}`;
+		return `Day ${dayLabel(op.payload.date, today())}: ${fields.length > 0 ? fields.join(', ') : 'no changes'}`;
 	}
 
 	function chipClass(status: QueueStatus): string {
@@ -135,7 +137,7 @@
 						<button
 							class="btn"
 							onclick={() => act(entry.op_id, retry)}
-							disabled={busy || entry.status === 'sending'}
+							disabled={busy || !connection.online || entry.status === 'sending'}
 							aria-label="Retry {summaryText}"
 						>
 							Retry

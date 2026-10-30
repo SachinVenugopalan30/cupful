@@ -70,18 +70,18 @@ test('a repeat meal and a weigh-in queue offline, survive a reload, and sync on 
 
 	await page.context().setOffline(true);
 	const bar = page.getByTestId('sync-bar');
-	await expect(bar).toContainText('Offline. Changes will sync when you reconnect.');
+	await expect(bar).toContainText('Offline. Changes sync when you reconnect.');
 
 	await repeatMeal(page, 'offline seed bowl');
 	await expect(page.getByTestId('meal').filter({ hasText: 'offline seed bowl' })).toHaveCount(2);
-	await expect(bar).toContainText(/1 waiting/);
+	await expect(bar).toContainText(/1 change waiting/);
 
 	await page.getByRole('link', { name: 'Activity' }).click();
 	const weight = page.getByLabel(/Weigh-in/);
 	await weight.fill('81');
 	await weight.blur();
 	await expect(weight).toHaveValue('81');
-	await expect(bar).toContainText(/2 waiting/);
+	await expect(bar).toContainText(/2 changes waiting/);
 
 	// Offline reload: the service worker serves the shell, and the cached day + queued overlay
 	// still render.
@@ -114,7 +114,7 @@ test('a deliberately broken op is visible in Settings and can be discarded', asy
 	await page.context().setOffline(true);
 	await repeatMeal(page, 'broken op seed');
 	const bar = page.getByTestId('sync-bar');
-	await expect(bar).toContainText(/1 waiting/);
+	await expect(bar).toContainText(/1 change waiting/);
 
 	await breakNewestQueueOp(page, 'broken');
 	await page.context().setOffline(false);
@@ -173,7 +173,7 @@ test('another tab logging in as a different account does not flush this tab queu
 	// reconnect: the flush must refuse because the server says the session is B.
 	await context.setOffline(true);
 	await repeatMeal(page, 'stale tab seed');
-	await expect(page.getByTestId('sync-bar')).toContainText(/1 waiting/);
+	await expect(page.getByTestId('sync-bar')).toContainText(/1 change waiting/);
 
 	let syncPosts = 0;
 	await page.route('**/api/sync', async (route) => {
@@ -213,7 +213,7 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 	await page.route('**/api/sync', (route) => route.abort('blockedbyclient'));
 	await page.context().setOffline(true);
 	await repeatMeal(page, secret);
-	await expect(page.getByTestId('sync-bar')).toContainText(/1 waiting/);
+	await expect(page.getByTestId('sync-bar')).toContainText(/1 change waiting/);
 	await page.context().setOffline(false);
 
 	await page.getByRole('link', { name: 'Settings' }).click();

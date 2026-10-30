@@ -24,6 +24,9 @@
 	const offline = $derived(!connection.online || connection.paused === 'offline');
 	const attention = $derived(connection.failed > 0);
 	const show = $derived(offline || paused || attention || connection.pending > 0);
+	const waiting = $derived(
+		`${connection.pending} ${connection.pending === 1 ? 'change' : 'changes'} waiting`
+	);
 
 	type BarState = 'offline' | 'signin' | 'identity' | 'attention' | 'pending';
 	const barState = $derived<BarState>(
@@ -56,20 +59,21 @@
 		{:else if barState === 'signin'}
 			<p>
 				Sign in again to sync your changes.
+				{connection.pending > 0 ? ` ${waiting}.` : ''}
 				<a href="/login">Sign in</a>
-				{connection.pending > 0 ? `· ${connection.pending} waiting` : ''}
 			</p>
 		{:else if barState === 'offline'}
 			<p>
-				Offline. Changes will sync when you reconnect.
-				{connection.pending > 0 ? `· ${connection.pending} waiting` : ''}
+				{connection.pending > 0
+					? `Offline. ${waiting} to sync.`
+					: 'Offline. Changes sync when you reconnect.'}
 			</p>
 		{:else if barState === 'attention'}
 			<p>
 				<a href="/settings#sync">{connection.failed} changes need attention</a>
 			</p>
 		{:else}
-			<p>{connection.pending} waiting to sync</p>
+			<p>{waiting}</p>
 			<button class="btn" onclick={sync} disabled={busy}>
 				{busy ? 'Syncing…' : 'Sync now'}
 			</button>
