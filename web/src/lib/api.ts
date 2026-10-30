@@ -7,9 +7,10 @@
 
 export type * from './api/types.ts';
 export { ApiError, errorMessage, parseError } from './api/errors.ts';
-export { api } from './api/http.ts';
+export { api, cachedGet } from './api/http.ts';
 export { getBudget, getDay, getMeals, getTrends, health } from './api/reads.ts';
 export { auth, profile } from './api/account.ts';
+export { invites } from './api/invites.ts';
 export { estimate } from './api/nutrition.ts';
 export { foods, products } from './api/products.ts';
 export { providers } from './api/providers.ts';

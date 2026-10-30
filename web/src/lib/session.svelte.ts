@@ -101,11 +101,14 @@ export async function loadSession(): Promise<void> {
 	session.profile = null;
 }
 
-const PUBLIC = ['/login', '/setup'];
+/** Routes a signed-in user is sent away from. */
+const PUBLIC = ['/login', '/setup', '/invite'];
+/** Routes a logged-out visitor may open. `/invite` carries a one-time token. */
+const LOGGED_OUT = ['/login', '/invite'];
 
 /** Where `path` must go for this auth state, or null to stay. */
 export function redirectFor(path: string, s: AuthState): string | null {
 	if (s.needs_setup) return path === '/setup' ? null : '/setup';
-	if (!s.user) return path === '/login' ? null : '/login';
+	if (!s.user) return LOGGED_OUT.includes(path) ? null : '/login';
 	return PUBLIC.includes(path) ? '/' : null;
 }

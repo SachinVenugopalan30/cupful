@@ -14,7 +14,8 @@ import {
 
 const auth: AuthState = {
 	needs_setup: false,
-	user: { id: 1, username: 'ada', is_admin: false }
+	user: { id: 1, username: 'ada', is_admin: false },
+	identity_mode: null
 };
 
 const profile: Profile = {
@@ -26,7 +27,8 @@ const profile: Profile = {
 
 const otherAuth: AuthState = {
 	needs_setup: false,
-	user: { id: 2, username: 'bob', is_admin: false }
+	user: { id: 2, username: 'bob', is_admin: false },
+	identity_mode: null
 };
 const otherProfile: Profile = { ...profile, timezone: 'America/New_York' };
 
