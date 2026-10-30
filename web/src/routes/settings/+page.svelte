@@ -4,6 +4,7 @@
 	import ProvidersSection from '#lib/settings/ProvidersSection.svelte';
 	import TokensSection from '#lib/settings/TokensSection.svelte';
 	import GoogleHealth from '#lib/settings/GoogleHealth.svelte';
+	import DataSection from '#lib/settings/DataSection.svelte';
 	import AboutSection from '#lib/settings/AboutSection.svelte';
 	import { auth, errorMessage } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
@@ -47,6 +48,7 @@
 	<TokensSection />
 	<GoogleHealth />
 	<ProvidersSection isAdmin={session.user?.is_admin ?? false} />
+	<DataSection />
 	<AboutSection />
 
 	<section class="card stack" aria-labelledby="account-h">
