@@ -1048,3 +1048,29 @@ async fn old_backup_with_a_shared_label_food_restores_privately() {
             .unwrap();
     assert_eq!(owner, Some(uid));
 }
+
+#[tokio::test]
+async fn unseen_delete_tombstones_are_ignored_by_export_and_kept_by_restore() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    rich_data(&app, &state, &mut a).await;
+    let ghost = uuid();
+    assert_eq!(
+        a.sync(vec![op("meal.delete", &at(-1), json!({"id": ghost}))])
+            .await,
+        ["applied"]
+    );
+    let doc = export(&mut a).await;
+    assert!(!doc.to_string().contains(&ghost));
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let n: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM meals WHERE id = ? AND deleted_at IS NOT NULL")
+            .bind(&ghost)
+            .fetch_one(&state.db)
+            .await
+            .unwrap();
+    assert_eq!(n, 1);
+    let (_, csv, _) = a.get_bytes("/api/export.csv").await;
+    let _ = csv;
+}
