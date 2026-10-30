@@ -32,8 +32,16 @@ vi.mock('./api', async (importOriginal) => {
 vi.mock('./offline/queue.ts', () => ({ start: mocks.start }));
 
 const user = { id: 1, username: 'a', is_admin: true };
-const ada: AuthState = { needs_setup: false, user: { id: 7101, username: 'ada', is_admin: false } };
-const bob: AuthState = { needs_setup: false, user: { id: 7102, username: 'bob', is_admin: false } };
+const ada: AuthState = {
+	needs_setup: false,
+	user: { id: 7101, username: 'ada', is_admin: false },
+	identity_mode: null
+};
+const bob: AuthState = {
+	needs_setup: false,
+	user: { id: 7102, username: 'bob', is_admin: false },
+	identity_mode: null
+};
 const profile: Profile = {
 	timezone: 'Europe/London',
 	weight_unit: 'kg',
@@ -43,23 +51,37 @@ const profile: Profile = {
 
 describe('redirectFor', () => {
 	it('sends everything to setup on first run', () => {
-		expect(redirectFor('/', { needs_setup: true, user: null })).toBe('/setup');
-		expect(redirectFor('/login', { needs_setup: true, user: null })).toBe('/setup');
-		expect(redirectFor('/setup', { needs_setup: true, user: null })).toBeNull();
+		const firstRun: AuthState = { needs_setup: true, user: null, identity_mode: null };
+		expect(redirectFor('/', firstRun)).toBe('/setup');
+		expect(redirectFor('/login', firstRun)).toBe('/setup');
+		expect(redirectFor('/setup', firstRun)).toBeNull();
 	});
 
 	it('sends logged-out visitors to login, setup included once it is done', () => {
-		expect(redirectFor('/', { needs_setup: false, user: null })).toBe('/login');
-		expect(redirectFor('/settings', { needs_setup: false, user: null })).toBe('/login');
-		expect(redirectFor('/setup', { needs_setup: false, user: null })).toBe('/login');
-		expect(redirectFor('/login', { needs_setup: false, user: null })).toBeNull();
+		const loggedOut: AuthState = { needs_setup: false, user: null, identity_mode: null };
+		expect(redirectFor('/', loggedOut)).toBe('/login');
+		expect(redirectFor('/settings', loggedOut)).toBe('/login');
+		expect(redirectFor('/setup', loggedOut)).toBe('/login');
+		expect(redirectFor('/login', loggedOut)).toBeNull();
 	});
 
-	it('sends logged-in users away from login and setup only', () => {
-		expect(redirectFor('/login', { needs_setup: false, user })).toBe('/');
-		expect(redirectFor('/setup', { needs_setup: false, user })).toBe('/');
-		expect(redirectFor('/settings', { needs_setup: false, user })).toBeNull();
-		expect(redirectFor('/', { needs_setup: false, user })).toBeNull();
+	it('keeps an invite open to a logged-out visitor', () => {
+		expect(redirectFor('/invite', { needs_setup: false, user: null, identity_mode: null })).toBeNull();
+	});
+
+	it('sends an invite to setup before the first admin exists', () => {
+		expect(redirectFor('/invite', { needs_setup: true, user: null, identity_mode: null })).toBe(
+			'/setup'
+		);
+	});
+
+	it('sends logged-in users away from login, setup and invite only', () => {
+		const signedIn: AuthState = { needs_setup: false, user, identity_mode: null };
+		expect(redirectFor('/login', signedIn)).toBe('/');
+		expect(redirectFor('/setup', signedIn)).toBe('/');
+		expect(redirectFor('/invite', signedIn)).toBe('/');
+		expect(redirectFor('/settings', signedIn)).toBeNull();
+		expect(redirectFor('/', signedIn)).toBeNull();
 	});
 });
 
@@ -140,14 +162,18 @@ describe('loadSession', () => {
 
 	it('clears the previous user’s cached reads when the server says logged out', async () => {
 		connection.activeUserId = 7103;
-		await saveSession(7103, { needs_setup: false, user: { id: 7103, username: 'c', is_admin: false } }, profile);
+		await saveSession(
+			7103,
+			{ needs_setup: false, user: { id: 7103, username: 'c', is_admin: false }, identity_mode: null },
+			profile
+		);
 		await putCachedBody(7103, '/api/meals?date=2026-10-29', { meals: [] });
-		mocks.authState.mockResolvedValue({ needs_setup: false, user: null });
+		mocks.authState.mockResolvedValue({ needs_setup: false, user: null, identity_mode: null });
 
 		await loadSession();
 
 		expect(connection.activeUserId).toBeNull();
-		expect(session.auth).toEqual({ needs_setup: false, user: null });
+		expect(session.auth).toEqual({ needs_setup: false, user: null, identity_mode: null });
 		expect(session.user).toBeNull();
 		expect(session.profile).toBeNull();
 		expect(mocks.start).not.toHaveBeenCalled();

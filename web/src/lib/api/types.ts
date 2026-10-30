@@ -8,7 +8,18 @@ import type { WeightUnit, HeightUnit } from '../format';
 export type Health = { status: string; version: string; source_url: string };
 
 export type AuthUser = { id: number; username: string; is_admin: boolean };
-export type AuthState = { needs_setup: boolean; user: AuthUser | null };
+/** `tailscale` when the server signs people in from the Tailscale header instead of a password. */
+export type IdentityMode = 'tailscale' | null;
+export type AuthState = {
+	needs_setup: boolean;
+	user: AuthUser | null;
+	identity_mode: IdentityMode;
+};
+
+/** GET /api/invites item: a pending invite. Times are RFC 3339. */
+export type Invite = { id: number; created_at: string; expires_at: string };
+/** POST /api/invites answer: `token` is returned once and never listed again. */
+export type NewInvite = Invite & { token: string };
 
 export type Sex = 'male' | 'female';
 export type ProfileVersion = {
