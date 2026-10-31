@@ -5,9 +5,11 @@
 
 mod oauth;
 mod sync;
+mod workouts;
 
 pub use oauth::{callback, connect};
 pub use sync::{sync_now, sync_user};
+pub use workouts::{list as list_workouts, set_gym_types};
 
 use std::time::Duration;
 
@@ -78,7 +80,7 @@ pub async fn status(State(s): State<AppState>, user: User) -> Result<Json<Value>
     )
     .fetch_optional(&s.db)
     .await?;
-    Ok(Json(match row {
+    let mut out = match row {
         None => json!({ "configured": true, "connected": false }),
         Some(r) => json!({
             "configured": true,
@@ -87,7 +89,9 @@ pub async fn status(State(s): State<AppState>, user: User) -> Result<Json<Value>
             "last_sync_at": r.last_sync_at.map(rfc3339).transpose()?,
             "last_error": r.last_error,
         }),
-    }))
+    };
+    workouts::extend_status(&s.db, user.id, &mut out).await?;
+    Ok(Json(out))
 }
 
 /// Forgets the connection and asks Google to revoke the token (best effort: the row goes either way).

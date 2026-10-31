@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT timezone, weight_unit, height_unit, gym_types FROM profiles WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "timezone",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "timezone"
+          }
+        }
+      },
+      {
+        "name": "weight_unit",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "weight_unit"
+          }
+        }
+      },
+      {
+        "name": "height_unit",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "height_unit"
+          }
+        }
+      },
+      {
+        "name": "gym_types",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "gym_types"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "f0e0705708e6423ee5df20e27c3d01ca8290fd5989a980abd2cf0c6d7fe1d21c"
+}

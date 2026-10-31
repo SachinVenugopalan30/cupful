@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE profiles SET timezone = ?, weight_unit = ?, height_unit = ?, gym_types = ?\n         WHERE user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "f904edba8c6b871d2e67d6e674c46d55a66780a2dc0fc86a6eef696606fdba99"
+}

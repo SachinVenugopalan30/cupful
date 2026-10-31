@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO workouts (user_id, external_id, start_ms, end_ms, date, exercise_type,\n                     name, active_seconds, kcal, distance_m, avg_hr)\n                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n                 ON CONFLICT (user_id, external_id) DO UPDATE SET\n                     start_ms = excluded.start_ms, end_ms = excluded.end_ms, date = excluded.date,\n                     exercise_type = excluded.exercise_type, name = excluded.name,\n                     active_seconds = excluded.active_seconds, kcal = excluded.kcal,\n                     distance_m = excluded.distance_m, avg_hr = excluded.avg_hr",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "2baa5ea5a38d3f03305d85a227adbf2d67bc274a8ea81f9995f8927c8fca1804"
+}

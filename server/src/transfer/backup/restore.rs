@@ -184,10 +184,12 @@ pub async fn restore(State(s): State<AppState>, user: User, req: Request) -> Res
         .await?;
 
     sqlx::query!(
-        "UPDATE profiles SET timezone = ?, weight_unit = ?, height_unit = ? WHERE user_id = ?",
+        "UPDATE profiles SET timezone = ?, weight_unit = ?, height_unit = ?, gym_types = ?
+         WHERE user_id = ?",
         &doc.profile.timezone,
         &doc.profile.weight_unit,
         &doc.profile.height_unit,
+        &doc.profile.gym_types,
         user.id
     )
     .execute(&mut *tx)

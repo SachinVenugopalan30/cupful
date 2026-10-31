@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT gym_types FROM profiles WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "gym_types",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "profiles",
+            "name": "gym_types"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "29802062e488034859191ae5307fbd3b896b219c0c31f16f208c3780387f9844"
+}

@@ -31,7 +31,7 @@ pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
 
     let profile = sqlx::query_as!(
         Profile,
-        "SELECT timezone, weight_unit, height_unit FROM profiles WHERE user_id = ?",
+        "SELECT timezone, weight_unit, height_unit, gym_types FROM profiles WHERE user_id = ?",
         id
     )
     .fetch_one(db)

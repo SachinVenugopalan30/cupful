@@ -25,7 +25,7 @@ server/                 Rust crate `cupful`
   src/ai/               providers, HTTP hardening, admin settings
   src/products/         barcode lookup, label entry, saved products
   src/transfer/         CSV export/import, backup/restore
-  src/google/           optional Google Health steps sync
+  src/google/           optional Google Health sync: steps (sync.rs), workouts + gym minutes + gym types (workouts.rs)
   src/{budget,profile,ingest,demo,cleanup,time,error,crypto,assets,config,db}.rs
   migrations/           never edit a released migration
   .sqlx/                committed offline query metadata
