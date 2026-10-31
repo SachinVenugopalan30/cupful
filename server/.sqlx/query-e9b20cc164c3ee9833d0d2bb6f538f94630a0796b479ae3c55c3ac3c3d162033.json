@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date FROM days WHERE user_id = ? AND gym_source = 'google'",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "days",
+            "name": "date"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e9b20cc164c3ee9833d0d2bb6f538f94630a0796b479ae3c55c3ac3c3d162033"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT DISTINCT exercise_type FROM workouts WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "exercise_type",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "exercise_type"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "62f01df01c2aca6c21bc0f401b1d422ecc7ab112f1e81f9c28d539c45decfd67"
+}

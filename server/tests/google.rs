@@ -799,3 +799,105 @@ async fn workouts_without_a_google_name_are_kept_and_not_duplicated() {
     let (_, day) = a.get(&format!("/api/days/{d}")).await;
     assert_eq!(day["gym_minutes"], json!(40));
 }
+
+#[tokio::test]
+async fn stored_types_become_pickable_and_treadmill_is_a_default() {
+    let (g, _, state, mut a) = setup().await;
+    link(&state, user_id(&state, "admin").await, 3600).await;
+    steps_empty(&g).await;
+    let d = day(-1);
+    exercise(
+        &g,
+        vec![
+            session("a", "TREADMILL", d, 7, 30),
+            session("b", "CARPENTRY", d, 9, 20),
+        ],
+    )
+    .await;
+    synced(&mut a).await;
+    let (_, st) = a.get("/api/google").await;
+    assert!(
+        st["gym_types"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("TREADMILL"))
+    );
+    let labels: Vec<&str> = st["exercise_types"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["label"].as_str().unwrap())
+        .collect();
+    assert!(labels.contains(&"Carpentry"), "stored type is offered");
+    assert!(labels.windows(2).all(|w| w[0] <= w[1]), "sorted by label");
+    let (_, day1) = a.get(&format!("/api/days/{d}")).await;
+    assert_eq!(day1["gym_minutes"], 30);
+    let (status, _) = a
+        .put(
+            "/api/google/gym-types",
+            json!({"types": ["TREADMILL", "CARPENTRY"]}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let (_, day1) = a.get(&format!("/api/days/{d}")).await;
+    assert_eq!(day1["gym_minutes"], 50);
+    let (status, _) = a
+        .put("/api/google/gym-types", json!({"types": ["NOT_A_TYPE"]}))
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn unticking_a_type_clears_google_gym_minutes_but_never_manual() {
+    let (g, _, state, mut a) = setup().await;
+    link(&state, user_id(&state, "admin").await, 3600).await;
+    steps_empty(&g).await;
+    let (run_day, manual_day) = (day(0), day(-2)); // the profile starts today, so budget works
+    a.sync(vec![op(
+        "day.patch",
+        &at(-60),
+        json!({"date": manual_day.to_string(), "gym_minutes": 25}),
+    )])
+    .await;
+    exercise(
+        &g,
+        vec![
+            session("a", "RUNNING", run_day, 7, 60),
+            session("b", "RUNNING", manual_day, 7, 40),
+        ],
+    )
+    .await;
+    synced(&mut a).await;
+    let (_, d) = a.get(&format!("/api/days/{run_day}")).await;
+    assert_eq!(d["gym_minutes"], json!(null));
+
+    let tick = json!({"types": ["RUNNING"]});
+    a.put("/api/google/gym-types", tick.clone()).await;
+    let (_, d) = a.get(&format!("/api/days/{run_day}")).await;
+    assert_eq!(
+        (d["gym_minutes"].clone(), d["gym_source"].clone()),
+        (json!(60), json!("google"))
+    );
+    let (_, b) = a.get(&format!("/api/budget/{run_day}")).await;
+    assert!(b["gym_kcal"].as_f64().unwrap_or(-1.0) > 0.0, "{b}");
+    a.put("/api/google/gym-types", tick).await;
+    let (_, d) = a.get(&format!("/api/days/{run_day}")).await;
+    assert_eq!(d["gym_minutes"], 60);
+
+    a.put("/api/google/gym-types", json!({"types": []})).await;
+    let (_, d) = a.get(&format!("/api/days/{run_day}")).await;
+    assert_eq!(
+        (d["gym_minutes"].clone(), d["gym_source"].clone()),
+        (json!(null), json!(null))
+    );
+    let (_, b) = a.get(&format!("/api/budget/{run_day}")).await;
+    assert_eq!(b["gym_kcal"].as_f64().unwrap_or(0.0), 0.0, "{b}");
+    let (_, m) = a.get(&format!("/api/days/{manual_day}")).await;
+    assert_eq!(
+        (m["gym_minutes"].clone(), m["gym_source"].clone()),
+        (json!(25), json!("manual"))
+    );
+    a.put("/api/google/gym-types", json!({"types": []})).await;
+    let (_, d) = a.get(&format!("/api/days/{run_day}")).await;
+    assert_eq!(d["gym_minutes"], json!(null));
+}
