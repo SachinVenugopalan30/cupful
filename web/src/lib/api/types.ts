@@ -91,6 +91,16 @@ export type TrendDay = {
 	steps: number | null;
 	gym_minutes: number | null;
 };
+/** GET /api/trends averages: mean daily macros over the days that have meals. */
+export type TrendAverages = { protein_g: number; carbs_g: number; fat_g: number };
+/** GET /api/trends meal mix: mean daily kcal per meal, over days that have meals. */
+export type MealMix = { breakfast: number; lunch: number; dinner: number; snack: number };
+/** The whole GET /api/trends answer. Aggregates are null until a meal exists in the range. */
+export type Trends = {
+	days: TrendDay[];
+	averages: TrendAverages | null;
+	meal_mix: MealMix | null;
+};
 
 // ---- meals and estimates ----
 

@@ -1,0 +1,82 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT m.date AS \"date!\",\n                  coalesce(sum(i.kcal), 0.0) AS \"kcal!: f64\",\n                  coalesce(sum(i.protein_g), 0.0) AS \"protein_g!: f64\",\n                  coalesce(sum(i.carbs_g), 0.0) AS \"carbs_g!: f64\",\n                  coalesce(sum(i.fat_g), 0.0) AS \"fat_g!: f64\",\n                  coalesce(sum(CASE WHEN m.meal_type = 'breakfast' THEN i.kcal END), 0.0)\n                      AS \"breakfast_kcal!: f64\",\n                  coalesce(sum(CASE WHEN m.meal_type = 'lunch' THEN i.kcal END), 0.0)\n                      AS \"lunch_kcal!: f64\",\n                  coalesce(sum(CASE WHEN m.meal_type = 'dinner' THEN i.kcal END), 0.0)\n                      AS \"dinner_kcal!: f64\",\n                  coalesce(sum(CASE WHEN m.meal_type = 'snack' THEN i.kcal END), 0.0)\n                      AS \"snack_kcal!: f64\"\n           FROM meals m LEFT JOIN meal_items i ON i.meal_id = m.id\n           WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.date BETWEEN ? AND ?\n           GROUP BY m.date\n           ORDER BY m.date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date!",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "meals",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "kcal!: f64",
+        "ordinal": 1,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "protein_g!: f64",
+        "ordinal": 2,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "carbs_g!: f64",
+        "ordinal": 3,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "fat_g!: f64",
+        "ordinal": 4,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "breakfast_kcal!: f64",
+        "ordinal": 5,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "lunch_kcal!: f64",
+        "ordinal": 6,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "dinner_kcal!: f64",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": "Expression"
+      },
+      {
+        "name": "snack_kcal!: f64",
+        "ordinal": 8,
+        "type_info": "Float",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e825921bbd6d231cb73b12b4f0b1577a3b54f1f87f3163fc0f0fa6edae73dbfa"
+}

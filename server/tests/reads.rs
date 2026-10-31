@@ -98,3 +98,136 @@ async fn bad_dates_are_400() {
         assert_eq!(status, StatusCode::BAD_REQUEST, "{uri}");
     }
 }
+
+fn meal_on(id: &str, date: &str, meal_type: &str, items: serde_json::Value) -> serde_json::Value {
+    let mut m = meal(id, date, items);
+    m["meal_type"] = json!(meal_type);
+    m
+}
+
+fn item_with(kcal: f64, protein: f64, carbs: f64, fat: f64) -> serde_json::Value {
+    let mut i = item(&uuid(), kcal);
+    i["protein_g"] = json!(protein);
+    i["carbs_g"] = json!(carbs);
+    i["fat_g"] = json!(fat);
+    i
+}
+
+#[tokio::test]
+async fn trends_average_macros_and_meal_mix_over_days_with_meals() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_on(
+                &uuid(),
+                "2026-01-02",
+                "breakfast",
+                json!([item_with(300.0, 10.0, 20.0, 5.0)]),
+            ),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_on(
+                &uuid(),
+                "2026-01-02",
+                "lunch",
+                json!([item_with(500.0, 20.0, 30.0, 10.0)]),
+            ),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_on(
+                &uuid(),
+                "2026-01-03",
+                "dinner",
+                json!([item_with(700.0, 30.0, 40.0, 15.0)]),
+            ),
+        ),
+    ])
+    .await;
+
+    let (status, body) = a.get("/api/trends?from=2026-01-01&to=2026-01-05").await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+
+    // Two days have meals: Jan 2 and Jan 3. Jan 5 is a gap, not a zero.
+    assert_eq!(body["averages"]["protein_g"], json!(30.0));
+    assert_eq!(body["averages"]["carbs_g"], json!(45.0));
+    assert_eq!(body["averages"]["fat_g"], json!(15.0));
+
+    let mix = &body["meal_mix"];
+    assert_eq!(mix["breakfast"], json!(150));
+    assert_eq!(mix["lunch"], json!(250));
+    assert_eq!(mix["dinner"], json!(350));
+    assert_eq!(mix["snack"], json!(0));
+    let sum: i64 = ["breakfast", "lunch", "dinner", "snack"]
+        .iter()
+        .map(|k| mix[k].as_i64().unwrap())
+        .sum();
+    let eaten: i64 = body["days"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|d| d["eaten_kcal"].as_i64())
+        .sum();
+    assert_eq!(sum, 750, "the mix adds up to the average eaten kcal");
+    assert_eq!(eaten, 1500);
+}
+
+#[tokio::test]
+async fn trends_meal_mix_rounds_to_whole_kcal_without_losing_the_sum() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_on(
+                &uuid(),
+                "2026-02-01",
+                "breakfast",
+                json!([item_with(100.0, 1.0, 1.0, 1.0)]),
+            ),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_on(
+                &uuid(),
+                "2026-02-02",
+                "lunch",
+                json!([item_with(101.0, 1.0, 1.0, 1.0)]),
+            ),
+        ),
+    ])
+    .await;
+
+    let (status, body) = a.get("/api/trends?from=2026-02-01&to=2026-02-02").await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let mix = &body["meal_mix"];
+    // Exact averages are 50 and 50.5 kcal; the rounded total is 101.
+    assert_eq!(mix["breakfast"], json!(50));
+    assert_eq!(mix["lunch"], json!(51));
+    assert_eq!(
+        mix["breakfast"].as_i64().unwrap()
+            + mix["lunch"].as_i64().unwrap()
+            + mix["dinner"].as_i64().unwrap()
+            + mix["snack"].as_i64().unwrap(),
+        101
+    );
+}
+
+#[tokio::test]
+async fn trends_averages_are_null_with_no_meals() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let (status, body) = a.get("/api/trends?from=2026-03-01&to=2026-03-07").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["averages"], json!(null));
+    assert_eq!(body["meal_mix"], json!(null));
+    assert_eq!(body["days"].as_array().unwrap().len(), 7);
+}

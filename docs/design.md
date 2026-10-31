@@ -104,21 +104,22 @@ One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font
 
 - Tokens: `--dur-fast` 120 ms, `--dur-med` 180 ms, `--dur-slow` 240 ms, `--ease` `cubic-bezier(0.2, 0.7, 0.2, 1)`.
 - Feedback answers an action. A pressed button scales to 0.98. Hover changes surface tone. Focus draws a 2 px accent ring with a 2 px offset.
-- Screens do not use entrance animations. Meters may fill after a save. Sheets may open.
+- Screens do not use entrance animations, except Trends. Its bars, cells, area fill and headline figures answer opening the screen and changing the range, in one short pass. Meters may fill after a save. Sheets may open.
 - A global `prefers-reduced-motion` rule sets durations to near zero and disables smooth scrolling. The duration tokens also become 0. Skeleton pulses stop.
 
 ## Charts
 
-LayerChart draws Trends. It is pinned at `2.8.0` and uses the SVG layer. `ChartCard` maps its CSS variables onto the tokens, so both themes follow `light-dark()` with no chart-specific theme code.
+Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so the line can stay continuous and the motion can be CSS. `ChartCard` frames every chart: title, headline figure, summary, readout and empty state.
 
-- Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (brick). The per-day budget tick uses `--chart-budget` with a halo in the card color, so it reads over any bar.
-- Weight points use `--chart-weight` (berry) and the 7-day average line uses `--chart-average` (teal). Steps use `--chart-steps` (teal). Grid lines use `--chart-grid` and axis text uses `--chart-axis`.
+- Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (brick). The budget line uses `--chart-budget` as a dashed path, broken on days without a budget.
+- Weight uses `--chart-weight` (berry) for the line and its 14% area fill; the readout still names the 7-day average. Steps use `--chart-steps` (teal). Grid lines use `--chart-grid` and axis text uses `--chart-axis`.
 - Color is never alone. A legend names each mark with a shape and a word. Over-budget days also say "over" in the readout.
-- LayerChart's floating tooltip is off because it moves under the finger. The day touched, hovered or clicked is written as a sentence in a fixed two-line readout above the chart, for example "Fri 16 Oct: 1797 kcal eaten of 2154 kcal, 357 left." The sentence stays after the finger lifts, so tapping never shifts the layout.
+- There is no floating tooltip, because it moves under the finger. The day touched, hovered or clicked is written as a sentence in a fixed two-line readout above the chart, for example "Fri 16 Oct: 1797 kcal eaten of 2154 kcal, 357 left." The sentence stays after the finger lifts, so tapping never shifts the layout.
 - The plot is `role="img"` with an `aria-label` summary of range, counts and averages. Keyboard users get the summary only. There is no keyboard day-stepping yet.
 - Each chart has its own `.empty` sentence that says what to log to fill it. The average card does the same. Gaps, such as no meals or no weigh-in, are gaps, never zeros.
 - The range control (7d, 30d, 90d, 365d) is a `.segmented` control remembered per device. Bars thin to hairlines past 120 days.
-- The Charts chunk loads when Trends opens, so Today does not carry the library.
+- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 12 ms bar stagger, a fading area, popping consistency cells and growing macro/mix bars. Headline numbers count up over 700 ms with a single rAF helper. Reduced motion removes all of it.
+- Consistency shows one cell per day, capped at 30 columns. Blue is within budget, brick is over, grey is no log.
 
 ## Tokens
 
