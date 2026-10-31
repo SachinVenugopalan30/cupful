@@ -1,4 +1,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="web/src/lib/assets/wordmark-dark.svg">
+    <img src="web/src/lib/assets/wordmark-light.svg" alt="Cupful" width="260">
+  </picture>
+</p>
+
 # Cupful
 
 Cupful is a self-hosted tracker for food, exercise and steps. You describe a meal in plain words. Cupful splits it into foods and portions, then estimates calories and macros with an AI provider you choose: a local model, OpenAI, Anthropic, Gemini or any OpenAI-compatible server.
