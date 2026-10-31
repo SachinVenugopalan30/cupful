@@ -22,21 +22,33 @@ use crate::reads::{Range, check_span};
 use crate::sync::{DayPatch, Source, WINDOW_DAYS, patch_day};
 use crate::time::{now_ms, parse_date, rfc3339};
 
-/// Types counted as gym minutes until the user chooses otherwise.
+/// Types counted as gym minutes until the user chooses otherwise: strength work plus the
+/// indoor machines. Outdoor running, walking, hiking and biking are left out.
 const DEFAULT_GYM: &[&str] = &[
     "STRENGTH_TRAINING",
     "FUNCTIONAL_STRENGTH_TRAINING",
     "WEIGHTLIFTING",
+    "POWERLIFTING",
     "WEIGHT_MACHINES",
     "FREE_WEIGHTS",
     "WEIGHTS",
     "BODY_WEIGHT",
+    "RESISTANCE_BANDS",
+    "TRX",
     "CALISTHENICS",
     "HIIT",
     "CIRCUIT_TRAINING",
     "CROSSFIT",
+    "TREADMILL",
+    "ELLIPTICAL",
+    "ROWING_MACHINE",
+    "STAIRCLIMBER",
+    "SPINNING",
+    "STATIONARY_BIKE",
+    "ASSAULT_BIKE",
 ];
-/// The pickable types: the defaults plus common cardio and mind-body ones.
+/// Also pickable: other gym-floor and cardio types. Every type present in the user's stored
+/// workouts is pickable too (see `pickable`). All names are `Exercise.ExerciseType` values.
 const OTHER_PICKABLE: &[&str] = &[
     "RUNNING",
     "TRAIL_RUN",
@@ -48,8 +60,16 @@ const OTHER_PICKABLE: &[&str] = &[
     "POWER_WALKING",
     "HIKING",
     "BIKING",
-    "STATIONARY_BIKE",
     "MOUNTAIN_BIKE",
+    "ROWING",
+    "STEP_TRAINING",
+    "CORE_TRAINING",
+    "BOOTCAMP",
+    "CARDIO_WORKOUT",
+    "INTERVAL_WORKOUT",
+    "TABATA_WORKOUT",
+    "CROSS_TRAINING",
+    "WALK_WITH_WEIGHTS",
     "SWIMMING",
     "YOGA",
     "PILATES",
@@ -70,8 +90,23 @@ fn label(t: &str) -> String {
     s
 }
 
-fn is_pickable(t: &str) -> bool {
-    DEFAULT_GYM.contains(&t) || OTHER_PICKABLE.contains(&t)
+/// The curated list plus every type in the user's stored workouts, sorted by label.
+async fn pickable(db: &SqlitePool, user_id: i64) -> Result<Vec<String>> {
+    let stored = sqlx::query_scalar!(
+        "SELECT DISTINCT exercise_type FROM workouts WHERE user_id = ?",
+        user_id
+    )
+    .fetch_all(db)
+    .await?;
+    let mut all: Vec<String> = DEFAULT_GYM
+        .iter()
+        .chain(OTHER_PICKABLE)
+        .map(|t| t.to_string())
+        .chain(stored)
+        .collect();
+    all.sort_by_key(|t| (label(t), t.clone()));
+    all.dedup();
+    Ok(all)
 }
 
 async fn gym_set(db: &SqlitePool, user_id: i64) -> Result<Vec<String>> {
@@ -86,9 +121,9 @@ async fn gym_set(db: &SqlitePool, user_id: i64) -> Result<Vec<String>> {
 /// Adds the gym-type preference and its choices to the Google status.
 pub(super) async fn extend_status(db: &SqlitePool, user_id: i64, status: &mut Value) -> Result<()> {
     status["gym_types"] = json!(gym_set(db, user_id).await?);
-    status["exercise_types"] = DEFAULT_GYM
+    status["exercise_types"] = pickable(db, user_id)
+        .await?
         .iter()
-        .chain(OTHER_PICKABLE)
         .map(|t| json!({ "value": t, "label": label(t) }))
         .collect();
     Ok(())
@@ -248,7 +283,8 @@ pub(super) async fn sync(s: &AppState, user_id: i64, token: &str, today: Date) -
 }
 
 /// Writes gym minutes (Google source, so manual values win) for every day that has a stored
-/// workout of a gym type. Days without one are left alone.
+/// workout of a gym type, and clears Google-written gym minutes on days that no longer have
+/// one. Other days are left alone.
 // ponytail: walks every stored workout day each time; fine for years of data, narrow to a
 // date range if history grows past a few thousand sessions
 async fn recompute_gym(db: &SqlitePool, user_id: i64) -> Result<()> {
@@ -263,7 +299,20 @@ async fn recompute_gym(db: &SqlitePool, user_id: i64) -> Result<()> {
     for r in rows.into_iter().filter(|r| gym.contains(&r.exercise_type)) {
         *secs.entry(r.date).or_default() += r.active_seconds;
     }
+    let stale = sqlx::query_scalar!(
+        "SELECT date FROM days WHERE user_id = ? AND gym_source = 'google'",
+        user_id
+    )
+    .fetch_all(db)
+    .await?;
     let now = now_ms();
+    for date in stale.into_iter().filter(|d| !secs.contains_key(d)) {
+        let clear = DayPatch {
+            gym_minutes: Some(None),
+            ..DayPatch::default()
+        };
+        patch_day(db, user_id, parse_date(&date)?, &clear, Source::Google, now).await?;
+    }
     for (date, s) in secs {
         let patch = DayPatch {
             gym_minutes: Some(Some(((s as f64 / 60.0).round() as i64).clamp(1, 600))),
@@ -329,7 +378,8 @@ pub async fn set_gym_types(
     JsonBody(b): JsonBody<GymTypes>,
 ) -> Result<Json<Value>> {
     creds(&s)?;
-    if b.types.len() > MAX_GYM_TYPES || !b.types.iter().all(|t| is_pickable(t)) {
+    let ok = pickable(&s.db, user.id).await?;
+    if b.types.len() > MAX_GYM_TYPES || !b.types.iter().all(|t| ok.contains(t)) {
         return Err(Error::bad_request("unknown or too many exercise types"));
     }
     let mut types = b.types;
