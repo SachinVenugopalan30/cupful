@@ -181,7 +181,7 @@
 	.viewfinder {
 		position: relative;
 		aspect-ratio: 4 / 3;
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		background: #000;
 	}
@@ -201,6 +201,10 @@
 	.typed {
 		display: flex;
 		gap: var(--space-2);
+	}
+	.typed input {
+		flex: 1;
+		min-width: 0;
 	}
 	.typed .btn {
 		white-space: nowrap;

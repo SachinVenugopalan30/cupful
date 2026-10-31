@@ -52,16 +52,16 @@
 
 <section class="entry" aria-label="Packaged food">
 	<div class="buttons">
-		<button type="button" class="btn btn-coral" onclick={() => show({ name: 'scan' })}>
+		<button type="button" class="btn" onclick={() => show({ name: 'scan' })}>
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M7 8v8M10 8v8M13 8v8M16 8v8" /></svg>
 			Scan barcode
 		</button>
-		<button type="button" class="btn btn-coral" onclick={() => show({ name: 'saved' })}>Saved products</button>
+		<button type="button" class="btn" onclick={() => show({ name: 'saved' })}>Saved products</button>
 	</div>
 	<p class="visually-hidden" aria-live="polite">{announce}</p>
 </section>
 
-<dialog class="sheet sheet-coral" bind:this={dialog} aria-labelledby="product-sheet-title" onclose={() => (view = null)}>
+<dialog class="sheet" bind:this={dialog} aria-labelledby="product-sheet-title" onclose={() => (view = null)}>
 	{#if view}
 		<header class="sheet-head">
 			<h2 id="product-sheet-title" tabindex="-1" bind:this={heading}>{title}</h2>

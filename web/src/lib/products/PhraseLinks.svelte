@@ -105,14 +105,16 @@
 <style>
 	.phrases {
 		border-top: 1px solid var(--border);
-		padding-top: var(--space-4);
+		padding-top: var(--space-5);
 	}
 	.list > li {
 		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.add {
 		align-items: end;
 		flex-wrap: nowrap;
+		gap: var(--space-2);
 	}
 	.add .field {
 		flex: 1;
