@@ -9,6 +9,7 @@
 	import { inviteUrl } from '#lib/invites.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let { isAdmin }: { isAdmin: boolean } = $props();
 
@@ -82,8 +83,7 @@
 </script>
 
 {#if isAdmin}
-	<section class="card stack" aria-labelledby="users-h">
-		<h2 id="users-h">Users</h2>
+	<SettingRow headingId="users-h" title="Users" description="One-time links for new accounts.">
 		{#if identityMode}
 			<p class="muted">
 				This server signs people in with Tailscale. Anyone in your tailnet gets an account when
@@ -167,7 +167,7 @@
 				</button>
 			</p>
 		{/if}
-	</section>
+	</SettingRow>
 {/if}
 
 <style>

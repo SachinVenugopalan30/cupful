@@ -8,6 +8,7 @@
 	import SyncSection from '#lib/settings/SyncSection.svelte';
 	import UsersSection from '#lib/settings/UsersSection.svelte';
 	import AboutSection from '#lib/settings/AboutSection.svelte';
+	import SettingRow from '#lib/settings/SettingRow.svelte';
 	import { auth, errorMessage } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
@@ -80,8 +81,11 @@
 
 	<ProfileSection />
 
-	<section class="card stack" aria-labelledby="appearance-h">
-		<h2 id="appearance-h">Appearance</h2>
+	<SettingRow
+		headingId="appearance-h"
+		title="Appearance"
+		description="Follow the system, or choose light or dark on this device."
+	>
 		<fieldset class="segmented">
 			<legend class="visually-hidden">Theme</legend>
 			{#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as [value, label] (value)}
@@ -89,7 +93,7 @@
 			{/each}
 		</fieldset>
 		<p class="hint">Remembered on this device. System follows your phone or computer.</p>
-	</section>
+	</SettingRow>
 
 	<TokensSection />
 	<GoogleHealth />
@@ -99,8 +103,7 @@
 	<UsersSection isAdmin={session.user?.is_admin ?? false} />
 	<AboutSection />
 
-	<section class="card stack" aria-labelledby="account-h">
-		<h2 id="account-h">Account</h2>
+	<SettingRow headingId="account-h" title="Account" description="Log out of this device.">
 		<p>Logged in as <strong>{session.user?.username}</strong>.</p>
 		{#if logoutError}<p class="notice notice-error" role="alert">{logoutError}</p>{/if}
 		{#if confirmingLogout}
@@ -122,12 +125,12 @@
 				</button>
 			</p>
 		{/if}
-	</section>
+	</SettingRow>
 </div>
 
 <style>
 	.settings {
-		max-width: var(--content-max);
+		max-width: 60rem;
 		margin: 0 auto;
 	}
 </style>

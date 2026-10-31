@@ -8,6 +8,7 @@
 	import { errorMessage, ingestTokens, type IngestToken } from '#lib/api.ts';
 	import { today } from '#lib/session.svelte.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let list = $state<IngestToken[] | null>(null);
 	let listError = $state('');
@@ -73,8 +74,11 @@
 	const when = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 </script>
 
-<section class="card stack" aria-labelledby="tokens-h">
-	<h2 id="tokens-h">Ingest tokens</h2>
+<SettingRow
+	headingId="tokens-h"
+	title="Ingest tokens"
+	description="Let an automation, such as an iOS Shortcut, post steps and gym minutes."
+>
 	<p class="small muted">
 		A token lets an automation, such as an iOS Shortcut, post your steps and gym minutes. It can't
 		read anything or overwrite a value you typed yourself. Setup steps are in
@@ -145,7 +149,7 @@
 		{#if formError}<p class="notice notice-error" role="alert">{formError}</p>{/if}
 		<p><button class="btn btn-primary" disabled={busy || !connection.online}>Create token</button></p>
 	</form>
-</section>
+</SettingRow>
 
 <style>
 	.token {

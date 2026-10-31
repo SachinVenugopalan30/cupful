@@ -8,6 +8,7 @@
 	import { loadSession } from '#lib/session.svelte.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { fromForm, setHeightUnit, setWeightUnit, toForm, type ProfileErrors, type ProfileForm } from './profile.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	const zones = Intl.supportedValuesOf('timeZone');
@@ -58,8 +59,11 @@
 		[hint, errors[k] && `${k}-err`].filter(Boolean).join(' ') || undefined;
 </script>
 
-<section class="card stack" aria-labelledby="profile-h">
-	<h2 id="profile-h">Profile and targets</h2>
+<SettingRow
+	headingId="profile-h"
+	title="Profile and targets"
+	description="Targets and units. Saving creates a new profile version from today."
+>
 	{#if loadError}
 		<div class="notice notice-error" role="alert">
 			<p>{loadError}</p>
@@ -79,6 +83,7 @@
 		<form class="stack" onsubmit={save} novalidate>
 			<fieldset class="stack" disabled={!connection.online || busy}>
 				<legend class="visually-hidden">Profile</legend>
+				<div class="fields">
 				<div class="field">
 					<label for="p-tz">Time zone</label>
 					<select id="p-tz" bind:value={f.timezone} aria-describedby="p-tz-hint">
@@ -186,6 +191,7 @@
 					<p id="p-steps-hint" class="hint">Used for a day until its steps are logged.</p>
 					{#if errors.typical_steps}<p id="typical_steps-err" class="err">{errors.typical_steps}</p>{/if}
 				</div>
+				</div>
 			</fieldset>
 
 			<p class="hint">Changes apply from today; past days keep their old targets.</p>
@@ -194,7 +200,7 @@
 			<button class="btn btn-primary btn-block" disabled={!connection.online || busy}>{busy ? 'Saving…' : 'Save profile'}</button>
 		</form>
 	{/if}
-</section>
+</SettingRow>
 
 <style>
 	fieldset {
@@ -213,6 +219,16 @@
 		grid-template-columns: 1fr 1fr;
 		gap: var(--space-3);
 	}
+	.fields {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-4);
+	}
+	/* A disabled fieldset picks up the global disabled-radio opacity; keep the control hidden. */
+	.segmented input,
+	.segmented input:disabled {
+		opacity: 0 !important;
+	}
 	.unit-input {
 		display: flex;
 		align-items: center;
@@ -228,5 +244,10 @@
 	}
 	.field-skel {
 		height: var(--touch);
+	}
+	@media (max-width: 47.99rem) {
+		.fields {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
