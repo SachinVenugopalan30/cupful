@@ -13,3 +13,6 @@ web/.svelte-kit/
 .agents/
 .claude/
 skills-lock.json
+
+# taste-skill previews and design renders
+.taste-skill/
