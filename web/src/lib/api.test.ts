@@ -213,13 +213,18 @@ describe('cached reads', () => {
 	it('uses the cache for budget, trends, profile and saved products', async () => {
 		mocks.connection.activeUserId = 7;
 		mocks.cachedGetJson.mockImplementation(async (path: string) => {
-			if (path.startsWith('/api/trends')) return { days: [{ date }] };
+			if (path.startsWith('/api/trends'))
+				return { days: [{ date }], averages: null, meal_mix: null };
 			if (path === '/api/products') return { products: [{ food_id: 1 }] };
 			return { date };
 		});
 
 		expect(await getBudget(date)).toEqual({ date });
-		expect(await getTrends('2026-10-01', date)).toEqual([{ date }]);
+		expect(await getTrends('2026-10-01', date)).toEqual({
+			days: [{ date }],
+			averages: null,
+			meal_mix: null
+		});
 		expect(await profile.get()).toEqual({ date });
 		expect(await products.list()).toEqual([{ food_id: 1 }]);
 		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/budget/${date}`, 7);

@@ -1,15 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  ChartCard — the frame every Trends chart sits in: title, a screen-reader summary, the value of
-  the day last tapped, an optional legend/footnote, and the empty state.
-  Props:
-    title: string       card heading
-    summary: string     plain-words description of the data; the chart itself is hidden from
-                        assistive tech (role="img") and this is its label
-    readout: string     the tapped day's values; empty shows the tap hint
-    empty: string       when set, replaces the chart with this sentence
-    children (the chart), legend snippets
-  Maps LayerChart's color variables onto the app tokens so every chart follows light and dark.
+  ChartCard — the frame every Trends chart sits in: title and headline figure, a screen-reader
+  summary, the value of the day last tapped, legend and footnote snippets, and the empty state.
+  The chart itself is presentational; this card carries `role="img"` and the summary text.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -19,6 +12,7 @@
 		summary,
 		readout = '',
 		empty = '',
+		figure,
 		legend,
 		note,
 		children
@@ -27,26 +21,50 @@
 		summary: string;
 		readout?: string;
 		empty?: string;
+		figure?: Snippet;
 		legend?: Snippet;
-		note?: string;
+		note?: Snippet;
 		children: Snippet;
 	} = $props();
 	const id = $props.id();
 </script>
 
 <section class="card stack" aria-labelledby="{id}-h">
-	<h2 id="{id}-h">{title}</h2>
+	<div class="head">
+		<h2 id="{id}-h">{title}</h2>
+		{#if figure}<div class="figure">{@render figure()}</div>{/if}
+	</div>
 	{#if empty}
 		<p class="empty">{empty}</p>
 	{:else}
 		{#if legend}<p class="legend small">{@render legend()}</p>{/if}
 		<p class="readout num" aria-live="polite">{readout || 'Tap a day to see its values.'}</p>
 		<div class="plot" role="img" aria-label={summary}>{@render children()}</div>
-		{#if note}<p class="hint">{note}</p>{/if}
+		{#if note}<div class="note">{@render note()}</div>{/if}
 	{/if}
 </section>
 
 <style>
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	h2 {
+		margin: 0;
+	}
+	.figure {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-bold);
+		line-height: var(--leading-tight);
+		white-space: nowrap;
+	}
+	.figure :global(small) {
+		font-size: var(--text-xs);
+		font-weight: var(--weight-regular);
+		color: var(--text-muted);
+	}
 	.readout {
 		min-height: 2.75em; /* two lines on a phone, so tapping never shifts the chart */
 		margin: 0;
@@ -61,13 +79,16 @@
 		color: var(--text-muted);
 	}
 	.plot {
-		height: 13rem;
-		/* LayerChart's color variables, mapped to the tokens. */
-		--color-surface-content: var(--chart-axis);
-		--color-surface-100: var(--surface);
-		--color-surface-300: var(--chart-grid);
-		--color-primary: var(--chart-intake);
-		--color-danger: var(--chart-over);
+		height: 11.5rem;
 		touch-action: pan-y;
+	}
+	.note {
+		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+	}
+	.note :global(strong) {
+		color: var(--text);
+		font-weight: var(--weight-bold);
 	}
 </style>

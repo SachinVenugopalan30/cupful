@@ -64,6 +64,42 @@ async fn days_between(db: &SqlitePool, user_id: i64, from: &str, to: &str) -> Re
     .await?)
 }
 
+/// Per-day totals from the meals that count toward Trends. A day with a meal but no items is a
+/// logged day with zero calories, not a gap.
+struct MealDay {
+    date: String,
+    kcal: f64,
+    protein_g: f64,
+    carbs_g: f64,
+    fat_g: f64,
+    breakfast_kcal: f64,
+    lunch_kcal: f64,
+    dinner_kcal: f64,
+    snack_kcal: f64,
+}
+
+/// Rounds four non-negative averages to whole kcal with the largest-remainder method, so the
+/// parts still add up to the rounded total.
+fn rounded_kcal(values: [f64; 4]) -> [i64; 4] {
+    let target = values.iter().sum::<f64>().round() as i64;
+    let mut out = values.map(|v| v.floor() as i64);
+    let mut order: Vec<usize> = (0..4).collect();
+    order.sort_by(|&a, &b| {
+        let fa = values[a] - values[a].floor();
+        let fb = values[b] - values[b].floor();
+        fb.partial_cmp(&fa).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    let mut left = target - out.iter().sum::<i64>();
+    for i in order {
+        if left <= 0 {
+            break;
+        }
+        out[i] += 1;
+        left -= 1;
+    }
+    out
+}
+
 pub async fn day(
     State(s): State<AppState>,
     user: User,
@@ -209,20 +245,63 @@ pub async fn trends(
     let versions = crate::profile::versions(&s.db, user.id).await?;
     let rows = days_between(&s.db, user.id, &f, &t).await?;
     let by_date: HashMap<&str, &DayRow> = rows.iter().map(|r| (r.date.as_str(), r)).collect();
-    let eaten: HashMap<String, f64> = sqlx::query!(
-        "SELECT m.date, coalesce(sum(i.kcal), 0.0) AS \"kcal!: f64\"
-         FROM meals m LEFT JOIN meal_items i ON i.meal_id = m.id
-         WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.date BETWEEN ? AND ?
-         GROUP BY m.date",
+    let meal_days = sqlx::query_as!(
+        MealDay,
+        r#"SELECT m.date AS "date!",
+                  coalesce(sum(i.kcal), 0.0) AS "kcal!: f64",
+                  coalesce(sum(i.protein_g), 0.0) AS "protein_g!: f64",
+                  coalesce(sum(i.carbs_g), 0.0) AS "carbs_g!: f64",
+                  coalesce(sum(i.fat_g), 0.0) AS "fat_g!: f64",
+                  coalesce(sum(CASE WHEN m.meal_type = 'breakfast' THEN i.kcal END), 0.0)
+                      AS "breakfast_kcal!: f64",
+                  coalesce(sum(CASE WHEN m.meal_type = 'lunch' THEN i.kcal END), 0.0)
+                      AS "lunch_kcal!: f64",
+                  coalesce(sum(CASE WHEN m.meal_type = 'dinner' THEN i.kcal END), 0.0)
+                      AS "dinner_kcal!: f64",
+                  coalesce(sum(CASE WHEN m.meal_type = 'snack' THEN i.kcal END), 0.0)
+                      AS "snack_kcal!: f64"
+           FROM meals m LEFT JOIN meal_items i ON i.meal_id = m.id
+           WHERE m.user_id = ? AND m.deleted_at IS NULL AND m.date BETWEEN ? AND ?
+           GROUP BY m.date
+           ORDER BY m.date"#,
         user.id,
         f,
         t
     )
     .fetch_all(&s.db)
-    .await?
-    .into_iter()
-    .map(|r| (r.date, r.kcal))
-    .collect();
+    .await?;
+    let by_meal_date: HashMap<&str, &MealDay> =
+        meal_days.iter().map(|r| (r.date.as_str(), r)).collect();
+    let n = meal_days.len() as f64;
+    let averages = if meal_days.is_empty() {
+        Value::Null
+    } else {
+        let (protein, carbs, fat) = meal_days.iter().fold((0.0, 0.0, 0.0), |a, m| {
+            (a.0 + m.protein_g, a.1 + m.carbs_g, a.2 + m.fat_g)
+        });
+        json!({
+            "protein_g": crate::nutrition::r1(protein / n),
+            "carbs_g": crate::nutrition::r1(carbs / n),
+            "fat_g": crate::nutrition::r1(fat / n),
+        })
+    };
+    let meal_mix = if meal_days.is_empty() {
+        Value::Null
+    } else {
+        let sum = |pick: fn(&MealDay) -> f64| meal_days.iter().map(pick).sum::<f64>() / n;
+        let [breakfast, lunch, dinner, snack] = rounded_kcal([
+            sum(|m| m.breakfast_kcal),
+            sum(|m| m.lunch_kcal),
+            sum(|m| m.dinner_kcal),
+            sum(|m| m.snack_kcal),
+        ]);
+        json!({
+            "breakfast": breakfast,
+            "lunch": lunch,
+            "dinner": dinner,
+            "snack": snack,
+        })
+    };
     // Budgets carry the latest weigh-in forward (§7), starting from before the range.
     let mut weight = sqlx::query_scalar!(
         "SELECT weight_kg AS \"w!: f64\" FROM days
@@ -242,7 +321,7 @@ pub async fn trends(
             let budget = day_budget(date, &versions, weight, row);
             json!({
                 "date": key,
-                "eaten_kcal": eaten.get(&key).map(|k| k.round() as i64),
+                "eaten_kcal": by_meal_date.get(key.as_str()).map(|m| m.kcal.round() as i64),
                 "budget_kcal": budget.map(|b| b.budget.round() as i64),
                 "weight_kg": row.and_then(|r| r.weight_kg),
                 "steps": row.and_then(|r| r.steps),
@@ -250,7 +329,9 @@ pub async fn trends(
             })
         })
         .collect();
-    Ok(Json(json!({ "days": days })))
+    Ok(Json(
+        json!({ "days": days, "averages": averages, "meal_mix": meal_mix }),
+    ))
 }
 
 /// Recomputed from current data every time (PLAN.md §7 "History").

@@ -3,7 +3,7 @@
 // queued writes applied on top.
 
 import { api, cachedGet, enc } from './http.ts';
-import type { Budget, Day, Health, Meal, TrendDay } from './types.ts';
+import type { Budget, Day, Health, Meal, Trends } from './types.ts';
 import { overlayDay, overlayMeals } from '../offline/overlay.ts';
 import { queueState } from '../offline/state.svelte.ts';
 
@@ -12,7 +12,7 @@ export const health = () => api.get<Health>('/api/health');
 export const getBudget = (date: string) => cachedGet<Budget>(`/api/budget/${enc(date)}`);
 
 export const getTrends = (from: string, to: string) =>
-	cachedGet<{ days: TrendDay[] }>(`/api/trends?from=${enc(from)}&to=${enc(to)}`).then((r) => r.days);
+	cachedGet<Trends>(`/api/trends?from=${enc(from)}&to=${enc(to)}`);
 
 export async function getMeals(date: string): Promise<Meal[]> {
 	const body = await cachedGet<{ meals: Meal[] }>(`/api/meals?date=${enc(date)}`);

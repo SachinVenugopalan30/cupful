@@ -3,13 +3,22 @@ import { describe, expect, it } from 'vitest';
 import type { TrendDay } from '../api';
 import {
 	averages,
+	consistency,
+	consistencyColumns,
+	formatNumber,
+	goalRemaining,
 	intakeReadout,
 	loadRange,
+	mealShares,
 	rangeDates,
 	rollingAverage,
 	saveRange,
+	shortDate,
+	signedWeightDelta,
+	stepsStats,
 	stepsReadout,
 	tickDates,
+	weightStats,
 	weightReadout
 } from './logic';
 
@@ -67,6 +76,7 @@ describe('tickDates', () => {
 		const t = tickDates(dates, 5);
 		expect(t.length).toBeLessThanOrEqual(5);
 		expect(t.at(-1)).toBe('x29');
+		expect(t[0]).toBe('x0');
 	});
 	it('keeps all when few', () => {
 		expect(tickDates(['a', 'b'], 5)).toEqual(['a', 'b']);
@@ -129,5 +139,100 @@ describe('remembered range', () => {
 		} as unknown as Storage;
 		expect(loadRange(bad)).toBe(30);
 		expect(() => saveRange(7, bad)).not.toThrow();
+	});
+});
+
+describe('numbers and dates', () => {
+	it('groups thousands', () => {
+		expect(formatNumber(1762)).toBe('1,762');
+		expect(formatNumber(999)).toBe('999');
+		expect(formatNumber(1234567)).toBe('1,234,567');
+	});
+	it('labels axes as short dates', () => {
+		expect(shortDate('2026-10-02')).toBe('Oct 2');
+		expect(shortDate('2026-01-31')).toBe('Jan 31');
+	});
+});
+
+describe('consistency', () => {
+	it('counts within, over, no log and logged-but-unscored days', () => {
+		const days = [
+			d('a', { eaten_kcal: 2000, budget_kcal: 2200 }),
+			d('b', { eaten_kcal: 2300, budget_kcal: 2200 }),
+			d('c'),
+			d('d', { eaten_kcal: 1800 }) // before any profile: no budget
+		];
+		const c = consistency(days);
+		expect(c.cells.map((x) => x.kind)).toEqual(['in', 'over', 'none', 'unknown']);
+		expect(c).toMatchObject({ in: 1, over: 1, none: 1, unknown: 1, logged: 3 });
+	});
+	it('treats an exact budget as within', () => {
+		expect(consistency([d('a', { eaten_kcal: 2200, budget_kcal: 2200 })]).in).toBe(1);
+	});
+	it('caps the grid at 30 columns', () => {
+		expect(consistencyColumns(7)).toBe(7);
+		expect(consistencyColumns(30)).toBe(30);
+		expect(consistencyColumns(365)).toBe(30);
+		expect(consistencyColumns(0)).toBe(1);
+	});
+});
+
+describe('weight', () => {
+	const days = [
+		d('2026-09-20', { weight_kg: 81 }),
+		d('2026-09-25', { weight_kg: 80.5 }),
+		d('2026-10-01', { weight_kg: 80.2 }),
+		d('2026-10-15', { weight_kg: 79.8 }),
+		d('2026-10-29', { weight_kg: 78.8 })
+	];
+	it('reports the range change and the trailing month change', () => {
+		const w = weightStats(days);
+		expect(w.count).toBe(5);
+		expect(w.change).toBeCloseTo(-2.2);
+		expect(w.monthChange).toBeCloseTo(-1.4); // Oct 1 to Oct 29
+		expect(w.latest).toBe(78.8);
+	});
+	it('has no change with one weigh-in', () => {
+		expect(weightStats([d('2026-10-01', { weight_kg: 80 })]).change).toBe(null);
+	});
+	it('signs a change with the render minus sign and the display unit', () => {
+		expect(signedWeightDelta(-1.4, 'kg')).toBe('−1.4 kg');
+		expect(signedWeightDelta(0.5, 'kg')).toBe('+0.5 kg');
+		expect(signedWeightDelta(0, 'kg')).toBe('0 kg');
+		expect(signedWeightDelta(-0.45359237, 'lb')).toBe('−1 lb');
+	});
+	it('says what is left to the goal', () => {
+		expect(goalRemaining(79.4, 75, 'kg')).toBe('4.4 kg to goal');
+		expect(goalRemaining(74, 75, 'kg')).toBe('Goal reached');
+		expect(goalRemaining(79.4, null, 'kg')).toBe(null);
+	});
+});
+
+describe('steps', () => {
+	it('averages the recorded days and finds the best', () => {
+		const s = stepsStats(
+			[d('a', { steps: 6000 }), d('b'), d('c', { steps: 10000 })],
+			8000
+		);
+		expect(s.count).toBe(2);
+		expect(s.avg).toBe(8000);
+		expect(s.best).toBe(10000);
+		expect(s.diff).toBe(0);
+	});
+	it('has no average without steps', () => {
+		expect(stepsStats([d('a')], 8000)).toMatchObject({ count: 0, avg: null, best: null });
+	});
+});
+
+describe('mealShares', () => {
+	it('turns average kcal into whole percentages that add to 100', () => {
+		const shares = mealShares({ breakfast: 388, lunch: 670, dinner: 528, snack: 176 })!;
+		expect(shares.map((s) => s.pct)).toEqual([22, 38, 30, 10]);
+		expect(shares.reduce((a, s) => a + s.pct, 0)).toBe(100);
+		expect(shares.map((s) => s.label)).toEqual(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+	});
+	it('is null for no mix', () => {
+		expect(mealShares(null)).toBe(null);
+		expect(mealShares({ breakfast: 0, lunch: 0, dinner: 0, snack: 0 })).toBe(null);
 	});
 });
