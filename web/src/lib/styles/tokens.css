@@ -1,95 +1,117 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
- * Cupful design tokens. See docs/design.md. Calm blue plus coral, sage and sand; warm sand light theme, deep-blue dark.
- * Every color is `light-dark(light, dark)`; `color-scheme` picks the side:
- * System follows prefers-color-scheme, `<html data-theme="light|dark">` forces one (Settings).
- * All text colors meet WCAG AA (4.5:1) on --bg, --surface and --surface-2 in their theme;
- * chart, meter and border-strong colors meet 3:1 against --surface.
+ * Cupful design tokens. See docs/design.md. Mineral palette: cool pale stone, a deep sea blue,
+ * and data hues drawn from pantry colors. Every color is `light-dark(light, dark)`;
+ * `color-scheme` picks the side: System follows prefers-color-scheme, `<html data-theme>` forces
+ * one (Settings). Text and muted text meet WCAG AA on --bg, --surface and --surface-2.
+ * Semantic text meets AA on its soft fill. Marks and meter fills meet 3:1 on surfaces.
  */
 :root {
 	color-scheme: light dark;
 
 	/* ---- surfaces and text ---- */
-	--bg: light-dark(#f8f4ec, #0f1d2c); /* light: warm sand tint; dark: deep blue */
-	--surface: light-dark(#ffffff, #152639);
-	--surface-2: light-dark(#efe8da, #1c3149); /* sunken: meter tracks, inputs, hover */
-	--border: light-dark(#e2d9c6, #2a4361); /* hairlines; decorative */
-	--border-strong: light-dark(#7a7566, #6a86a6); /* input outlines: 3:1 */
-	--text: light-dark(#13263b, #e5eef8);
-	--text-muted: light-dark(#4b5a6b, #a5b8cd);
+	--bg: light-dark(#f2f5f6, #0e1418); /* cool pale stone */
+	--surface: light-dark(#ffffff, #151d22);
+	--surface-2: light-dark(#e7edef, #1b262c); /* sunken: meter tracks, inputs, hover */
+	--border: light-dark(#dce5e8, #2a3740); /* hairlines; decorative */
+	--border-strong: light-dark(#9aabb3, #60747f); /* stronger rules and separators */
+	--control-border: light-dark(#8598a1, #60747f); /* input outlines: 3:1 on surface */
+	--text: light-dark(#172025, #e9f1f4);
+	--text-muted: light-dark(#59666d, #9fb0b8);
 
 	/* ---- brand ---- */
-	--accent: light-dark(#2b67a3, #84b8ea); /* buttons, links, focus, current tab */
-	--accent-hover: light-dark(#225687, #a3cbf1);
-	--on-accent: light-dark(#ffffff, #0f1d2c);
-	--accent-soft: light-dark(#dceaf8, #1f3b5b); /* selected chips, current day */
-	--focus-ring: light-dark(#2b67a3, #a3cbf1);
+	--accent: light-dark(#245f8a, #82c2e8); /* buttons, links, focus */
+	--accent-hover: light-dark(#1c4d70, #9ad1ef);
+	--on-accent: light-dark(#ffffff, #071820);
+	--accent-soft: light-dark(#e1eef6, #173647); /* selected chips, quiet fills */
+	--focus-ring: var(--accent);
 
 	/* ---- meaning ---- */
-	--under: light-dark(#17734f, #62d2a8); /* left in budget, success: emerald, bluer than sage */
-	--under-soft: light-dark(#dcf3ea, #12402f);
-	--over: light-dark(#a8232f, #ff8f9a); /* over budget: crimson, deeper than coral */
-	--over-soft: light-dark(#fbe3e5, #4d1f27);
-	--warning: light-dark(#8a4b00, #f2a65a); /* provisional, flags: amber-orange, redder than sand-gold */
-	--warning-soft: light-dark(#fbebd6, #402a14);
-	--error: light-dark(#a8232f, #ff8f9a);
-	--error-soft: light-dark(#fbe3e5, #4d1f27);
+	--under: light-dark(#2f7a6b, #8bd3c0); /* left in budget, success */
+	--under-soft: light-dark(#edf4f2, #1b3132);
+	--over: light-dark(#a64a52, #e39aa8); /* over budget */
+	--over-soft: light-dark(#f3e7e9, #35272d);
+	--warning: light-dark(#8a5a00, #e0b45a); /* provisional, flags */
+	--warning-soft: light-dark(#f0eade, #2f2a1b);
+	--error: light-dark(#b3261e, #e39aa8);
+	--error-soft: light-dark(#f5e3e2, #381f21);
 
-	/* ---- palette accents: coral, sage, sand (decoration and categories, never meaning) ---- */
-	--coral: light-dark(#cb5a3e, #ee8a70); /* marks, fills: 3:1 on surface */
-	--coral-soft: light-dark(#fbe9e3, #4a2a33);
-	--coral-text: light-dark(#a8402a, #f5a891);
-	--sage: light-dark(#4f8a6b, #7fc09f);
-	--sage-soft: light-dark(#e3f0e8, #1b3a2c);
-	--sage-text: light-dark(#2f6a4d, #98d3b3);
-	--sand: light-dark(#efe8da, #22344a); /* warm neutral surface */
-	--sand-soft: light-dark(#f8f4ec, #1a2b3d);
-	--gold: light-dark(#9a7710, #e2bd5a); /* sand-gold mark */
-	--gold-soft: light-dark(#f6edd0, #3a3220);
-	--gold-text: light-dark(#6e5410, #ecca80);
+	/* ---- palette aliases: coral, sage and gold map onto Mineral data hues ---- */
+	--coral: light-dark(#a64a52, #e39aa8); /* was the products and fat tone */
+	--coral-soft: light-dark(#f3e7e9, #35272d);
+	--coral-text: light-dark(#a64a52, #e39aa8);
+	--sage: light-dark(#2f7a6b, #8bd3c0); /* was steps and lunch */
+	--sage-soft: light-dark(#edf4f2, #1b3132);
+	--sage-text: light-dark(#2f7a6b, #8bd3c0);
+	--sand: var(--surface-2); /* quiet panel fill */
+	--sand-soft: var(--surface);
+	--gold: light-dark(#8a6a1f, #e0c078); /* snack and sand-gold mark */
+	--gold-soft: light-dark(#f0ece2, #2f2e21);
+	--gold-text: light-dark(#81621a, #e0c078);
+
+	/* ---- data hues: macros, steps, weight and meal types ---- */
+	--protein: light-dark(#2c6e9e, #8fc3e6);
+	--carbs: light-dark(#9a651c, #e0b45a);
+	--fat: light-dark(#a64a52, #e39aa8);
+	--steps: light-dark(#2f7a6b, #8bd3c0);
+	--weight: light-dark(#8e4f6b, #d8a6c8);
+	--breakfast: light-dark(#c26a2a, #e8a06a);
+	--lunch: light-dark(#2f7a6b, #8bd3c0);
+	--dinner: light-dark(#3a5f8e, #8fb3e0);
+	--snack: light-dark(#8a6a1f, #e0c078);
+	--protein-text: var(--protein);
+	--carbs-text: var(--carbs);
+	--fat-text: var(--fat);
 
 	/* ---- where a number came from (estimate review, meal items) ---- */
-	--src-db: light-dark(#1c6a80, #6cc5da); /* "Database": matched food or product */
-	--src-db-soft: light-dark(#dcf0f5, #153a46);
-	--src-ai: light-dark(#6047a8, #bba7f2); /* "AI estimate": the model's guess */
-	--src-ai-soft: light-dark(#ebe5fa, #2d2550);
+	--src-db: light-dark(#2c6e9e, #8fc3e6); /* "Database": matched food or product, blue */
+	--src-db-soft: light-dark(#e4ecf2, #1a2f3d);
+	--src-ai: light-dark(#8e4f6b, #d8a6c8); /* "AI estimate": the model's guess, berry */
+	--src-ai-soft: light-dark(#f0e8ec, #302832);
 
-	/* ---- macros and charts (LayerChart reads these via CSS vars) ---- */
-	--protein: var(--accent);
-	--carbs: var(--sage);
-	--fat: var(--coral);
-	--protein-text: var(--accent);
-	--carbs-text: var(--sage-text);
-	--fat-text: var(--coral-text);
-	--chart-1: var(--accent);
-	--chart-2: var(--coral);
-	--chart-3: var(--sage);
-	--chart-4: var(--gold);
-	--chart-intake: var(--accent);
-	--chart-budget: light-dark(#13263b, #e5eef8); /* budget tick */
-	--chart-weight: light-dark(#6047a8, #bba7f2);
-	--chart-average: var(--sage); /* rolling averages */
-	--chart-steps: var(--under);
+	/* ---- meal types (headers, dots, selected segmented control) ---- */
+	--meal-breakfast: var(--breakfast);
+	--meal-breakfast-soft: light-dark(#f7ece3, #3b2e24);
+	--meal-breakfast-text: light-dark(#a9531d, #e8a06a);
+	--meal-lunch: var(--lunch);
+	--meal-lunch-soft: var(--sage-soft);
+	--meal-lunch-text: var(--sage-text);
+	--meal-dinner: var(--dinner);
+	--meal-dinner-soft: light-dark(#e5eaf0, #1d2c3a);
+	--meal-dinner-text: light-dark(#3a5f8e, #8fb3e0);
+	--meal-snack: var(--snack);
+	--meal-snack-soft: var(--gold-soft);
+	--meal-snack-text: var(--gold-text);
+
+	/* ---- charts (LayerChart reads these via CSS vars) ---- */
+	--chart-1: var(--protein);
+	--chart-2: var(--fat);
+	--chart-3: var(--steps);
+	--chart-4: var(--carbs);
+	--chart-intake: var(--protein); /* blue intake bars */
+	--chart-budget: light-dark(#172025, #e9f1f4); /* budget tick */
+	--chart-weight: var(--weight);
+	--chart-average: var(--steps); /* rolling averages */
+	--chart-steps: var(--steps);
 	--chart-over: var(--over);
 	--chart-grid: var(--border);
 	--chart-axis: var(--text-muted);
 
-	/* ---- type ---- */
-	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
-	/* Rounded numerals for the numbers people glance at; falls back to the system face. */
-	--font-numeric: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	/* ---- type: one family, Manrope, self-hosted ---- */
+	--font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+	--font-numeric: var(--font-sans); /* tabular figures come from font-variant-numeric */
 	--text-xs: 0.8125rem; /* 13px: captions, chips */
-	--text-sm: 0.875rem; /* 14px: secondary text */
+	--text-sm: 0.875rem; /* 14px: small text */
 	--text-md: 1rem; /* 16px: body, inputs (keeps iOS from zooming) */
-	--text-lg: 1.25rem; /* 20px: section titles */
-	--text-xl: 1.5625rem; /* 25px: page titles, meal totals */
-	--text-2xl: 2rem; /* 32px */
-	--text-hero: 3.25rem; /* 52px: kcal left */
+	--text-lg: 1.25rem; /* 20px: h2, section titles */
+	--text-xl: 1.75rem; /* 28px: h1, page titles */
+	--text-2xl: 2rem; /* 32px: wordmark, large figures */
+	--text-hero: 2.75rem; /* 44px: kcal left */
 	--leading-tight: 1.15;
 	--leading: 1.5;
 	--weight-regular: 400;
-	--weight-medium: 550;
-	--weight-bold: 680;
+	--weight-medium: 500;
+	--weight-bold: 600;
 
 	/* ---- space (4 px grid) ---- */
 	--space-1: 0.25rem;
@@ -105,32 +127,18 @@
 	--touch: 2.75rem; /* 44 px minimum touch target */
 
 	/* ---- shape ---- */
-	--radius-sm: 0.5rem; /* chips, small inputs */
-	--radius-md: 0.75rem; /* buttons, inputs */
-	--radius-lg: 1.125rem; /* cards */
+	--radius-sm: 0.625rem; /* small insets, segmented options */
+	--radius-md: 0.75rem; /* buttons, inputs, chips with text */
+	--radius-lg: 1.25rem; /* cards */
 	--radius-sheet: 1.5rem; /* bottom sheets, dialogs */
 	--radius-pill: 999px;
-	--shadow-color: light-dark(rgb(60 45 20 / 0.1), rgb(0 0 0 / 0.25));
-	/* ---- meal types ---- */
-	--meal-breakfast: var(--coral);
-	--meal-breakfast-soft: var(--coral-soft);
-	--meal-breakfast-text: var(--coral-text);
-	--meal-lunch: var(--sage);
-	--meal-lunch-soft: var(--sage-soft);
-	--meal-lunch-text: var(--sage-text);
-	--meal-dinner: var(--accent);
-	--meal-dinner-soft: var(--accent-soft);
-	--meal-dinner-text: var(--accent);
-	--meal-snack: var(--gold);
-	--meal-snack-soft: var(--gold-soft);
-	--meal-snack-text: var(--gold-text);
-	--shadow-card: 0 1px 2px var(--shadow-color), 0 6px 20px -8px var(--shadow-color);
-	--shadow-sheet: 0 -8px 32px rgb(5 14 25 / 0.28);
+	--shadow-card: none; /* resting cards are flat: border only */
+	--shadow-sheet: 0 24px 64px -24px rgb(7 24 32 / 0.38);
 
 	/* ---- motion ---- */
 	--dur-fast: 120ms;
-	--dur-med: 220ms;
-	--dur-slow: 420ms; /* meter fills */
+	--dur-med: 180ms;
+	--dur-slow: 240ms;
 	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 

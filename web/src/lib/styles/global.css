@@ -1,11 +1,35 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* Global element styles, built only from tokens.css. Screens style with these classes. */
 
+/* Manrope, self-hosted. One variable file covers 400 to 600; no remote font requests. */
+@font-face {
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url('/fonts/manrope-latin.woff2') format('woff2');
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+		U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'Manrope';
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url('/fonts/manrope-latin-ext.woff2') format('woff2');
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+		U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113,
+		U+2C60-2C7F, U+A720-A7FF;
+}
+
 *,
 *::before,
 *::after {
 	box-sizing: border-box;
 }
+
 
 html {
 	-webkit-text-size-adjust: 100%;
@@ -30,9 +54,11 @@ h3 {
 }
 h1 {
 	font-size: var(--text-xl);
+	letter-spacing: -0.02em;
 }
 h2 {
 	font-size: var(--text-lg);
+	letter-spacing: -0.01em;
 }
 h3 {
 	font-size: var(--text-md);
@@ -51,15 +77,16 @@ a:hover {
 }
 
 :focus-visible {
-	outline: 3px solid var(--focus-ring);
+	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
 	border-radius: var(--radius-sm);
 }
 
-/* Numbers people glance at: rounded, fixed-width digits so totals don't jitter. */
+/* Numbers people glance at: fixed-width digits so totals don't jitter. */
 .num {
 	font-family: var(--font-numeric);
 	font-variant-numeric: tabular-nums;
+	font-feature-settings: 'tnum' 1;
 }
 .muted {
 	color: var(--text-muted);
@@ -98,7 +125,6 @@ a:hover {
 	background: var(--surface);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-card);
 	padding: var(--space-4);
 }
 
@@ -122,6 +148,8 @@ a:hover {
 	cursor: pointer;
 	transition:
 		background var(--dur-fast) var(--ease),
+		border-color var(--dur-fast) var(--ease),
+		color var(--dur-fast) var(--ease),
 		transform var(--dur-fast) var(--ease);
 }
 .btn:hover {
@@ -203,7 +231,7 @@ textarea {
 	min-height: var(--touch);
 	width: 100%;
 	padding: var(--space-2) var(--space-3);
-	border: 1px solid var(--border-strong);
+	border: 1px solid var(--control-border);
 	border-radius: var(--radius-md);
 	background: var(--surface);
 	color: var(--text);
@@ -215,7 +243,7 @@ textarea {
 }
 /*
  * Checkboxes and radios are drawn from tokens: the native dark-mode controls tint the unchecked
- * state from accent-color and come out brownish on the deep-blue surfaces.
+ * state from accent-color and come out muddy on the dark surfaces.
  */
 input[type='checkbox'],
 input[type='radio'] {
@@ -226,7 +254,7 @@ input[type='radio'] {
 	width: 1.25rem;
 	height: 1.25rem;
 	margin: 0;
-	border: 2px solid var(--border-strong);
+	border: 2px solid var(--control-border);
 	border-radius: 0.3rem;
 	background: var(--surface);
 	cursor: pointer;
@@ -302,12 +330,12 @@ textarea:focus-visible {
 .segmented label:hover {
 	background: var(--surface);
 }
-/* Selected: accent outline, accent text and a heavier weight, so it reads in both themes. */
+/* Selected: a raised surface and a heavier weight, so it reads in both themes. */
 .segmented label:has(input:checked) {
-	background: var(--accent-soft);
-	color: var(--accent);
+	background: var(--surface);
+	color: var(--text);
 	font-weight: var(--weight-bold);
-	box-shadow: inset 0 0 0 1px var(--accent);
+	box-shadow: inset 0 0 0 1px var(--border);
 }
 /* Meal-type radios take their meal color (soft fill, colored text and outline). */
 .segmented label:has(input[value='breakfast']:checked) {
@@ -326,7 +354,7 @@ textarea:focus-visible {
 	box-shadow: inset 0 0 0 1px var(--meal-snack);
 }
 .segmented label:has(input:focus-visible) {
-	outline: 3px solid var(--focus-ring);
+	outline: 2px solid var(--focus-ring);
 }
 
 /* ---- lists ---- */
@@ -511,7 +539,7 @@ dialog.sheet {
 	box-shadow: var(--shadow-sheet);
 }
 dialog.sheet::backdrop {
-	background: rgb(5 14 25 / 0.55);
+	background: rgb(7 24 32 / 0.55);
 }
 @media (min-width: 48rem) {
 	dialog.sheet {
@@ -550,8 +578,21 @@ dialog.sheet::backdrop {
 	gap: var(--space-4);
 }
 .wordmark {
-	font-family: var(--font-numeric);
+	font-family: var(--font-sans);
 	font-size: var(--text-2xl);
 	font-weight: var(--weight-bold);
-	color: var(--accent);
+	letter-spacing: -0.02em;
+	color: var(--text);
+}
+
+/* Global reduced motion: animation and transitions answer actions, so none of them play. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }
