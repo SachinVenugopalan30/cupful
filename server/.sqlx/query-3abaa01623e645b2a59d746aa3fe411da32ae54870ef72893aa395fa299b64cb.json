@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT date, exercise_type, active_seconds FROM workouts WHERE user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "exercise_type",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "exercise_type"
+          }
+        }
+      },
+      {
+        "name": "active_seconds",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "active_seconds"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3abaa01623e645b2a59d746aa3fe411da32ae54870ef72893aa395fa299b64cb"
+}

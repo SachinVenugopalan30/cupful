@@ -87,6 +87,9 @@ pub(super) struct Profile {
     pub timezone: String,
     pub weight_unit: String,
     pub height_unit: String,
+    /// JSON array text; absent in older backups (= the default set).
+    #[serde(default)]
+    pub gym_types: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

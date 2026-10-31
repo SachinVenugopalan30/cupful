@@ -107,30 +107,12 @@ async fn access_token(s: &AppState, user_id: i64) -> Result<String> {
     }
 }
 
-/// Pulls the last two weeks of daily steps into the user's days. Returns (days seen, days changed).
-pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
-    let token = access_token(s, user_id).await?;
-    let today = user_today(&s.db, user_id).await?;
-    let body = json!({
-        "range": {
-            "start": civil(today.saturating_sub((WINDOW_DAYS - 1).days())),
-            "end": civil(today.saturating_add(1.day())),
-        },
-        "windowSizeDays": 1,
-        "pageSize": 90,
-    });
-    // ponytail: one page; 14 windows never reach the 90-point page size, so nextPageToken is ignored
-    let res = s
-        .google_http
-        .post(format!(
-            "{}/users/me/dataTypes/steps/dataPoints:dailyRollUp",
-            s.config.google_health_url
-        ))
-        .bearer_auth(&token)
-        .header("content-type", "application/json")
-        .body(body.to_string())
-        .send()
-        .await;
+/// Turns a Google reply into the response to read, or records why the sync failed.
+pub(super) async fn checked(
+    s: &AppState,
+    user_id: i64,
+    res: reqwest::Result<reqwest::Response>,
+) -> Result<reqwest::Response> {
     let Ok(res) = res else {
         return Err(fail(s, user_id, "could not reach Google Health", false).await?);
     };
@@ -153,8 +135,86 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
         )
         .await?);
     }
+    Ok(res)
+}
+
+pub(super) async fn unreadable(s: &AppState, user_id: i64) -> Result<Error> {
+    fail(s, user_id, "unreadable reply from Google Health", false).await
+}
+
+pub struct Synced {
+    pub days: usize,
+    pub changed: usize,
+    pub workouts: usize,
+    /// Set when only the exercise part failed; steps still synced.
+    pub workouts_error: Option<String>,
+}
+
+/// Pulls the last two weeks of steps and workouts. The parts fail independently: a steps error
+/// is returned (workouts are still stored), an exercise error is reported in `Synced`, except
+/// a reconnect need, which always wins.
+pub async fn sync_user(s: &AppState, user_id: i64) -> Result<Synced> {
+    let token = access_token(s, user_id).await?;
+    let today = user_today(&s.db, user_id).await?;
+    let steps = sync_steps(s, user_id, &token, today).await;
+    let workouts = super::workouts::sync(s, user_id, &token, today).await;
+    let (days, changed) = steps?;
+    let mut out = Synced {
+        days,
+        changed,
+        workouts: 0,
+        workouts_error: None,
+    };
+    match workouts {
+        Ok(n) => out.workouts = n,
+        Err(Error::Coded(StatusCode::CONFLICT, "reconnect", m)) => {
+            return Err(Error::Coded(StatusCode::CONFLICT, "reconnect", m));
+        }
+        Err(e) => out.workouts_error = Some(e.message()),
+    }
+    // fail() already stored an exercise error; only a clean run clears it.
+    sqlx::query!(
+        "UPDATE google_connections SET last_sync_at = ?,
+             last_error = CASE WHEN ? THEN last_error END WHERE user_id = ?",
+        now_ms(),
+        out.workouts_error.is_some(),
+        user_id
+    )
+    .execute(&s.db)
+    .await?;
+    Ok(out)
+}
+
+/// Daily steps into the user's days. Returns (days seen, days changed).
+async fn sync_steps(
+    s: &AppState,
+    user_id: i64,
+    token: &str,
+    today: Date,
+) -> Result<(usize, usize)> {
+    let body = json!({
+        "range": {
+            "start": civil(today.saturating_sub((WINDOW_DAYS - 1).days())),
+            "end": civil(today.saturating_add(1.day())),
+        },
+        "windowSizeDays": 1,
+        "pageSize": 90,
+    });
+    // ponytail: one page; 14 windows never reach the 90-point page size, so nextPageToken is ignored
+    let res = s
+        .google_http
+        .post(format!(
+            "{}/users/me/dataTypes/steps/dataPoints:dailyRollUp",
+            s.config.google_health_url
+        ))
+        .bearer_auth(token)
+        .header("content-type", "application/json")
+        .body(body.to_string())
+        .send()
+        .await;
+    let res = checked(s, user_id, res).await?;
     let Some(rollups) = read_json::<Rollups>(res).await else {
-        return Err(fail(s, user_id, "unreadable reply from Google Health", false).await?);
+        return Err(unreadable(s, user_id).await?);
     };
     let (mut seen, mut changed) = (0, 0);
     let now = now_ms();
@@ -175,13 +235,6 @@ pub async fn sync_user(s: &AppState, user_id: i64) -> Result<(usize, usize)> {
         seen += 1;
         changed += usize::from(patch_day(&s.db, user_id, date, &patch, Source::Google, now).await?);
     }
-    sqlx::query!(
-        "UPDATE google_connections SET last_sync_at = ?, last_error = NULL WHERE user_id = ?",
-        now,
-        user_id
-    )
-    .execute(&s.db)
-    .await?;
     Ok((seen, changed))
 }
 
@@ -192,6 +245,10 @@ pub async fn sync_now(State(s): State<AppState>, user: User) -> Result<Json<Valu
         &format!("google:{}", user.id),
         "too many syncs; try again later",
     )?;
-    let (days, changed) = sync_user(&s, user.id).await?;
-    Ok(Json(json!({ "days": days, "changed": changed })))
+    let r = sync_user(&s, user.id).await?;
+    let mut out = json!({ "days": r.days, "changed": r.changed, "workouts": r.workouts });
+    if let Some(e) = r.workouts_error {
+        out["workouts_error"] = e.into();
+    }
+    Ok(Json(out))
 }

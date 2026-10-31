@@ -1,0 +1,134 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, date, start_ms, end_ms, exercise_type, name, active_seconds, kcal, distance_m,\n                avg_hr\n         FROM workouts WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY start_ms, id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "date"
+          }
+        }
+      },
+      {
+        "name": "start_ms",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "start_ms"
+          }
+        }
+      },
+      {
+        "name": "end_ms",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "end_ms"
+          }
+        }
+      },
+      {
+        "name": "exercise_type",
+        "ordinal": 4,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "exercise_type"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "active_seconds",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "active_seconds"
+          }
+        }
+      },
+      {
+        "name": "kcal",
+        "ordinal": 7,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "kcal"
+          }
+        }
+      },
+      {
+        "name": "distance_m",
+        "ordinal": 8,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "distance_m"
+          }
+        }
+      },
+      {
+        "name": "avg_hr",
+        "ordinal": 9,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "workouts",
+            "name": "avg_hr"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "c364dfb87e30735c035d5210155d2c35ac27914440553c5c2db3061716f6d741"
+}

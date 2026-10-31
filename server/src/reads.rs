@@ -123,11 +123,11 @@ pub async fn day(
 
 #[derive(Deserialize)]
 pub struct Range {
-    from: String,
-    to: String,
+    pub(crate) from: String,
+    pub(crate) to: String,
 }
 
-fn check_span(from: Date, to: Date) -> Result<()> {
+pub(crate) fn check_span(from: Date, to: Date) -> Result<()> {
     if !(0..MAX_RANGE_DAYS).contains(&(to - from).get_days()) {
         return Err(Error::bad_request(format!(
             "`from` must be on or before `to`, at most {MAX_RANGE_DAYS} days apart"

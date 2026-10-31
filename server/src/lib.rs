@@ -159,6 +159,13 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/google/callback", User, get(google::callback)),
         ("POST", "/api/google/sync", User, post(google::sync_now)),
         (
+            "PUT",
+            "/api/google/gym-types",
+            User,
+            put(google::set_gym_types),
+        ),
+        ("GET", "/api/workouts", User, get(google::list_workouts)),
+        (
             "POST",
             ingest::ACTIVITY_PATH,
             Token,

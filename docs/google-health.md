@@ -5,7 +5,16 @@ Cupful can read your daily step count from the Google Health API v4. It does thi
 
 The feature is optional and off until you configure it. It needs a Google Cloud project of your own. Cupful ships no shared Google credentials.
 
-What it does: it reads steps for the last 14 days and writes them to your days with the source "Google". A value you typed by hand is never overwritten. Gym minutes are not synced.
+What it does: it reads steps and exercise sessions for the last 14 days. Steps go to your days with the source "Google". A value you typed by hand is never overwritten. Workouts are stored and shown in Cupful, and fill a day's gym minutes (see Workouts).
+
+## Workouts
+
+- Cupful reads Google Health `exercise` data points (runs, walks, gym sessions and so on) with `GET /v4/users/me/dataTypes/exercise/dataPoints`, filtered on `exercise.interval.civil_start_time` for the last 14 days. The same `activity_and_fitness.readonly` scope is used; no new consent is needed beyond what Google's scope page implies for activity and fitness data (it does not list exercise explicitly, so a 403 here shows as **Reconnect Google Health**). The location scope is never requested, so routes are not read.
+- Only workouts that reach Google Health appear. A session recorded in another app shows up only if that app syncs it to Google Health.
+- Google returns 25 sessions per page, newest first. Cupful follows the page tokens up to 20 pages (500 sessions) per sync.
+- Re-syncing updates a changed session. A session you delete in Google Health stays in Cupful, and its gym minutes stay until you change them.
+- **Gym types:** the exercise types that count as gym minutes. The default is `STRENGTH_TRAINING`, `FUNCTIONAL_STRENGTH_TRAINING`, `WEIGHTLIFTING`, `WEIGHT_MACHINES`, `FREE_WEIGHTS`, `WEIGHTS`, `BODY_WEIGHT`, `CALISTHENICS`, `HIIT`, `CIRCUIT_TRAINING` and `CROSSFIT`. You can change the list in Settings (`PUT /api/google/gym-types`). After each sync and each change, every day with a matching workout gets gym minutes = the sum of their active minutes, rounded, at least 1. Days without a matching workout are not touched, runs and walks never count unless you add them, and a value you typed by hand wins.
+- Workouts are derived data: they are not in the JSON backup or CSV export (a sync restores them). The gym type choice is part of the backup.
 
 Privacy: step data flows from Google to your server only. Cupful sends nothing about you to anyone else, and it contacts Google only after you press **Connect**. Tokens are encrypted on your server. See `CUPFUL_SECRET_KEY` in `.env.example`.
 
@@ -50,7 +59,7 @@ For a personal app you do not have to pass Google's verification review to publi
 
 ## Disconnect
 
-**Disconnect** in Settings asks Google to revoke the token and deletes it from your server. Steps already synced stay.
+**Disconnect** in Settings asks Google to revoke the token and deletes it from your server. Steps and workouts already synced stay.
 
 You can also remove access at <https://myaccount.google.com/permissions>.
 

@@ -40,6 +40,8 @@ const COVERED: &[&str] = &[
     "GET /api/google/connect",
     "GET /api/google/callback",
     "POST /api/google/sync",
+    "PUT /api/google/gym-types",
+    "GET /api/workouts",
 ];
 
 #[test]
@@ -69,7 +71,7 @@ async fn user_routes_need_a_login() {
             .replace("{id}", "96385074")
             + if path == "/api/meals" {
                 "?date=2026-01-01"
-            } else if path == "/api/days" || path == "/api/trends" {
+            } else if path == "/api/days" || path == "/api/workouts" || path == "/api/trends" {
                 "?from=2026-01-01&to=2026-01-02"
             } else {
                 ""
