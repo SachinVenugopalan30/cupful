@@ -94,7 +94,10 @@
 
 <section class="card composer" aria-labelledby="composer-title">
 	<form class="stack" onsubmit={(e) => (e.preventDefault(), runEstimate())}>
-		<h2 id="composer-title">Log a meal</h2>
+		<header class="panel-head">
+			<h2 id="composer-title">Log a meal</h2>
+			<p class="small muted">Words or a photo, then check the estimate.</p>
+		</header>
 		<fieldset class="segmented" aria-label="Meal">
 			{#each MEAL_TYPES as t (t)}
 				<label><input type="radio" name="composer-type" value={t} bind:group={mealType} />{capitalize(t)}</label>
@@ -107,34 +110,12 @@
 				id="composer-description"
 				bind:value={description}
 				maxlength={MAX_DESCRIPTION}
-				placeholder="Small cup of rice, dal, one chicken breast shallow fried"
+				placeholder="Two eggs on toast with butter, and a flat white"
 				aria-describedby="composer-count"
 			></textarea>
 			<p id="composer-count" class="hint num" aria-live="polite">
 				{#if description.length > MAX_DESCRIPTION - 200}{description.length} / {MAX_DESCRIPTION} characters{/if}
 			</p>
-		</div>
-
-		<div class="photo row">
-			{#if preview}
-				<img src={preview} alt="Meal attached for the estimate" />
-				<button type="button" class="btn btn-quiet" onclick={() => setPhoto(null)}>Remove photo</button>
-			{:else}
-				<label class="btn">
-					<svg viewBox="0 0 24 24" aria-hidden="true"
-						><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg
-					>
-					Add photo
-					<input
-						class="visually-hidden"
-						type="file"
-						accept="image/*"
-						capture="environment"
-						onchange={pickPhoto}
-					/>
-				</label>
-			{/if}
-			<p class="small muted note">Photos are used for this estimate only and aren't saved.</p>
 		</div>
 
 		{#if failure}
@@ -153,16 +134,40 @@
 		{/if}
 
 		<div class="actions">
-			<button class="btn btn-primary" disabled={busy} aria-describedby="composer-status">
+			{#if preview}
+				<div class="preview">
+					<img src={preview} alt="Meal attached for the estimate" />
+					<button type="button" class="btn btn-quiet" onclick={() => setPhoto(null)}>Remove photo</button>
+				</div>
+			{:else}
+				<label class="btn photo">
+					<svg viewBox="0 0 24 24" aria-hidden="true"
+						><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg
+					>
+					Photo
+					<input
+						class="visually-hidden"
+						type="file"
+						accept="image/*"
+						capture="environment"
+						onchange={pickPhoto}
+					/>
+				</label>
+			{/if}
+			<button class="btn btn-primary estimate" disabled={busy} aria-describedby="composer-status">
 				{busy ? 'Estimating…' : 'Estimate'}
 			</button>
+		</div>
+		<p class="small muted note">Photos are used for this estimate only and aren't saved.</p>
+
+		<div class="foot">
 			{#if !failure || failure.code === 'empty' || failure.code === 'photo'}
 				<button type="button" class="btn btn-quiet" onclick={byHand}>Enter by hand</button>
 			{/if}
+			<p id="composer-status" class="small muted" role="status">
+				{#if busy}Estimating. Local models can take up to a minute.{/if}
+			</p>
 		</div>
-		<p id="composer-status" class="small muted" role="status">
-			{#if busy}Estimating. Local models can take up to a minute.{/if}
-		</p>
 	</form>
 </section>
 
@@ -174,17 +179,37 @@
 	.composer form {
 		gap: var(--space-3);
 	}
+	.panel-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-1) var(--space-3);
+	}
+	.panel-head p {
+		text-align: right;
+	}
 	fieldset {
 		min-width: 0;
 	}
 	.hint:empty {
 		display: none;
 	}
-	.photo {
-		gap: var(--space-3);
-		flex-wrap: nowrap;
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
-	.photo .btn {
+	.preview {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	.preview .btn,
+	.photo {
 		flex: none;
 	}
 	.photo svg {
@@ -195,11 +220,11 @@
 		stroke-width: 1.8;
 		stroke-linejoin: round;
 	}
-	.photo label:has(input:focus-visible) {
+	.photo:has(input:focus-visible) {
 		outline: 3px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
-	.photo img {
+	.preview img {
 		width: 3.5rem;
 		height: 3.5rem;
 		object-fit: cover;
@@ -209,9 +234,18 @@
 	.note {
 		min-width: 0;
 	}
-	.actions {
-		display: grid;
-		grid-template-columns: 1fr auto;
+	.estimate {
+		margin-left: auto;
+	}
+	.foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
 		gap: var(--space-2);
+		margin-top: calc(-1 * var(--space-1));
+	}
+	.foot .btn {
+		padding: 0 var(--space-2);
 	}
 </style>

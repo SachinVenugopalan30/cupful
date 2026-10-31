@@ -95,25 +95,38 @@
 	li {
 		flex-wrap: wrap;
 	}
+	.list > li {
+		align-items: flex-start;
+		padding: var(--space-3) 0;
+	}
 	.pick {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 0.125rem;
 		min-height: var(--touch);
-		padding: var(--space-1) 0;
-		border: 0;
-		background: none;
+		padding: var(--space-1) var(--space-2);
+		margin-left: calc(-1 * var(--space-2));
+		border: 1px solid transparent;
+		border-radius: var(--radius-md);
+		background: transparent;
 		color: inherit;
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+		transition:
+			background var(--dur-fast) var(--ease),
+			border-color var(--dur-fast) var(--ease);
 	}
 	.pick .name {
 		font-weight: var(--weight-medium);
 		overflow-wrap: anywhere;
 	}
+	.pick:hover {
+		background: var(--surface-2);
+		border-color: var(--border);
+	}
 	.pick:hover .name {
-		color: var(--accent);
+		color: var(--text);
 	}
 </style>

@@ -86,14 +86,18 @@
 	const title = (m: Meal) => m.description || m.items.map((i) => i.name).join(', ') || 'Meal';
 	const macros = (t: Macros) =>
 		`P ${formatGrams(t.protein_g)} · C ${formatGrams(t.carbs_g)} · F ${formatGrams(t.fat_g)} g`;
+	const sourceChip = (m: Meal) => {
+		const label = mealSourceLabel(m);
+		return label === 'AI estimate' ? 'chip-ai' : label === 'Product' ? 'chip-db' : '';
+	};
 </script>
 
-<section class="meals" aria-labelledby="meals-title" aria-busy={meals === null && !loadError}>
-	<header class="head">
+<section class="card meals" aria-labelledby="meals-title" aria-busy={meals === null && !loadError}>
+	<header class="panel-head">
 		<h2 id="meals-title">Meals</h2>
 		{#if meals?.length}
 			<p class="day-total" data-testid="day-total">
-				<span class="num kcal">{formatKcal(total.kcal)} kcal</span>
+				<span class="num total-kcal">{formatKcal(total.kcal)} kcal</span>
 				<span class="small muted num">{macros(total)}</span>
 			</p>
 		{/if}
@@ -112,77 +116,78 @@
 	{:else if !meals.length}
 		<p class="empty">Nothing logged yet. Describe what you ate above.</p>
 	{:else}
-		{#each groups as g (g.type)}
-			<section class="group" aria-label={capitalize(g.type)} style="--m: var(--meal-{g.type}); --m-text: var(--meal-{g.type}-text)">
-				<h3 class="small group-title">{capitalize(g.type)}</h3>
-				<ul class="list-cards">
-					{#each g.meals as m (m.id)}
-						<li class="card meal" data-testid="meal">
-							<details>
-								<summary>
-									<span class="what">
-										<span class="title">{title(m)}</span>
-										<span class="row small">
-											<span class="chip">{mealSourceLabel(m)}</span>
-											{#if m.scale !== 1}<span class="chip chip-warning">×{m.scale}</span>{/if}
+		<ul class="meal-list">
+			{#each groups.flatMap((g) => g.meals) as m (m.id)}
+				<li
+					class="meal-row"
+					data-testid="meal"
+					style="--m: var(--meal-{m.meal_type}); --m-soft: var(--meal-{m.meal_type}-soft); --m-text: var(--meal-{m.meal_type}-text)"
+				>
+					<details>
+						<summary>
+							<span class="dot" aria-hidden="true"></span>
+							<span class="body">
+								<span class="line">
+									<span class="title">{title(m)}</span>
+									<span class="num kcal">{formatKcal(m.totals.kcal)} kcal</span>
+								</span>
+								<span class="meta small">
+									<span class="type">{capitalize(m.meal_type)}</span>
+									<span class="muted num">{macros(m.totals)}</span>
+									<span class="chip {sourceChip(m)}">{mealSourceLabel(m)}</span>
+									{#if m.scale !== 1}<span class="chip chip-warning">×{m.scale}</span>{/if}
+								</span>
+							</span>
+						</summary>
+						<ul class="list items">
+							{#each m.items as i (i.id)}
+								{@const src = itemSourceLabel(i, m)}
+								<li>
+									<span class="item-what">
+										<span>{i.name}</span>
+										<span class="row small muted">
+											{#if i.portion_text}<span>{i.portion_text}</span>{/if}
+											{#if i.grams !== null}<span class="num">{formatGrams(i.grams)} g</span>{/if}
+											{#if src}
+												<span class="chip {src.kind === 'plain' ? '' : `chip-${src.kind}`}">{src.text}</span>
+											{/if}
 										</span>
 									</span>
 									<span class="sum">
-										<span class="num kcal">{formatKcal(m.totals.kcal)} kcal</span>
-										<span class="small muted num">{macros(m.totals)}</span>
+										<span class="num">{formatKcal(i.kcal)} kcal</span>
+										<span class="small muted num">{macros(i)}</span>
 									</span>
-								</summary>
-								<ul class="list items">
-									{#each m.items as i (i.id)}
-										{@const src = itemSourceLabel(i, m)}
-										<li>
-											<span class="item-what">
-												<span>{i.name}</span>
-												<span class="row small muted">
-													{#if i.portion_text}<span>{i.portion_text}</span>{/if}
-													{#if i.grams !== null}<span class="num">{formatGrams(i.grams)} g</span>{/if}
-													{#if src}
-														<span class="chip {src.kind === 'plain' ? '' : `chip-${src.kind}`}">{src.text}</span>
-													{/if}
-												</span>
-											</span>
-											<span class="sum">
-												<span class="num">{formatKcal(i.kcal)} kcal</span>
-												<span class="small muted num">{macros(i)}</span>
-											</span>
-										</li>
-									{/each}
-								</ul>
-								{#if confirming === m.id}
-									<div class="notice notice-warning confirm" role="group" aria-label="Confirm delete">
-										<p>Delete this meal? This can't be undone.</p>
-										<div class="row">
-											<button class="btn btn-danger" disabled={busy} onclick={() => send(m, mealDelete(m.id), 'Meal deleted.')}
-												>Delete meal</button
-											>
-											<button class="btn btn-quiet" onclick={() => (confirming = null)}>Keep it</button>
-										</div>
-									</div>
-								{:else}
-									<div class="row actions">
-										<button
-											class="btn"
-											disabled={busy}
-											onclick={() => send(m, mealUpsert(repeatMeal(m, date)), 'Logged again.')}>Eat this again</button
-										>
-										<button class="btn btn-quiet" onclick={() => (editing = draftFromMeal(m))}>Edit</button>
-										<button class="btn btn-quiet danger" onclick={() => (confirming = m.id)}>Delete</button>
-									</div>
-								{/if}
-								{#if actionError?.id === m.id}
-									<p class="notice notice-error" role="alert">{actionError.message}</p>
-								{/if}
-							</details>
-						</li>
-					{/each}
-				</ul>
-			</section>
-		{/each}
+								</li>
+							{/each}
+						</ul>
+						{#if confirming === m.id}
+							<div class="notice notice-warning confirm" role="group" aria-label="Confirm delete">
+								<p>Delete this meal? This can't be undone.</p>
+								<div class="row">
+									<button class="btn btn-danger" disabled={busy} onclick={() => send(m, mealDelete(m.id), 'Meal deleted.')}
+										>Delete meal</button
+									>
+									<button class="btn btn-quiet" onclick={() => (confirming = null)}>Keep it</button>
+								</div>
+							</div>
+						{:else}
+							<div class="row actions">
+								<button
+									class="btn"
+									disabled={busy}
+									onclick={() => send(m, mealUpsert(repeatMeal(m, date)), 'Logged again.')}>Eat this again</button
+								>
+								<button class="btn btn-quiet" onclick={() => (editing = draftFromMeal(m))}>Edit</button>
+								<button class="btn btn-quiet danger" onclick={() => (confirming = m.id)}>Delete</button>
+							</div>
+						{/if}
+						{#if actionError?.id === m.id}
+							<p class="notice notice-error" role="alert">{actionError.message}</p>
+						{/if}
+					</details>
+				</li>
+			{/each}
+		</ul>
 	{/if}
 </section>
 
@@ -200,14 +205,15 @@
 	.meals {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-2);
 	}
-	.head {
+	.panel-head {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
 		gap: var(--space-3);
 		flex-wrap: wrap;
+		margin-bottom: var(--space-1);
 	}
 	.day-total,
 	.sum {
@@ -216,82 +222,101 @@
 		align-items: flex-end;
 		text-align: right;
 	}
-	.kcal {
+	.total-kcal {
 		font-weight: var(--weight-bold);
 	}
-	.group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
-	.group-title {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		color: var(--m-text);
-		font-weight: var(--weight-bold);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		font-size: var(--text-xs);
-	}
-	.group-title::before {
-		content: '';
-		width: 0.625rem;
-		height: 0.625rem;
-		border-radius: var(--radius-pill);
-		background: var(--m);
-	}
-	.list-cards {
+	.meal-list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
 	}
-	.meal {
-		padding: 0;
+	.meal-row {
+		border-bottom: 1px solid var(--border);
+	}
+	.meal-row:last-child {
+		border-bottom: 0;
 	}
 	summary {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: start;
 		gap: var(--space-3);
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-3) var(--space-1);
 		min-height: var(--touch);
 		cursor: pointer;
 		list-style: none;
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-md);
+		transition: background var(--dur-fast) var(--ease);
+	}
+	summary:hover {
+		background: var(--surface-2);
+	}
+	summary:active {
+		background: var(--m-soft);
 	}
 	summary::-webkit-details-marker {
 		display: none;
 	}
-	.what,
+	.dot {
+		width: 0.5625rem;
+		height: 0.5625rem;
+		margin-top: 0.45rem;
+		border-radius: var(--radius-pill);
+		background: var(--m);
+		outline: 4px solid var(--m-soft);
+		flex: none;
+	}
+	.body,
 	.item-what {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
 		min-width: 0;
 	}
+	.line {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-3);
+		min-width: 0;
+	}
 	.title {
 		font-weight: var(--weight-medium);
 		overflow-wrap: anywhere;
+	}
+	.kcal {
+		flex: none;
+		font-weight: var(--weight-bold);
+	}
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+	}
+	.type {
+		color: var(--m-text);
+		font-weight: var(--weight-medium);
 	}
 	.sum {
 		flex: none;
 	}
 	details[open] summary {
 		border-bottom: 1px solid var(--border);
-		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		border-radius: var(--radius-md) var(--radius-md) 0 0;
 	}
 	.items,
 	.actions,
 	.confirm,
 	details > .notice-error {
-		margin: 0 var(--space-4) var(--space-3);
+		margin: 0 0 var(--space-3);
 	}
 	.items > li {
 		justify-content: space-between;
 		align-items: flex-start;
+	}
+	.actions {
+		padding-top: var(--space-1);
 	}
 	.item-what span:first-child {
 		overflow-wrap: anywhere;

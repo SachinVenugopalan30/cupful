@@ -58,7 +58,7 @@
 </script>
 
 <div class="stack">
-	{#if p.brand}<p class="muted">{p.brand}</p>{/if}
+	{#if p.brand}<p class="brand small muted">{p.brand}</p>{/if}
 
 	<table class="values small">
 		<caption class="visually-hidden">Nutrition values</caption>
@@ -142,11 +142,13 @@
 	}
 	.values th,
 	.values td {
-		padding: var(--space-1) 0;
+		padding: var(--space-2) 0;
 		text-align: right;
 		font-weight: var(--weight-regular);
 	}
 	.values thead th {
+		color: var(--text-muted);
+		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
 		vertical-align: bottom;
 	}
@@ -155,6 +157,9 @@
 	}
 	.values tbody tr + tr {
 		border-top: 1px solid var(--border);
+	}
+	.brand {
+		margin-top: calc(-1 * var(--space-2));
 	}
 	.amount {
 		display: grid;
@@ -172,15 +177,20 @@
 		font-size: var(--text-lg);
 	}
 	.stepper .btn {
+		width: var(--touch);
 		font-size: var(--text-lg);
 		padding: 0;
 	}
 	.total {
+		padding: var(--space-3) var(--space-4);
+		background: var(--surface-2);
+		border-radius: var(--radius-lg);
 		margin: 0;
 	}
 	.kcal {
 		font-size: var(--text-xl);
 		font-weight: var(--weight-bold);
+		letter-spacing: -0.02em;
 	}
 	fieldset {
 		min-width: 0;

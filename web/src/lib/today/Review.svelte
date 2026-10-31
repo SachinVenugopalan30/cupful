@@ -275,7 +275,7 @@
 						{/if}
 						<button
 							type="button"
-							class="btn btn-coral"
+							class="btn"
 							aria-expanded={picking === item.id}
 							aria-controls="picker-{item.id}"
 							onclick={() => pick(item.id)}>Use my product</button
@@ -363,9 +363,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		padding: var(--space-3);
+		padding: var(--space-3) var(--space-4);
 		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		background: var(--surface);
 	}
 	.item.needs {
@@ -454,8 +454,8 @@
 		color: var(--fat-text);
 	}
 	.picker {
-		padding: var(--space-3);
-		background: var(--coral-soft);
+		padding: var(--space-3) var(--space-4);
+		background: var(--surface-2);
 		border-radius: var(--radius-md);
 	}
 	.pick {
@@ -476,13 +476,14 @@
 		padding: 0 var(--space-1);
 	}
 	.totals {
-		padding: var(--space-3) var(--space-4);
-		background: var(--sand);
-		border-radius: var(--radius-md);
+		padding: var(--space-4);
+		background: var(--surface-2);
+		border-radius: var(--radius-lg);
 	}
 	.total-kcal {
 		font-size: var(--text-xl);
 		font-weight: var(--weight-bold);
 		line-height: var(--leading-tight);
+		letter-spacing: -0.02em;
 	}
 </style>

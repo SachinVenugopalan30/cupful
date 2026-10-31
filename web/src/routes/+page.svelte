@@ -53,12 +53,12 @@
 		grid-area: activity;
 		display: none;
 	}
-	/* Wide: the budget stays in view beside logging and the meal list. */
+	/* Wide: the budget sits beside logging, then the meals and activity span the page. */
 	@media (min-width: 60rem) {
 		.today {
-			grid-template-areas: 'nav nav' 'budget log' 'budget meals' 'budget activity';
+			grid-template-areas: 'nav nav' 'budget log' 'meals meals' 'activity activity';
 			grid-template-columns: 22rem minmax(0, 1fr);
-			grid-template-rows: auto auto auto 1fr;
+			grid-template-rows: auto auto auto auto;
 			column-gap: var(--space-6);
 		}
 		.activity {
@@ -66,8 +66,6 @@
 		}
 		.budget {
 			align-self: start;
-			position: sticky;
-			top: calc(var(--touch) + var(--space-6));
 		}
 	}
 </style>

@@ -50,8 +50,13 @@
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 </script>
 
-<section class="card stack" aria-labelledby="budget-h" aria-busy={s.kind === 'loading'}>
-	<h2 id="budget-h">Budget</h2>
+<section class="card budget" aria-labelledby="budget-h" aria-busy={s.kind === 'loading'}>
+	<header class="panel-head">
+		<h2 id="budget-h">Budget</h2>
+		{#if s.kind === 'ready'}
+			<p class="plan small muted num">{formatKcal(s.budget.budget)} kcal plan</p>
+		{/if}
+	</header>
 	{#if s.kind === 'loading'}
 		<div class="skeleton hero-skel"></div>
 		<div class="skeleton"></div>
@@ -70,12 +75,16 @@
 	{:else}
 		{@const b = s.budget}
 		{@const lo = leftOver(s.eaten.kcal, b.budget)}
-		<div class="hero" class:is-over={lo.over}>
+		<div class="lead" class:is-over={lo.over}>
 			<p class="left num">{formatKcal(lo.kcal)}</p>
 			<p class="left-label">kcal {lo.over ? 'over' : 'left'}</p>
 		</div>
+		<p class="caption small muted">
+			<span class="num">{formatKcal(s.eaten.kcal)}</span> eaten of
+			<span class="num">{formatKcal(b.budget)}</span> kcal
+		</p>
 		<div
-			class="meter"
+			class="meter budget-meter"
 			class:is-over={lo.over}
 			style="--value: {b.budget ? s.eaten.kcal / b.budget : 0}"
 			role="meter"
@@ -85,22 +94,18 @@
 			aria-valuenow={Math.round(s.eaten.kcal)}
 			aria-valuetext="{formatKcal(s.eaten.kcal)} of {formatKcal(b.budget)} kcal"
 		></div>
-		<p class="small muted">
-			<span class="num">{formatKcal(s.eaten.kcal)}</span> eaten of
-			<span class="num">{formatKcal(b.budget)}</span> kcal budget
-		</p>
 
 		{#if b.flags.length}
-			<ul class="flags stack">
+			<ul class="flags">
 				{#each flagMessages(b.flags) as msg (msg)}
 					<li class="notice notice-warning">{msg}</li>
 				{/each}
 			</ul>
 		{/if}
 
-		<ul class="macros stack">
+		<ul class="macros">
 			{#each macroRows(b, s.eaten) as m (m.key)}
-				<li class="stack">
+				<li>
 					<div class="macro-head">
 						<span class="macro-name" style="--c: var(--{m.key.slice(0, -2)}-text)">{m.label}</span>
 						<span class="num small">
@@ -113,7 +118,7 @@
 					</div>
 					{#if m.target !== null}
 						<div
-							class="meter"
+							class="meter macro-meter"
 							class:is-over={m.over}
 							style="--value: {m.value}; --fill: var(--{m.key.slice(0, -2)})"
 							role="meter"
@@ -128,7 +133,7 @@
 			{/each}
 		</ul>
 
-		<details>
+		<details class="working">
 			<summary>How it's worked out</summary>
 			<dl class="terms">
 				{#each breakdown(b, unit) as t (t.label)}
@@ -148,36 +153,67 @@
 </section>
 
 <style>
-	.hero {
+	.budget {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+	.panel-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.plan {
+		text-align: right;
+	}
+	.lead {
 		color: var(--under);
 		display: flex;
 		align-items: baseline;
 		gap: var(--space-2);
 	}
-	.hero.is-over {
+	.lead.is-over {
 		color: var(--over);
 	}
 	.left {
 		font-size: var(--text-hero);
 		font-weight: var(--weight-bold);
-		line-height: 1;
+		line-height: var(--leading-tight);
+		letter-spacing: -0.03em;
 	}
 	.left-label {
-		font-size: var(--text-lg);
+		font-size: var(--text-md);
 		font-weight: var(--weight-medium);
+	}
+	.caption {
+		margin-top: calc(-1 * var(--space-2));
 	}
 	.hero-skel {
 		height: var(--text-hero);
 		width: 60%;
+	}
+	/* The meter fills after a save. 420 ms is the one long motion; reduced motion sets it to zero. */
+	.budget :global(.meter)::after {
+		transition-duration: 420ms;
 	}
 	.flags,
 	.macros {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		gap: var(--space-3);
+	}
+	.flags {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.macros {
+		display: grid;
+		gap: var(--space-2);
 	}
 	.macros > li {
+		display: grid;
 		gap: var(--space-1);
 	}
 	.macro-name {
@@ -191,13 +227,23 @@
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 	}
+	.macro-meter {
+		height: 0.5rem;
+	}
+	.working {
+		border-top: 1px solid var(--border);
+		padding-top: var(--space-2);
+	}
 	summary {
 		min-height: var(--touch);
 		display: flex;
 		align-items: center;
 		color: var(--accent);
+		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		cursor: pointer;
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 	.terms {
 		margin: 0 0 var(--space-3);
