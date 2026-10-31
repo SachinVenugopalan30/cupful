@@ -187,9 +187,12 @@ pub(super) async fn sync(s: &AppState, user_id: i64, token: &str, today: Date) -
             else {
                 continue;
             };
-            if p.name.is_empty() {
-                continue;
-            }
+            // Google's id when the point has one; else start and type, which a re-sync repeats.
+            let external_id = if p.name.is_empty() {
+                format!("{start}:{}", e.exercise_type)
+            } else {
+                p.name
+            };
             let date = jiff::Timestamp::from_millisecond(start)
                 .map_err(|e| Error::Internal(e.to_string()))?
                 .to_zoned(tz.clone())
@@ -220,7 +223,7 @@ pub(super) async fn sync(s: &AppState, user_id: i64, token: &str, today: Date) -
                      active_seconds = excluded.active_seconds, kcal = excluded.kcal,
                      distance_m = excluded.distance_m, avg_hr = excluded.avg_hr",
                 user_id,
-                p.name,
+                external_id,
                 start,
                 end,
                 date,

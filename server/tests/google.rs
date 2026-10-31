@@ -777,3 +777,25 @@ async fn b_cannot_see_a_workouts_or_gym_types() {
     let (_, st) = a.get("/api/google").await;
     assert_ne!(st["gym_types"], json!([]), "B's setting is B's own");
 }
+
+#[tokio::test]
+async fn workouts_without_a_google_name_are_kept_and_not_duplicated() {
+    // The docs don't say exercise points carry `name`; losing every workout over it would be silent.
+    let (g, _, state, mut a) = setup().await;
+    link(&state, user_id(&state, "admin").await, 3600).await;
+    steps_empty(&g).await;
+    let d = day(-1);
+    let mut nameless = session("x", "STRENGTH_TRAINING", d, 7, 40);
+    nameless.as_object_mut().unwrap().remove("name");
+    exercise(&g, vec![nameless]).await;
+    assert_eq!(synced(&mut a).await["workouts"], 1);
+    assert_eq!(synced(&mut a).await["workouts"], 1);
+    let (_, w) = a.get(&range()).await;
+    assert_eq!(
+        w["workouts"].as_array().unwrap().len(),
+        1,
+        "a second sync upserts"
+    );
+    let (_, day) = a.get(&format!("/api/days/{d}")).await;
+    assert_eq!(day["gym_minutes"], json!(40));
+}

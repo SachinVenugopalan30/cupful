@@ -29,9 +29,11 @@
 			<ActivitySection date={day.date} {refreshKey} onChanged={changed} heading={false} bind:win />
 			<ActivityWeek date={day.date} {win} />
 			<WorkoutsPanel date={day.date} {win} />
+		</div>
+		<div class="side">
+			<BudgetCard date={day.date} {refreshKey} bind:budget />
 			<ActivityBudget {budget} />
 		</div>
-		<BudgetCard date={day.date} {refreshKey} bind:budget />
 	</div>
 </div>
 
@@ -47,7 +49,8 @@
 		display: grid;
 		gap: var(--space-5);
 	}
-	.main {
+	.main,
+	.side {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
