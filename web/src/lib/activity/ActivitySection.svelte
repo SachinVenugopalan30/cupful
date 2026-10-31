@@ -6,6 +6,7 @@
     date: string             YYYY-MM-DD, the selected day
     refreshKey: number       bumped after any write to the day; refetch when it changes
     onChanged: () => void    call after a write is applied (the budget card refreshes)
+    heading?: boolean        show the section heading and saved status (default true)
   Data: getDay(date). Writes only through #lib/sync (dayPatch + sendOps).
   The server never lets Shortcut or import values overwrite a manual one; typing here is manual.
 -->
@@ -102,14 +103,22 @@
 </script>
 
 <section class="activity" aria-label="Activity" aria-busy={data === null && !loadError}>
-	<header class="head">
-		{#if heading}<h2>Activity</h2>{/if}
-		<p class="saved small" role="status">
+	{#if heading}
+		<header class="head">
+			<h2>Activity</h2>
+			<p class="saved small" role="status">
+				{#key status}
+					{#if status}<span class="saved-text">{status}</span>{/if}
+				{/key}
+			</p>
+		</header>
+	{:else}
+		<p class="visually-hidden" role="status">
 			{#key status}
 				{#if status}<span class="saved-text">{status}</span>{/if}
 			{/key}
 		</p>
-	</header>
+	{/if}
 
 	{#if loadError}
 		<div class="notice notice-error" role="alert">

@@ -16,20 +16,29 @@
 		<h1>Activity</h1>
 		<DayNav />
 	</header>
-	<ActivitySection date={day.date} {refreshKey} onChanged={changed} heading={false} />
-	<BudgetCard date={day.date} {refreshKey} />
+	<div class="panels">
+		<ActivitySection date={day.date} {refreshKey} onChanged={changed} heading={false} />
+		<BudgetCard date={day.date} {refreshKey} />
+	</div>
 </div>
 
 <style>
-	.activity {
-		max-width: var(--content-max);
-		margin: 0 auto;
-	}
 	.page-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
 		flex-wrap: wrap;
+	}
+	.panels {
+		display: grid;
+		gap: var(--space-5);
+	}
+	/* Wide: the budget sits beside the stat cards, so the page uses its full width. */
+	@media (min-width: 68rem) {
+		.panels {
+			grid-template-columns: minmax(0, 1.8fr) minmax(21rem, 1fr);
+			align-items: start;
+		}
 	}
 </style>

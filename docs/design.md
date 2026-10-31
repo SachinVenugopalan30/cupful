@@ -135,7 +135,7 @@ Tokens live in `web/src/lib/styles/tokens.css`.
 | Sources | `--src-db`/`--src-db-soft` ("Database"), `--src-ai`/`--src-ai-soft` ("AI estimate") |
 | Charts | `--chart-intake`, `--chart-budget`, `--chart-weight`, `--chart-average`, `--chart-steps`, `--chart-over`, `--chart-grid`, `--chart-axis` |
 | Type | `--font-sans`, `--font-numeric`; `--text-xs` 13, `--text-sm` 14, `--text-md` 16, `--text-lg` 20, `--text-xl` 28, `--text-2xl` 32, `--text-hero` 44 px; `--leading-tight`, `--leading`; `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600 |
-| Space | `--space-1` through `--space-8` (4, 8, 12, 16, 24, 32, 40, 48 px), `--gutter`, `--content-max` (40 rem), `--touch` (44 px) |
+| Space | `--space-1` through `--space-8` (4, 8, 12, 16, 24, 32, 40, 48 px), `--gutter`, `--content-max` (40 rem), `--page-max` (72 rem), `--touch` (44 px) |
 | Shape | `--radius-sm` (10 px), `--radius-md` (12 px controls), `--radius-lg` (20 px cards), `--radius-sheet` (24 px), `--radius-pill`, `--shadow-card` (none), `--shadow-sheet` |
 | Motion | `--dur-fast` 120, `--dur-med` 180, `--dur-slow` 240 ms, `--ease`. All durations are 0 under `prefers-reduced-motion` |
 

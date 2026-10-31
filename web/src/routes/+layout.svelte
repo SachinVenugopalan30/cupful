@@ -102,7 +102,7 @@
 <style>
 	/* Pages narrower than this (forms, settings) set max-width: var(--content-max) themselves. */
 	.page {
-		max-width: 64rem;
+		max-width: var(--page-max);
 		margin: 0 auto;
 		padding: var(--space-4) var(--gutter) var(--space-6);
 		padding-left: max(var(--gutter), env(safe-area-inset-left));
@@ -177,7 +177,8 @@
 			justify-content: flex-start;
 			align-items: center;
 			gap: var(--space-3);
-			padding: var(--space-2) max(var(--gutter), calc((100vw - 64rem) / 2));
+			padding: var(--space-2)
+				max(var(--gutter), calc((100vw - var(--page-max)) / 2 + var(--gutter)));
 			border-top: 0;
 			border-bottom: 1px solid var(--border);
 		}

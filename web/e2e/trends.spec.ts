@@ -136,8 +136,22 @@ test('Trends: charts, range switch remembered, empty state, no side scroll', asy
 	await noSideScroll(page);
 
 	// Other spec files share the server, so meals may exist: a chart or its empty state, never neither.
-	const intake = page.getByRole('region', { name: 'Intake' });
+	const intake = page.getByRole('region', { name: 'Intake', exact: true });
 	await expect(
 		intake.locator('.plot svg').first().or(intake.getByText('No meals logged in this range'))
 	).toBeVisible();
+});
+
+test('Activity uses the desktop width: budget beside the stat cards', async () => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/activity');
+	await expect(page.getByRole('heading', { name: 'Activity', level: 1 })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'Activity' })).toBeVisible();
+
+	const steps = await page.locator('.stat-steps').boundingBox();
+	const budget = await page.getByRole('region', { name: 'Budget' }).boundingBox();
+	expect(steps).not.toBeNull();
+	expect(budget).not.toBeNull();
+	expect(budget!.x).toBeGreaterThan(steps!.x + steps!.width);
+	await noSideScroll(page);
 });

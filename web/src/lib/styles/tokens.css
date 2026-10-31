@@ -124,6 +124,7 @@
 	--space-8: 3rem;
 	--gutter: var(--space-4); /* page side padding on phones */
 	--content-max: 40rem;
+	--page-max: 72rem;
 	--touch: 2.75rem; /* 44 px minimum touch target */
 
 	/* ---- shape ---- */
