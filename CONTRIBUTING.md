@@ -50,6 +50,16 @@ npm run dev
 
 Open <http://localhost:5173>. Data lives in `./.cupful/` relative to the server working directory, unless `CUPFUL_DATA_DIR` says otherwise. Every setting is listed in `.env.example`.
 
+## Git hooks
+
+Install the checked-in hooks once per clone:
+
+```sh
+./scripts/install-hooks.sh
+```
+
+The pre-commit hook runs `cargo fmt --check` when server files are staged, and `svelte-check` plus Vitest when web files are staged. It stays fast on purpose. Clippy, `cargo test`, the build and Playwright still run in the checks below and in CI.
+
 ## CLI commands
 
 Run these with `cargo run -- <command>` from `server/`:

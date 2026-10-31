@@ -47,6 +47,9 @@ fixtures/               shared test vectors and samples
 ## Commands
 
 ```sh
+# repo root, once per clone: pre-commit runs fmt, svelte-check and Vitest on staged changes
+./scripts/install-hooks.sh
+
 # backend, from server/
 CUPFUL_SECURE_COOKIES=false cargo run -- serve
 cargo run -- import-foods <FoodData_Central_*_food_json.json>
