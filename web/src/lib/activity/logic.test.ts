@@ -17,6 +17,7 @@ import {
 	toggle,
 	weekWindow,
 	weightDelta,
+	lastWeight,
 	workoutKind
 } from './logic';
 
@@ -118,6 +119,13 @@ describe('week and insights', () => {
 		expect(d.prevDate).toBe('2026-10-20');
 		expect(weightDelta(days, '2026-10-25')!.deltaKg).toBeCloseTo(-0.6);
 		expect(weightDelta(days, '2026-10-15')).toBeNull();
+	});
+
+	it('lastWeight returns the latest weigh-in on or before the date', () => {
+		const days = [day('2026-10-10', { weight_kg: 81 }), day('2026-10-20', { weight_kg: 80.4 })];
+		expect(lastWeight(days, '2026-10-25')).toEqual({ kg: 80.4, date: '2026-10-20' });
+		expect(lastWeight(days, '2026-10-15')).toEqual({ kg: 81, date: '2026-10-10' });
+		expect(lastWeight(days, '2026-10-05')).toBeNull();
 	});
 	it('groupByDate keeps order within a day', () => {
 		const m = groupByDate([wo('2026-10-29', { id: 1 }), wo('2026-10-30', { id: 2 }), wo('2026-10-29', { id: 3 })]);

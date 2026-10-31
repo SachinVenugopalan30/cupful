@@ -27,7 +27,9 @@
 	</div>
 	<div class="meals"><MealList date={day.date} {refreshKey} onChanged={changed} /></div>
 	<!-- Phones have the Activity tab instead. -->
-	<div class="activity"><ActivitySection date={day.date} {refreshKey} onChanged={changed} /></div>
+	<div class="activity">
+		<ActivitySection date={day.date} {refreshKey} onChanged={changed} syncSteps />
+	</div>
 </div>
 
 <style>

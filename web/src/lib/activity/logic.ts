@@ -91,6 +91,15 @@ export function weightDelta(days: Day[], date: string) {
 	return { date: last.date, prevDate: prev.date, deltaKg: last.weight_kg! - prev.weight_kg! };
 }
 
+/** The latest weigh-in on or before `date`, or null. */
+export function lastWeight(days: Day[], date: string): { kg: number; date: string } | null {
+	const last = days
+		.filter((d) => d.weight_kg !== null && d.date <= date)
+		.sort((a, b) => a.date.localeCompare(b.date))
+		.at(-1);
+	return last ? { kg: last.weight_kg!, date: last.date } : null;
+}
+
 /**
  * SVG polyline points for the non-null values, spread over `w` x `h` with `pad` inside. The line
  * joins across gaps. Fewer than two points, or a flat series, still draw (flat sits mid-height).

@@ -26,7 +26,14 @@
 	</header>
 	<div class="panels">
 		<div class="main">
-			<ActivitySection date={day.date} {refreshKey} onChanged={changed} heading={false} bind:win />
+			<ActivitySection
+				date={day.date}
+				{refreshKey}
+				onChanged={changed}
+				heading={false}
+				syncSteps
+				bind:win
+			/>
 			<ActivityWeek date={day.date} {win} />
 			<WorkoutsPanel date={day.date} {win} />
 		</div>

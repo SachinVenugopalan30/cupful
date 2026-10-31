@@ -7,13 +7,22 @@
     refreshKey: number       bumped after any write to the day; refetch when it changes
     onChanged: () => void    call after a write is applied (the budget card refreshes)
     heading?: boolean        show the section heading and saved status (default true)
+    syncSteps?: boolean      show a Google Health sync button on the steps card (Today)
     win?: ActivityWindow|null  bindable: the 30 days of day rows and 7 days of workouts around
                              `date`, for the week strip and workouts panel to share one fetch
   Data: getDay(date). Writes only through #lib/sync (dayPatch + sendOps).
   The server never lets Shortcut or import values overwrite a manual one; typing here is manual.
 -->
 <script lang="ts">
-	import { errorMessage, getDay, getDays, getWorkouts, type Day } from '#lib/api.ts';
+	import {
+		errorMessage,
+		getDay,
+		getDays,
+		getWorkouts,
+		google,
+		type Day,
+		type GoogleStatus
+	} from '#lib/api.ts';
 	import { addDays, dayLabel } from '#lib/date.ts';
 	import { formatWeight, round, weightToKg } from '#lib/format.ts';
 	import { session, today } from '#lib/session.svelte.ts';
@@ -25,6 +34,7 @@
 		BODY_PARTS,
 		gymDates,
 		lastTrained,
+		lastWeight,
 		MAX_GYM,
 		MAX_STEPS,
 		parseCount,
@@ -46,12 +56,14 @@
 		refreshKey,
 		onChanged,
 		heading = true,
+		syncSteps = false,
 		win = $bindable(null)
 	}: {
 		date: string;
 		refreshKey: number;
 		onChanged: () => void;
 		heading?: boolean;
+		syncSteps?: boolean;
 		win?: ActivityWindow | null;
 	} = $props();
 
@@ -64,6 +76,9 @@
 	let error = $state('');
 	let status = $state('');
 	let trained = $state<string[]>([]);
+	let googleStatus = $state<GoogleStatus | null>(null);
+	let syncing = $state(false);
+	let syncNote = $state('');
 
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	const typicalSteps = $derived(session.profile?.version?.typical_steps ?? null);
@@ -77,6 +92,16 @@
 	const gym7 = $derived(w ? gymDates(w.days, w.workouts) : null);
 	const last = $derived(gym7 ? lastTrained(gym7, date) : null);
 	const delta = $derived(w ? weightDelta(w.days, date) : null);
+	const carried = $derived(
+		data && data.weight_kg === null && w ? lastWeight(w.days, addDays(date, -1)) : null
+	);
+	const canSync = $derived(
+		syncSteps &&
+			googleStatus?.configured === true &&
+			googleStatus.connected &&
+			!googleStatus.needs_reconnect &&
+			!future
+	);
 	const trend = $derived(
 		w ? sparklinePoints(Array.from({ length: 30 }, (_, i) => w.days.find((x) => x.date === addDays(date, i - 29))?.weight_kg ?? null), 120, 32) : ''
 	);
@@ -85,6 +110,18 @@
 		return Math.abs(round(kg / weightToKg(1, unit), 1)) === 0 ? `No change` : `${kg < 0 ? '−' : '+'}${t}`;
 	};
 	const shown = (kg: number | null) => (kg === null ? '' : String(round(kg / weightToKg(1, unit), 1)));
+
+	$effect(() => {
+		if (!syncSteps) return;
+		google.status().then(
+			(s) => (googleStatus = s),
+			() => (googleStatus = null)
+		);
+	});
+
+	$effect(() => {
+		if (carried && weight === '') weight = shown(carried.kg);
+	});
 
 	let loaded = ''; // the date `data` belongs to
 	$effect(() => {
@@ -121,7 +158,7 @@
 	});
 
 	async function save(fields: DayFields, done: string): Promise<boolean> {
-		error = status = '';
+		error = status = syncNote = '';
 		try {
 			const [r] = await sendOps([dayPatch(date, fields)]);
 			if (r.status === 'rejected') throw new Error(`Not saved: ${r.error ?? 'rejected'}.`);
@@ -136,6 +173,21 @@
 		} catch (e) {
 			error = errorMessage(e);
 			return false;
+		}
+	}
+
+	async function syncFromGoogle() {
+		syncing = true;
+		error = status = syncNote = '';
+		try {
+			const r = await google.sync();
+			status = r.changed > 0 ? 'Steps synced.' : 'Steps already up to date.';
+			syncNote = status;
+			onChanged();
+		} catch (e) {
+			error = errorMessage(e);
+		} finally {
+			syncing = false;
 		}
 	}
 
@@ -211,6 +263,14 @@
 					/>
 					<span class="unit" aria-hidden="true">steps</span>
 				</div>
+				{#if canSync}
+					<div class="sync-row">
+						<button type="button" class="btn btn-quiet sync" onclick={syncFromGoogle} disabled={syncing}>
+							{syncing ? 'Syncing…' : 'Sync steps'}
+						</button>
+						{#if !heading && syncNote}<span class="small muted">{syncNote}</span>{/if}
+					</div>
+				{/if}
 				{#if pct !== null}
 					<div
 						class="meter"
@@ -295,6 +355,8 @@
 					<h3 id="weight-h">Weigh-in</h3>
 					{#if d.weight_kg !== null}
 						<span class="chip">Manual</span>
+					{:else if carried}
+						<span class="chip">Carried</span>
 					{:else}
 						<span class="chip">Not logged</span>
 					{/if}
@@ -323,7 +385,9 @@
 						<polyline points={trend} />
 					</svg>
 				{/if}
-				<p class="caption">Changes the budget from this day until your next weigh-in.</p>
+				<p class="caption">
+					{#if carried}Carried from {dayLabel(carried.date, today())}.{' '}{/if}Changes the budget from this day until your next weigh-in.
+				</p>
 			</div>
 		</div>
 	{/if}
@@ -426,6 +490,12 @@
 	}
 	.stat-weight .figure input {
 		width: 5ch;
+	}
+	.sync-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 	.figure input:hover:not(:disabled) {
 		background: var(--surface-2);

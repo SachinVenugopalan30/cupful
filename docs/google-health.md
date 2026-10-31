@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 # Google Health steps sync
 
-Cupful can read your daily step count from the Google Health API v4. It does this once a day, or when you press **Sync now** in Settings.
+Cupful can read your daily step count from the Google Health API v4. It does this once a day, or when you press **Sync steps** on the steps card (Today on desktop, Activity on a phone) or **Sync now** in Settings.
 
 The feature is optional and off until you configure it. It needs a Google Cloud project of your own. Cupful ships no shared Google credentials.
 
@@ -11,6 +11,7 @@ What it does: it reads steps and exercise sessions for the last 14 days. Steps g
 
 - Cupful reads Google Health `exercise` data points (runs, walks, gym sessions and so on) with `GET /v4/users/me/dataTypes/exercise/dataPoints`, filtered on `exercise.interval.civil_start_time` for the last 14 days. The same `activity_and_fitness.readonly` scope is used; no new consent is needed beyond what Google's scope page implies for activity and fitness data (it does not list exercise explicitly, so a 403 here shows as **Reconnect Google Health**). The location scope is never requested, so routes are not read.
 - Only workouts that reach Google Health appear. A session recorded in another app shows up only if that app syncs it to Google Health.
+- Each workout shows the summary Google provides: active time, distance, calories and average heart rate. Google also includes steps, elevation gain, average speed or pace, active-zone minutes and heart-rate zone time when the source recorded them; Cupful keeps the common four today.
 - Google returns 25 sessions per page, newest first. Cupful follows the page tokens up to 20 pages (500 sessions) per sync.
 - Re-syncing updates a changed session. A session you delete in Google Health stays in Cupful, and its stored copy stays; if that leaves a day with no matching workout, the day's Google-written gym minutes are cleared on the next sync.
 - **Gym types:** the exercise types that count as gym minutes. The default is `STRENGTH_TRAINING`, `FUNCTIONAL_STRENGTH_TRAINING`, `WEIGHTLIFTING`, `POWERLIFTING`, `WEIGHT_MACHINES`, `FREE_WEIGHTS`, `WEIGHTS`, `BODY_WEIGHT`, `RESISTANCE_BANDS`, `TRX`, `CALISTHENICS`, `HIIT`, `CIRCUIT_TRAINING`, `CROSSFIT` and the indoor machines `TREADMILL`, `ELLIPTICAL`, `ROWING_MACHINE`, `STAIRCLIMBER`, `SPINNING`, `STATIONARY_BIKE` and `ASSAULT_BIKE` (all names from Google's `Exercise.ExerciseType`). Outdoor running, walking, hiking and biking are not in the default. The choices are a curated list plus every type present in your stored workouts, so anything Google sends can be ticked. You can change the list in Settings (`PUT /api/google/gym-types`, at most 30). After each sync and each change, every day with a matching workout gets gym minutes = the sum of their active minutes, rounded, at least 1; a day whose Google-written gym minutes no longer have a matching workout is cleared. A value you typed by hand is never touched.

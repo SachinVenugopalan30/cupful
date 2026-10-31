@@ -8,7 +8,10 @@ export const google = {
 	status: () => api.get<GoogleStatus>('/api/google'),
 	/** Starts the Google sign-in; this is a page navigation (the server redirects to Google). */
 	connectUrl: '/api/google/connect',
-	sync: () => api.post<{ days: number; changed: number }>('/api/google/sync'),
+	sync: () =>
+		api.post<{ days: number; changed: number; workouts: number; workouts_error?: string }>(
+			'/api/google/sync'
+		),
 	/** Which workout types count as gym minutes; the server recomputes the gym minutes. */
 	setGymTypes: (types: string[]) => api.put<object>('/api/google/gym-types', { types }),
 	disconnect: () => api.delete<object>('/api/google')

@@ -40,7 +40,7 @@ test.beforeAll(async ({ browser }) => {
 	await login(page);
 	await saveProfile(page);
 	await seedDay(page, TODAY, { steps: 6640 });
-	await seedDay(page, YESTERDAY, { steps: 9100, gym_minutes: 40 });
+	await seedDay(page, YESTERDAY, { steps: 9100, gym_minutes: 40, weight_kg: 80.4 });
 	await page.route('**/api/workouts?**', (route) =>
 		route.fulfill({
 			json: {
@@ -107,6 +107,46 @@ test('an empty day says so', async () => {
 	await page.getByLabel('Previous day').click();
 	await page.getByLabel('Previous day').click();
 	await expect(page.getByText('No workouts synced for this day.')).toBeVisible();
+});
+
+test('Activity carries the last weigh-in forward', async () => {
+	await page.goto('/activity');
+	await expect(page.getByLabel('Weigh-in (kg)')).toHaveValue('80.4');
+	await expect(page.getByText('Carried', { exact: true })).toBeVisible();
+	await expect(page.getByText(/Carried from Yesterday\./)).toBeVisible();
+});
+
+test('Today syncs steps when Google Health is connected', async () => {
+	let syncs = 0;
+	await page.route(/\/api\/google$/, (route) =>
+		route.request().method() === 'GET'
+			? route.fulfill({
+					json: {
+						configured: true,
+						connected: true,
+						needs_reconnect: false,
+						last_sync_at: null,
+						last_error: null,
+						gym_types: [],
+						exercise_types: []
+					}
+				})
+			: route.continue()
+	);
+	await page.route('**/api/google/sync', (route) => {
+		syncs++;
+		return route.fulfill({ json: { days: 1, changed: 1, workouts: 0 } });
+	});
+
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Sync steps' }).click();
+	await expect(page.getByText('Steps synced.')).toBeVisible();
+	expect(syncs).toBe(1);
+
+	await page.unroute(/\/api\/google$/);
+	await page.unroute('**/api/google/sync');
+	await page.setViewportSize({ width: 360, height: 740 });
 });
 
 test('Settings: pick gym workout types and save (google mocked)', async () => {
