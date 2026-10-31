@@ -9,6 +9,7 @@
 	import { errorMessage, health, type Health } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { loadHealth } from '#lib/offline/session-cache.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let server = $state<Health | null>(null);
 	let cached = $state<Health | null>(null);
@@ -33,8 +34,7 @@
 	});
 </script>
 
-<section class="card stack" aria-labelledby="about-h">
-	<h2 id="about-h">About</h2>
+<SettingRow headingId="about-h" title="About" description="Free software under AGPL-3.0-or-later.">
 	<p>App build <span class="num">{version}</span></p>
 	{#if server}
 		<p>
@@ -69,7 +69,7 @@
 		</li>
 		<li>No telemetry. Cupful doesn't report anything to anyone.</li>
 	</ul>
-</section>
+</SettingRow>
 
 <style>
 	.notes {

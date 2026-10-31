@@ -9,6 +9,7 @@
 	import type { QueueStatus, QueuedOp } from '#lib/offline/types.ts';
 	import { dayLabel } from '#lib/date.ts';
 	import { today } from '#lib/session.svelte.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let syncing = $state(false);
 	let working = $state<Record<string, boolean>>({});
@@ -83,24 +84,18 @@
 	}
 </script>
 
-<section
-	id="sync"
-	class="card stack"
-	aria-labelledby="sync-h"
-	data-testid="sync-section"
-	tabindex="-1"
+<SettingRow
+	headingId="sync-h"
+	title="Sync"
+	description="Changes saved on this device are sent when you're online. A rejected change stays here until you retry or discard it."
+	anchorId="sync"
+	focusable
+	testId="sync-section"
 >
-	<div class="stack head">
-		<h2 id="sync-h">Sync</h2>
-		<p class="small muted">
-			Logged changes are saved on this device first and sent when you're online. A change that the
-			server rejects stays here until you retry or discard it.
-		</p>
-		<div class="row">
-			<button class="btn" onclick={sync} disabled={blocked}>
-				{syncing ? 'Syncing…' : 'Sync now'}
-			</button>
-		</div>
+	<div class="row">
+		<button class="btn" onclick={sync} disabled={blocked}>
+			{syncing ? 'Syncing…' : 'Sync now'}
+		</button>
 	</div>
 
 	{#if ops.length === 0}
@@ -159,12 +154,9 @@
 	{#if !connection.online}
 		<p class="notice notice-warning" role="status">Offline. You can discard changes now; retry and sync need a connection.</p>
 	{/if}
-</section>
+</SettingRow>
 
 <style>
-	.head {
-		gap: var(--space-2);
-	}
 	.op {
 		align-items: stretch;
 		gap: var(--space-2);

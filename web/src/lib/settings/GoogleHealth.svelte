@@ -7,6 +7,7 @@
 	import { errorMessage, google, type GoogleStatus } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { googleResult } from './google.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let status = $state<GoogleStatus | null>(null);
 	let loadError = $state('');
@@ -63,13 +64,11 @@
 </script>
 
 {#if loadError}
-	<section class="card stack" aria-labelledby="google-h">
-		<h2 id="google-h">Google Health</h2>
+	<SettingRow headingId="google-h" title="Google Health" description="Reads your daily steps into this server.">
 		<p class="notice notice-error" role="alert">{loadError}</p>
-	</section>
+	</SettingRow>
 {:else if status?.configured}
-	<section class="card stack" aria-labelledby="google-h">
-		<h2 id="google-h">Google Health</h2>
+	<SettingRow headingId="google-h" title="Google Health" description="Reads your daily steps into this server.">
 		<p class="small muted">
 			Reads your daily steps from Google Health into this server. Steps you enter by hand are never
 			overwritten. Nothing is sent to Google except the sign-in and the steps request.
@@ -105,5 +104,5 @@
 				<button class="btn btn-quiet" onclick={disconnect} disabled={busy || !connection.online}>Disconnect</button>
 			</div>
 		{/if}
-	</section>
+	</SettingRow>
 {/if}

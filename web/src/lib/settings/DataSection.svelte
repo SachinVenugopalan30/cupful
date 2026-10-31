@@ -8,6 +8,7 @@
 	import { download, errorMessage, importCsv, restoreBackup } from '#lib/api.ts';
 	import { day, loadSession, today } from '#lib/session.svelte.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
+	import SettingRow from './SettingRow.svelte';
 	import {
 		formatImportSummary,
 		formatRestoreSummary,
@@ -96,8 +97,11 @@
 	const blocked = $derived(busy !== '' || !connection.online);
 </script>
 
-<section class="card stack" aria-labelledby="data-h">
-	<h2 id="data-h">Data</h2>
+<SettingRow
+	headingId="data-h"
+	title="Data"
+	description="Export, import and restore your log."
+>
 	<p class="small muted">
 		The backup leaves out provider keys, ingest and Google tokens, and photos. Restoring replaces
 		this account's meals, days, profile versions, foods, aliases, portions and products. The CSV is
@@ -175,9 +179,15 @@
 			</label>
 		</div>
 	</div>
-</section>
+</SettingRow>
 
 <style>
+	.group {
+		padding: var(--space-4);
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+	}
 	.status:empty {
 		display: none;
 	}

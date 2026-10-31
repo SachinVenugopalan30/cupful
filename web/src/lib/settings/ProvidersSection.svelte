@@ -7,6 +7,7 @@
 	import { ApiError, errorMessage, providers, type Provider } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { emptyForm, formFrom, KINDS, setKind, toProviderIn, type ProviderForm } from './providers.ts';
+	import SettingRow from './SettingRow.svelte';
 
 	let { isAdmin }: { isAdmin: boolean } = $props();
 
@@ -79,8 +80,11 @@
 	}
 </script>
 
-<section class="card stack" aria-labelledby="providers-h">
-	<h2 id="providers-h">AI providers</h2>
+<SettingRow
+	headingId="providers-h"
+	title="AI providers"
+	description="Estimates use this provider. Keys stay on this server."
+>
 	{#if !isAdmin}
 		<p class="muted">Only the admin can change AI providers.</p>
 	{:else}
@@ -204,7 +208,7 @@
 			<p><button class="btn" onclick={() => open(null)} disabled={!connection.online}>Add provider</button></p>
 		{/if}
 	{/if}
-</section>
+</SettingRow>
 
 <style>
 	.provider {
