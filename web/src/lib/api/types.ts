@@ -245,7 +245,26 @@ export type GoogleStatus =
 			needs_reconnect: boolean;
 			last_sync_at: string | null;
 			last_error: string | null;
+			/** Workout types (Google exercise type names) that count as gym minutes. */
+			gym_types: string[];
+			exercise_types: { value: string; label: string }[];
 	  };
+
+/** One synced workout, GET /api/workouts. Distance is metres; Cupful shows km. */
+export type Workout = {
+	id: number;
+	date: string;
+	start: string;
+	end: string;
+	type: string;
+	type_label: string;
+	name: string | null;
+	active_minutes: number;
+	kcal: number | null;
+	distance_m: number | null;
+	avg_hr: number | null;
+	counts_as_gym: boolean;
+};
 
 // ---- import, backup and restore ----
 

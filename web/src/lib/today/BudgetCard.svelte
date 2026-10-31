@@ -15,7 +15,12 @@
 	import { breakdown, flagMessages, leftOver, macroRows } from './budget.ts';
 	import { dayTotals } from './meal.ts';
 
-	let { date, refreshKey }: { date: string; refreshKey: number } = $props();
+	// `budget` is optional and bindable: the Activity page reads the loaded budget from here.
+	let {
+		date,
+		refreshKey,
+		budget = $bindable(null)
+	}: { date: string; refreshKey: number; budget?: Budget | null } = $props();
 
 	type State =
 		| { kind: 'loading' }
@@ -48,6 +53,9 @@
 	});
 
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
+	$effect(() => {
+		budget = s.kind === 'ready' && s.budget.date === date ? s.budget : null;
+	});
 </script>
 
 <section class="card budget" aria-labelledby="budget-h" aria-busy={s.kind === 'loading'}>

@@ -121,6 +121,13 @@ Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so th
 - The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 12 ms bar stagger, a fading area, popping consistency cells and growing macro/mix bars. Headline numbers count up over 700 ms with a single rAF helper. Reduced motion removes all of it.
 - Consistency shows one cell per day, capped at 30 columns. Blue is within budget, brick is over, grey is no log.
 
+## Activity
+
+- The day's cards (Steps, Gym, Weigh-in) each carry one or two plain facts under the figure: steps as a `.meter` against the typical day and a 7-day average; gym sessions in the last 7 days and the last day trained; the weigh-in change since the previous one and a 30-day line. Facts only appear when the data exists. From 46 rem the cards are as tall as their own content, so none stretches to the Gym card.
+- "This week" is a full-width card under them: seven buttons ending on the selected day. Each shows steps as a `--steps` bar scaled to the week's highest, a dashed line at the typical day, a `--accent` dot on gym days, the synced workout count, and the weekday and date. A day without steps is a thin tick, never a zero bar. Tapping a day selects it (the strip then ends on it). Each button's `aria-label` is a sentence ("Yesterday: 9,100 steps, gym, 1 workout"); the selected day has `aria-current="date"`. It fits 360 px with seven equal columns.
+- "Workouts" lists what Google Health synced for the selected day: icon, name, time, duration, km, kcal, average heart rate, and a "Counts as gym" chip (`--accent-soft`). Distances are km because there is no distance unit setting. Empty: "No workouts synced for this day.", plus a Settings pointer only when Google is configured but not connected.
+- A one-line card reports what steps and gym added to the budget, from the server's terms.
+
 ## Tokens
 
 Tokens live in `web/src/lib/styles/tokens.css`.

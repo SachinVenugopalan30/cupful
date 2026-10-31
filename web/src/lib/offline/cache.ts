@@ -37,7 +37,7 @@ export function isCacheable(path: string): boolean {
 	if (route === '/api/days') return true; // `/api/days?from=…` range reads
 	if (route.startsWith('/api/days/')) return true;
 	if (route.startsWith('/api/budget/')) return true;
-	if (route === '/api/trends') return hasQuery;
+	if (route === '/api/trends' || route === '/api/workouts') return hasQuery;
 	return CACHEABLE_EXACT.includes(path);
 }
 

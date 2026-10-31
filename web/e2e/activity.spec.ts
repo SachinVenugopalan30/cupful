@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Activity: insight cards, the week strip, the workouts panel, and Settings -> Counts as gym.
+// /api/workouts and /api/google are MOCKED with route interception (the workouts API is built in
+// parallel and Google is not configured on the e2e server); everything else is the real server.
+import { expect, test, type Page } from '@playwright/test';
+import { login, saveProfile, seedDay, startCupful, type CupfulServer } from './helpers/server.ts';
+
+test.describe.configure({ mode: 'serial' });
+
+const addDays = (iso: string, n: number) => {
+	const d = new Date(`${iso}T00:00:00Z`);
+	d.setUTCDate(d.getUTCDate() + n);
+	return d.toISOString().slice(0, 10);
+};
+const TODAY = new Date().toLocaleDateString('en-CA');
+const YESTERDAY = addDays(TODAY, -1);
+
+const workout = (id: number, date: string, o: Record<string, unknown> = {}) => ({
+	id,
+	date,
+	start: `${date}T07:30:00Z`,
+	end: `${date}T08:01:00Z`,
+	type: 'RUNNING',
+	type_label: 'Running',
+	name: 'Morning run',
+	active_minutes: 31,
+	kcal: 412,
+	distance_m: 5200,
+	avg_hr: 148,
+	counts_as_gym: false,
+	...o
+});
+
+let server: CupfulServer;
+let page: Page;
+test.beforeAll(async ({ browser }) => {
+	server = await startCupful();
+	const ctx = await browser.newContext({ baseURL: server.base, viewport: { width: 360, height: 740 }, hasTouch: true });
+	page = await ctx.newPage();
+	await login(page);
+	await saveProfile(page);
+	await seedDay(page, TODAY, { steps: 6640 });
+	await seedDay(page, YESTERDAY, { steps: 9100, gym_minutes: 40 });
+	await page.route('**/api/workouts?**', (route) =>
+		route.fulfill({
+			json: {
+				workouts: [
+					workout(1, YESTERDAY, { name: null, type: 'STRENGTH_TRAINING', type_label: 'Strength training', counts_as_gym: true, distance_m: null, avg_hr: 120 }),
+					workout(2, TODAY),
+					workout(3, TODAY, { name: 'Evening walk', type: 'WALKING', type_label: 'Walking', distance_m: 2300, kcal: null, start: `${TODAY}T18:00:00Z` })
+				]
+			}
+		})
+	);
+});
+test.afterAll(async () => {
+	await page.context().close();
+	server.stop();
+});
+
+const noSideScroll = async () =>
+	expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+
+test('cards, week strip and workouts panel; tapping a day selects it (workouts mocked)', async () => {
+	await page.goto('/activity');
+	await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
+	// Steps card: 6,640 of a typical 8,000 is 83%.
+	await expect(page.locator('.fact', { hasText: 'of your typical day' })).toContainText('83%');
+	// Today's workouts, one with the name and one with a fallback.
+	const panel = page.getByRole('region', { name: 'Workouts' });
+	await expect(panel.getByTestId('workout')).toHaveCount(2);
+	await expect(panel.getByText('Morning run')).toBeVisible();
+	await expect(panel.getByText('5.2 km')).toBeVisible();
+	await expect(panel.getByText('Counts as gym')).toHaveCount(0);
+	await expect(page.getByTestId('activity-budget')).toContainText('kcal budget');
+	// Seven day buttons; gym shows on yesterday.
+	const cols = page.getByRole('region', { name: 'This week' }).getByRole('button');
+	await expect(cols).toHaveCount(7);
+	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, gym, 1 workout/ })).toBeVisible();
+	await noSideScroll();
+
+	await page.getByRole('button', { name: /^Yesterday:/ }).click();
+	await expect(page.locator('#day-picker')).toHaveValue(YESTERDAY);
+	await expect(panel.getByTestId('workout')).toHaveCount(1);
+	await expect(panel.getByText('Strength training').first()).toBeVisible();
+	await expect(panel.getByText('Counts as gym')).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Yesterday:/ })).toHaveAttribute('aria-current', 'date');
+	await noSideScroll();
+});
+
+test('an empty day says so', async () => {
+	await page.goto('/activity');
+	await page.getByLabel('Previous day').click();
+	await page.getByLabel('Previous day').click();
+	await expect(page.getByText('No workouts synced for this day.')).toBeVisible();
+});
+
+test('Settings: pick gym workout types and save (google mocked)', async () => {
+	let body: unknown = null;
+	await page.route(/\/api\/google$/, (route) =>
+		route.request().method() === 'GET'
+			? route.fulfill({
+					json: {
+						configured: true,
+						connected: true,
+						needs_reconnect: false,
+						last_sync_at: null,
+						last_error: null,
+						gym_types: ['STRENGTH_TRAINING'],
+						exercise_types: [
+							{ value: 'RUNNING', label: 'Running' },
+							{ value: 'STRENGTH_TRAINING', label: 'Strength training' },
+							{ value: 'YOGA', label: 'Yoga' }
+						]
+					}
+				})
+			: route.continue()
+	);
+	await page.route('**/api/google/gym-types', (route) => {
+		body = route.request().postDataJSON();
+		return route.fulfill({ json: {} });
+	});
+	await page.goto('/settings');
+	const strength = page.getByRole('checkbox', { name: 'Strength training' });
+	await expect(strength).toBeChecked();
+	await expect(page.getByText('Anything you enter by hand wins.')).toBeVisible();
+	await page.getByRole('checkbox', { name: 'Yoga' }).check();
+	await strength.uncheck();
+	await page.getByRole('button', { name: 'Save gym types' }).click();
+	await expect(page.getByText('Gym workout types saved.')).toBeVisible();
+	expect(body).toEqual({ types: ['YOGA'] });
+	await noSideScroll();
+});

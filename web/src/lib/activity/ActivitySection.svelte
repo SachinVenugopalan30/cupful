@@ -7,24 +7,36 @@
     refreshKey: number       bumped after any write to the day; refetch when it changes
     onChanged: () => void    call after a write is applied (the budget card refreshes)
     heading?: boolean        show the section heading and saved status (default true)
+    win?: ActivityWindow|null  bindable: the 30 days of day rows and 7 days of workouts around
+                             `date`, for the week strip and workouts panel to share one fetch
   Data: getDay(date). Writes only through #lib/sync (dayPatch + sendOps).
   The server never lets Shortcut or import values overwrite a manual one; typing here is manual.
 -->
 <script lang="ts">
-	import { errorMessage, getDay, type Day } from '#lib/api.ts';
-	import { round, weightToKg } from '#lib/format.ts';
+	import { errorMessage, getDay, getDays, getWorkouts, type Day } from '#lib/api.ts';
+	import { addDays, dayLabel } from '#lib/date.ts';
+	import { formatWeight, round, weightToKg } from '#lib/format.ts';
 	import { session, today } from '#lib/session.svelte.ts';
 	import { dayPatch, sendOps, type DayFields } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
 	import {
 		BODY_PARTS,
+		gymDates,
+		lastTrained,
 		MAX_GYM,
 		MAX_STEPS,
 		parseCount,
 		parseWeight,
+		sessionsIn,
 		sourceLabel,
+		sparklinePoints,
+		stepsAverage,
+		stepsVsTypical,
 		toggle,
+		weekWindow,
+		weightDelta,
+		type ActivityWindow,
 		type Parsed
 	} from './logic.ts';
 
@@ -32,8 +44,15 @@
 		date,
 		refreshKey,
 		onChanged,
-		heading = true
-	}: { date: string; refreshKey: number; onChanged: () => void; heading?: boolean } = $props();
+		heading = true,
+		win = $bindable(null)
+	}: {
+		date: string;
+		refreshKey: number;
+		onChanged: () => void;
+		heading?: boolean;
+		win?: ActivityWindow | null;
+	} = $props();
 
 	let data = $state<Day | null>(null);
 	let loadError = $state('');
@@ -48,6 +67,22 @@
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	const typicalSteps = $derived(session.profile?.version?.typical_steps ?? null);
 	const future = $derived(date > today());
+
+	// Facts under the figures. They come from the window and only show once it is for this date.
+	const w = $derived(win && win.date === date ? win : null);
+	const week = $derived(weekWindow(date));
+	const pct = $derived(data ? stepsVsTypical(data.steps, typicalSteps) : null);
+	const avg = $derived(w ? stepsAverage(w.days, week) : null);
+	const gym7 = $derived(w ? gymDates(w.days, w.workouts) : null);
+	const last = $derived(gym7 ? lastTrained(gym7, date) : null);
+	const delta = $derived(w ? weightDelta(w.days, date) : null);
+	const trend = $derived(
+		w ? sparklinePoints(Array.from({ length: 30 }, (_, i) => w.days.find((x) => x.date === addDays(date, i - 29))?.weight_kg ?? null), 120, 32) : ''
+	);
+	const signed = (kg: number) => {
+		const t = formatWeight(Math.abs(kg), unit);
+		return Math.abs(round(kg / weightToKg(1, unit), 1)) === 0 ? `No change` : `${kg < 0 ? '−' : '+'}${t}`;
+	};
 	const shown = (kg: number | null) => (kg === null ? '' : String(round(kg / weightToKg(1, unit), 1)));
 
 	let loaded = ''; // the date `data` belongs to
@@ -57,10 +92,19 @@
 		void dataVersion.n;
 		void retry;
 		if (!d) return;
-		if (d !== loaded) data = null; // a new day shows the skeleton; a refresh keeps the form
+		if (d !== loaded) {
+			data = null; // a new day shows the skeleton; a refresh keeps the form
+			win = null;
+		}
 		loaded = d;
 		let stale = false;
 		loadError = '';
+		// The window never blocks the form: if it fails, the cards simply show no extras. Workouts
+		// fail separately (the endpoint may be empty or absent) and then read as none.
+		Promise.all([
+			getDays(addDays(d, -29), d).catch(() => [] as Day[]),
+			getWorkouts(addDays(d, -6), d).catch(() => [])
+		]).then(([days, workouts]) => !stale && (win = { date: d, days, workouts }));
 		getDay(d).then(
 			(r) => {
 				if (stale) return;
@@ -159,6 +203,22 @@
 					/>
 					<span class="unit" aria-hidden="true">steps</span>
 				</div>
+				{#if pct !== null}
+					<div
+						class="meter"
+						style="--value: {pct / 100}; --fill: var(--steps)"
+						role="meter"
+						aria-label="Steps against your typical day"
+						aria-valuemin="0"
+						aria-valuemax={typicalSteps}
+						aria-valuenow={d.steps}
+						aria-valuetext="{pct}% of your typical day"
+					></div>
+					<p class="fact"><span class="num">{pct}%</span> of your typical day</p>
+				{/if}
+				{#if avg !== null}
+					<p class="fact">7-day average <span class="num">{Math.round(avg).toLocaleString()}</span></p>
+				{/if}
 				<p class="caption">
 					{#if typicalSteps !== null}
 						Typical day: <span class="num">{typicalSteps.toLocaleString()}</span> steps.
@@ -206,6 +266,13 @@
 						{/each}
 					</div>
 				</fieldset>
+				{#if gym7}
+					{@const n = sessionsIn(gym7, week)}
+					<p class="fact">
+						<span class="num">{n}</span>
+						{n === 1 ? 'session' : 'sessions'} in the last 7 days{#if last}; last trained {dayLabel(last, today())}{/if}
+					</p>
+				{/if}
 				<p class="caption">Tap the parts you trained.</p>
 			</div>
 
@@ -232,6 +299,16 @@
 					/>
 					<span class="unit" aria-hidden="true">{unit}</span>
 				</div>
+				{#if delta}
+					<p class="fact">
+						<span class="num">{signed(delta.deltaKg)}</span> since {dayLabel(delta.prevDate, today())}
+					</p>
+				{/if}
+				{#if trend}
+					<svg class="spark" viewBox="0 0 120 32" preserveAspectRatio="none" role="img" aria-label="Weigh-ins over the last 30 days">
+						<polyline points={trend} />
+					</svg>
+				{/if}
 				<p class="caption">Changes the budget from this day until your next weigh-in.</p>
 			</div>
 		</div>
@@ -368,6 +445,27 @@
 		margin-top: auto;
 	}
 
+	.fact {
+		font-size: var(--text-sm);
+		color: var(--text);
+	}
+	.stat .meter {
+		height: 0.5rem;
+	}
+	.spark {
+		width: 100%;
+		height: 2rem;
+		overflow: visible;
+	}
+	.spark polyline {
+		fill: none;
+		stroke: var(--weight);
+		stroke-width: 2;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		vector-effect: non-scaling-stroke;
+	}
+
 	.trained {
 		border: 0;
 		margin: 0;
@@ -428,6 +526,7 @@
 	@media (min-width: 46rem) {
 		.stats {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
+			align-items: start; /* each card is as tall as its own content, not the Gym card's */
 		}
 		.stat-weight {
 			grid-column: auto;

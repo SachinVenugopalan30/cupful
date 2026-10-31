@@ -14,10 +14,12 @@
 	let message = $state('');
 	let messageOk = $state(true);
 	let busy = $state(false);
+	let picked = $state<string[]>([]); // workout types ticked as "counts as gym"
 
 	async function load() {
 		try {
 			status = await google.status();
+			if (status.configured && status.connected) picked = [...(status.gym_types ?? [])];
 		} catch (e) {
 			loadError = errorMessage(e);
 		}
@@ -52,6 +54,12 @@
 		run(async () => {
 			const r = await google.sync();
 			return `Synced ${r.days} ${r.days === 1 ? 'day' : 'days'} of steps.`;
+		});
+
+	const saveGymTypes = () =>
+		run(async () => {
+			await google.setGymTypes(picked);
+			return 'Gym workout types saved.';
 		});
 
 	function disconnect() {
@@ -95,6 +103,23 @@
 				</p>
 				{#if status.last_error}<p class="notice notice-error" role="alert">{status.last_error}</p>{/if}
 			{/if}
+			{#if !status.needs_reconnect && status.exercise_types?.length}
+				<fieldset class="gym-types">
+					<legend>Counts as gym</legend>
+					<p class="small muted">Gym minutes are filled from these workout types. Anything you enter by hand wins.</p>
+					<div class="types">
+						{#each status.exercise_types as t (t.value)}
+							<label class="type">
+								<input type="checkbox" value={t.value} bind:group={picked} disabled={busy || !connection.online} />
+								<span>{t.label}</span>
+							</label>
+						{/each}
+					</div>
+					<div class="row">
+						<button class="btn" onclick={saveGymTypes} disabled={busy || !connection.online}>Save gym types</button>
+					</div>
+				</fieldset>
+			{/if}
 			<div class="row">
 				{#if !status.needs_reconnect}
 					<button class="btn" onclick={syncNow} disabled={busy || !connection.online}>
@@ -106,3 +131,30 @@
 		{/if}
 	</SettingRow>
 {/if}
+
+<style>
+	.gym-types {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+	.gym-types legend {
+		padding: 0;
+		font-weight: var(--weight-bold);
+	}
+	.types {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+		gap: 0 var(--space-3);
+	}
+	.type {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--touch);
+	}
+</style>

@@ -30,6 +30,7 @@ describe('isCacheable', () => {
 		expect(isCacheable('/api/days?from=2026-10-01&to=2026-10-29')).toBe(true);
 		expect(isCacheable('/api/budget/2026-10-29')).toBe(true);
 		expect(isCacheable('/api/trends?from=2026-10-01&to=2026-10-29')).toBe(true);
+		expect(isCacheable('/api/workouts?from=2026-10-24&to=2026-10-30')).toBe(true);
 		expect(isCacheable('/api/products')).toBe(true);
 		expect(isCacheable('/api/profile')).toBe(true);
 	});
@@ -41,6 +42,8 @@ describe('isCacheable', () => {
 		expect(isCacheable('/api/products?q=milk')).toBe(false);
 		expect(isCacheable('/api/profile/versions')).toBe(false);
 		expect(isCacheable('/api/google/status')).toBe(false);
+		expect(isCacheable('/api/workouts')).toBe(false);
+		expect(isCacheable('/api/google/gym-types')).toBe(false);
 		expect(isCacheable('/api/health')).toBe(false);
 	});
 });

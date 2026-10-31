@@ -3,7 +3,7 @@
 // queued writes applied on top.
 
 import { api, cachedGet, enc } from './http.ts';
-import type { Budget, Day, Health, Meal, Trends } from './types.ts';
+import type { Budget, Day, Health, Meal, Trends, Workout } from './types.ts';
 import { overlayDay, overlayMeals } from '../offline/overlay.ts';
 import { queueState } from '../offline/state.svelte.ts';
 
@@ -23,4 +23,16 @@ export async function getMeals(date: string): Promise<Meal[]> {
 export async function getDay(date: string): Promise<Day> {
 	const body = await cachedGet<Day>(`/api/days/${enc(date)}`);
 	return overlayDay(body, queueState.ops, date);
+}
+
+/** Days with data in a range (at most 400), oldest first. */
+export async function getDays(from: string, to: string): Promise<Day[]> {
+	const body = await cachedGet<{ days: Day[] }>(`/api/days?from=${enc(from)}&to=${enc(to)}`);
+	return body.days;
+}
+
+/** Synced workouts in a range (at most 400 days), oldest first. Empty when nothing is synced. */
+export async function getWorkouts(from: string, to: string): Promise<Workout[]> {
+	const body = await cachedGet<{ workouts: Workout[] }>(`/api/workouts?from=${enc(from)}&to=${enc(to)}`);
+	return body.workouts;
 }
