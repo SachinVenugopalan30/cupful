@@ -54,18 +54,27 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 		name: string;
 		display: string;
 		background_color: string;
-		icons: { src: string }[];
+	icons: { src: string; purpose?: string }[];
 	};
 	expect(body.name).toBe('Cupful');
 	expect(body.display).toBe('standalone');
 	expect(body.background_color).toBe('#f2f5f6');
 
-	for (const icon of ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png']) {
+	const pwaIcons = ['/icons/icon-192.png', '/icons/icon-512.png'];
+	for (const icon of [
+		...pwaIcons,
+		'/icons/apple-touch-icon.png',
+		'/favicon.svg',
+		'/favicon.ico'
+	]) {
 		const res = await page.request.get(icon);
 		expect(res.status(), icon).toBe(200);
-		expect(res.headers()['content-type'], icon).toBe('image/png');
-		expect(body.icons.map((i) => i.src)).toContain(icon);
+		expect(res.headers()['content-type'], icon).toMatch(/image\/(png|svg\+xml|x-icon)/);
 	}
+	expect(body.icons).toEqual([
+		expect.objectContaining({ src: '/icons/icon-192.png', purpose: 'any maskable' }),
+		expect.objectContaining({ src: '/icons/icon-512.png', purpose: 'any maskable' })
+	]);
 
 	await page.context().setOffline(true);
 	await page.reload();

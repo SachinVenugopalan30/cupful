@@ -9,6 +9,7 @@
 	import { health, invites, type Health } from '#lib/api.ts';
 	import { inviteErrorMessage, inviteToken } from '#lib/invites.ts';
 	import { loadSession } from '#lib/session.svelte.ts';
+	import Wordmark from '#lib/Wordmark.svelte';
 
 	const zones = Intl.supportedValuesOf('timeZone');
 
@@ -60,7 +61,7 @@
 
 <div class="auth-page">
 	<div class="auth-card">
-		<p class="wordmark" aria-hidden="true">Cupful</p>
+		<Wordmark height="2rem" />
 		<h1>Join Cupful</h1>
 		{#if !token}
 			<div class="notice notice-error" role="alert">
@@ -142,7 +143,6 @@
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-card);
 	}
-	.wordmark,
 	.auth-card h1,
 	.auth-copy {
 		margin: 0;

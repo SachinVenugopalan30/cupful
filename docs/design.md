@@ -95,6 +95,7 @@ One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font
 ## Shell
 
 - From 48 rem the top bar is sticky. It holds the wordmark, four plain links (Today, Activity, Trends, Settings) and a user chip.
+- Brand: use the shipped logo set, not styled text. `web/src/lib/Wordmark.svelte` renders the light and dark wordmark SVGs and picks one from the active theme. Its colors match `--accent` and `--gold`. Favicons live in `web/static/favicon.svg`, `web/static/favicon.ico` and `web/static/icons/`.
 - Below 48 rem the top bar becomes fixed bottom tabs with an icon and a short label per tab.
 - The current route uses `--surface-2` with `--text`. It is never an accent fill or accent text.
 - Every tab is at least 44 px tall. The bar adds `env(safe-area-inset-bottom)` on phones. The page reserves room for the bar.

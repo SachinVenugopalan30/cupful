@@ -2,7 +2,7 @@
 <script lang="ts">
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/global.css';
-	import favicon from '#lib/assets/favicon.svg';
+	import Wordmark from '#lib/Wordmark.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -43,7 +43,6 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
 	<title>Cupful</title>
 </svelte:head>
 
@@ -57,7 +56,7 @@
 {:else if ready}
 	{#if session.user}
 		<nav class="tabs" aria-label="Main">
-			<a class="brand" href="/">Cupful</a>
+			<a class="brand" href="/"><Wordmark label="Cupful" /></a>
 			<div class="nav-links">
 				<a href="/" aria-current={current('/')}>
 					<svg viewBox="0 0 24 24" aria-hidden="true"

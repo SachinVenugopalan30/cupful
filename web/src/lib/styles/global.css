@@ -606,14 +606,6 @@ dialog.sheet::backdrop {
 	flex-direction: column;
 	gap: var(--space-4);
 }
-.wordmark {
-	font-family: var(--font-sans);
-	font-size: var(--text-2xl);
-	font-weight: var(--weight-bold);
-	letter-spacing: -0.02em;
-	color: var(--text);
-}
-
 /* Global reduced motion: animation and transitions answer actions, so none of them play. */
 @media (prefers-reduced-motion: reduce) {
 	*,

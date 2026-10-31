@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { ApiError, auth, errorMessage, health, type Health } from '#lib/api.ts';
+	import Wordmark from '#lib/Wordmark.svelte';
 	import { loadSession, session } from '#lib/session.svelte.ts';
 	import { clearUser, countFor } from '#lib/offline/queue.ts';
 	import { clearPreviousUser, loadPreviousUser } from '#lib/offline/session-cache.ts';
@@ -81,7 +82,7 @@
 
 <div class="auth-page">
 	<div class="auth-card">
-		<p class="wordmark" aria-hidden="true">Cupful</p>
+		<Wordmark height="2rem" />
 		<div class="auth-intro">
 			<h1>Log in</h1>
 			<p class="muted">Your food, activity and trends, on your own server.</p>
@@ -144,9 +145,6 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-card);
-	}
-	.wordmark {
-		margin: 0;
 	}
 	.auth-intro {
 		display: flex;

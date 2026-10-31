@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { ApiError, auth, errorMessage, health, type Health } from '#lib/api.ts';
+	import Wordmark from '#lib/Wordmark.svelte';
 	import { loadSession } from '#lib/session.svelte.ts';
 
 	const zones = Intl.supportedValuesOf('timeZone');
@@ -50,7 +51,7 @@
 
 <div class="auth-page">
 	<div class="auth-card">
-		<p class="wordmark" aria-hidden="true">Cupful</p>
+		<Wordmark height="2rem" />
 		<div class="auth-intro">
 			<h1>Create the admin account</h1>
 			<p class="muted">This is the first account on this server. You can add others later.</p>
@@ -125,9 +126,6 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-card);
-	}
-	.wordmark {
-		margin: 0;
 	}
 	.auth-intro {
 		display: flex;
