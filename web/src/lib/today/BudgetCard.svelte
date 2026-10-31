@@ -242,6 +242,8 @@
 	.working {
 		border-top: 1px solid var(--border);
 		padding-top: var(--space-2);
+		/* In a stretched card the row sits at the bottom. */
+		margin-top: auto;
 	}
 	summary {
 		min-height: var(--touch);

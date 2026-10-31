@@ -72,8 +72,12 @@
 		.activity {
 			display: block;
 		}
+		/* The budget card is as tall as the logging column beside it. */
 		.budget {
-			align-self: start;
+			display: flex;
+		}
+		.budget > :global(.card) {
+			flex: 1;
 		}
 	}
 </style>
