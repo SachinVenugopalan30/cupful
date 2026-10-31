@@ -11,20 +11,20 @@ const TIMEZONE: &str = "UTC";
 const BREAKFASTS: &[&[&str]] = &[
     &["Oatmeal, cooked with water", "Milk, whole"],
     &["Egg, scrambled", "Toast, whole wheat"],
-    &["Dosa, plain"],
+    &["Pancakes", "Milk, whole"],
     &["Greek yogurt, plain, whole milk", "Dates, medjool"],
     &["Egg, fried", "Toast, white bread"],
 ];
 const LUNCHES: &[&[&str]] = &[
     &[
         "Rice, white, cooked",
-        "Dal (cooked, with tadka)",
-        "Cauliflower (gobi), boiled",
+        "Chickpeas (chana), boiled",
+        "Tomato, raw",
     ],
     &[
-        "Roti (chapati), whole wheat",
         "Chicken breast, cooked (roasted)",
-        "Spinach (palak), boiled",
+        "Quinoa, cooked",
+        "Broccoli, boiled",
     ],
     &["Quinoa, cooked", "Chickpeas (chana), boiled", "Tomato, raw"],
     &["Pasta, cooked", "Chicken, minced, cooked"],
@@ -35,11 +35,7 @@ const LUNCHES: &[&[&str]] = &[
     ],
 ];
 const DINNERS: &[&[&str]] = &[
-    &[
-        "Roti (chapati), whole wheat",
-        "Dal (cooked, with tadka)",
-        "Okra (bhindi), boiled",
-    ],
+    &["Pasta, cooked", "Chicken, minced, cooked", "Tomato, raw"],
     &["Salmon, cooked", "Potato, boiled", "Green beans, boiled"],
     &[
         "Rice, white, cooked",

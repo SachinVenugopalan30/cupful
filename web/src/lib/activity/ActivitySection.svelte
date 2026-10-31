@@ -27,8 +27,12 @@
 		type Parsed
 	} from './logic.ts';
 
-	let { date, refreshKey, onChanged }: { date: string; refreshKey: number; onChanged: () => void } =
-		$props();
+	let {
+		date,
+		refreshKey,
+		onChanged,
+		heading = true
+	}: { date: string; refreshKey: number; onChanged: () => void; heading?: boolean } = $props();
 
 	let data = $state<Day | null>(null);
 	let loadError = $state('');
@@ -97,9 +101,9 @@
 	}
 </script>
 
-<section class="activity" aria-labelledby="activity-h" aria-busy={data === null && !loadError}>
+<section class="activity" aria-label="Activity" aria-busy={data === null && !loadError}>
 	<header class="head">
-		<h2 id="activity-h">Activity</h2>
+		{#if heading}<h2>Activity</h2>{/if}
 		<p class="saved small" role="status">
 			{#key status}
 				{#if status}<span class="saved-text">{status}</span>{/if}
@@ -124,13 +128,13 @@
 		{#if error}<p class="notice notice-error" role="alert">{error}</p>{/if}
 
 		<div class="stats">
-			<section class="card stat stat-steps" aria-labelledby="steps-h">
+			<div class="card stat stat-steps">
 				<div class="stat-head">
 					<h3 id="steps-h">Steps</h3>
 					{#if d.steps !== null}
-						<span class="chip">{d.steps_source ? sourceLabel(d.steps_source) : 'Manual'}</span>
+						<span class="chip" data-testid="steps-source">{d.steps_source ? sourceLabel(d.steps_source) : 'Manual'}</span>
 					{:else}
-						<span class="chip">Not logged</span>
+						<span class="chip" data-testid="steps-source">Not logged</span>
 					{/if}
 				</div>
 				<div class="figure">
@@ -153,9 +157,9 @@
 						Steps for this day.
 					{/if}
 				</p>
-			</section>
+			</div>
 
-			<section class="card stat stat-gym" aria-labelledby="gym-h">
+			<div class="card stat stat-gym">
 				<div class="stat-head">
 					<h3 id="gym-h">Gym</h3>
 					{#if d.gym_minutes !== null}
@@ -194,9 +198,9 @@
 					</div>
 				</fieldset>
 				<p class="caption">Tap the parts you trained.</p>
-			</section>
+			</div>
 
-			<section class="card stat stat-weight" aria-labelledby="weight-h">
+			<div class="card stat stat-weight">
 				<div class="stat-head">
 					<h3 id="weight-h">Weigh-in</h3>
 					{#if d.weight_kg !== null}
@@ -220,7 +224,7 @@
 					<span class="unit" aria-hidden="true">{unit}</span>
 				</div>
 				<p class="caption">Changes the budget from this day until your next weigh-in.</p>
-			</section>
+			</div>
 		</div>
 	{/if}
 </section>

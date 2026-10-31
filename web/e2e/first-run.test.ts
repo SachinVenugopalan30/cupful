@@ -23,8 +23,10 @@ test('first run: setup, Today, stays logged in, theme, logout and login', async 
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Log a meal' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled();
+	const today = await page.getByLabel('Date').inputValue();
 	await page.getByRole('button', { name: 'Previous day' }).click();
-	await expect(page.getByRole('heading', { name: 'Yesterday' })).toBeVisible();
+	await expect(page.getByLabel('Date')).not.toHaveValue(today);
+	await expect(page.getByRole('button', { name: 'Back to today' })).toBeVisible();
 	await noSideScroll(page);
 
 	await page.reload();

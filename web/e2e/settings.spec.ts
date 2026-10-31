@@ -100,7 +100,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	const about = page.getByRole('region', { name: 'About' });
 	await expect(about.getByText(/Cupful \d+\.\d+\.\d+/)).toBeVisible();
 	await expect(about.getByRole('link', { name: 'Source code' })).toHaveAttribute('href', /^https?:\/\//);
-	await expect(about.getByText('AGPL-3.0-or-later', { exact: false })).toBeVisible();
+	await expect(about.getByText('AGPL-3.0-or-later', { exact: false }).first()).toBeVisible();
 
 	// The e2e server has no Google client configured: the feature is invisible and its routes 404.
 	expect(await (await page.request.get('/api/google')).json()).toEqual({ configured: false });

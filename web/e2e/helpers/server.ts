@@ -84,14 +84,14 @@ export async function startCupful(
 }
 
 /**
- * Adds the `demo` user (and one day of their history) with `seed-demo`. It runs against the live
+ * Adds the `demo` user (and `days` of their history) with `seed-demo`. It runs against the live
  * data dir; SQLite is in WAL mode with a busy timeout, so a short CLI write is safe.
  */
-export function seedDemoUser(server: CupfulServer): {
+export function seedDemoUser(server: CupfulServer, days = 1): {
 	username: string;
 	password: string;
 } {
-	const res = spawnSync(BIN, ['seed-demo', '--days', '1', '--seed', '9'], {
+	const res = spawnSync(BIN, ['seed-demo', '--days', String(days), '--seed', '9'], {
 		encoding: 'utf8',
 		env: serverEnv(server.port, server.dataDir, {}),
 		timeout: 60_000,

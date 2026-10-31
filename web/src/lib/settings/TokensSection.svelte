@@ -80,8 +80,7 @@
 	description="Let an automation, such as an iOS Shortcut, post steps and gym minutes."
 >
 	<p class="small muted">
-		A token lets an automation, such as an iOS Shortcut, post your steps and gym minutes. It can't
-		read anything or overwrite a value you typed yourself. Setup steps are in
+		A token can't read anything or overwrite a value you typed yourself. Setup steps are in
 		<code>docs/shortcuts.md</code> in the source code.
 	</p>
 	{#if !connection.online}

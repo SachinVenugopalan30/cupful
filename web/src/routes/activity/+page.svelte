@@ -12,8 +12,11 @@
 <svelte:head><title>Activity · Cupful</title></svelte:head>
 
 <div class="activity stack">
-	<DayNav />
-	<ActivitySection date={day.date} {refreshKey} onChanged={changed} />
+	<header class="page-head">
+		<h1>Activity</h1>
+		<DayNav />
+	</header>
+	<ActivitySection date={day.date} {refreshKey} onChanged={changed} heading={false} />
 	<BudgetCard date={day.date} {refreshKey} />
 </div>
 
@@ -21,5 +24,12 @@
 	.activity {
 		max-width: var(--content-max);
 		margin: 0 auto;
+	}
+	.page-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		flex-wrap: wrap;
 	}
 </style>

@@ -20,7 +20,7 @@ async function noSideScroll(page: Page) {
 }
 
 const stepsField = (page: Page) => page.getByLabel('Steps', { exact: true });
-const stepsChip = (page: Page) => page.getByLabel('Steps', { exact: true }).locator('xpath=ancestor::div[contains(@class,"field")]').locator('.chip');
+const stepsChip = (page: Page) => page.getByTestId('steps-source');
 
 test.describe.configure({ mode: 'serial' });
 

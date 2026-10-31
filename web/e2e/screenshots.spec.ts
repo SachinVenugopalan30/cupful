@@ -7,25 +7,20 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-	localDate,
 	login,
 	randomPort,
-	saveProfile,
-	seedDay,
-	seedMeal,
+	seedDemoUser,
 	startCupful,
 	type CupfulServer
 } from './helpers/server.ts';
 
 test.describe.configure({ mode: 'serial' });
 test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1 to capture docs screenshots');
+test.use({ reducedMotion: 'reduce' });
 
 const OUT = fileURLToPath(new URL('../../docs/screenshots', import.meta.url));
 const port = randomPort();
 test.use({ baseURL: `http://127.0.0.1:${port}` });
-
-const daysAgo = (n: number) =>
-	new Date(Date.now() - n * 86_400_000).toLocaleDateString('en-CA');
 
 let server: CupfulServer;
 
@@ -44,38 +39,21 @@ async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
 }
 
 test('capture Today in light and dark at 360, then Trends at 1280', async ({ page }) => {
-	await login(page);
-	await saveProfile(page);
-
-	// Two weeks of steps and a slow downward weight curve, so the Trends charts have shape.
-	for (let n = 13; n >= 0; n--) {
-		await seedDay(page, daysAgo(n), {
-			steps: 6200 + ((n * 1100) % 5200),
-			weight_kg: Math.round((80.4 - (13 - n) * 0.11) * 10) / 10
-		});
-	}
-	// Older intake so the Trends intake chart is not a single bar.
-	for (let n = 7; n >= 1; n--) {
-		const date = daysAgo(n);
-		await seedMeal(page, date, 'Greek yogurt, berries and granola', 'breakfast');
-		await seedMeal(page, date, 'Chicken, rice and broccoli bowl', 'lunch');
-	}
-	const today = localDate();
-	await seedMeal(page, today, 'Greek yogurt, berries and granola', 'breakfast');
-	await seedMeal(page, today, 'Chicken, rice and broccoli bowl', 'lunch');
-	await seedMeal(page, today, 'Salmon with roast potatoes and greens', 'dinner');
+	// The demo user has 90 days of meals, budgets, steps and weigh-ins.
+	const demo = seedDemoUser(server, 90);
+	await login(page, demo);
 
 	await page.setViewportSize({ width: 360, height: 800 });
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('meal').filter({ hasText: 'Salmon' })).toBeVisible();
+	await expect(page.getByTestId('meal').first()).toBeVisible();
 
 	await setTheme(page, 'light');
-	await expect(page.getByTestId('meal').filter({ hasText: 'Salmon' })).toBeVisible();
+	await expect(page.getByTestId('meal').first()).toBeVisible();
 	await page.screenshot({ path: join(OUT, 'today-360-light.png') });
 
 	await setTheme(page, 'dark');
-	await expect(page.getByTestId('meal').filter({ hasText: 'Salmon' })).toBeVisible();
+	await expect(page.getByTestId('meal').first()).toBeVisible();
 	await page.screenshot({ path: join(OUT, 'today-360-dark.png') });
 
 	// Trends is a wide screen in the docs.

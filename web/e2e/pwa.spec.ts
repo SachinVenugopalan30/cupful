@@ -58,7 +58,7 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 	};
 	expect(body.name).toBe('Cupful');
 	expect(body.display).toBe('standalone');
-	expect(body.background_color).toBe('#f8f4ec');
+	expect(body.background_color).toBe('#f2f5f6');
 
 	for (const icon of ['/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png']) {
 		const res = await page.request.get(icon);

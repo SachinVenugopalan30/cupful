@@ -16,7 +16,10 @@
 <svelte:head><title>Today · Cupful</title></svelte:head>
 
 <div class="today">
-	<div class="nav"><DayNav /></div>
+	<header class="page-head">
+		<h1>Today</h1>
+		<DayNav />
+	</header>
 	<div class="budget"><BudgetCard date={day.date} {refreshKey} /></div>
 	<div class="log">
 		<Composer date={day.date} onSaved={changed} />
@@ -34,8 +37,13 @@
 		grid-template-areas: 'nav' 'budget' 'log' 'meals';
 		grid-template-columns: minmax(0, 1fr);
 	}
-	.nav {
+	.page-head {
 		grid-area: nav;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		flex-wrap: wrap;
 	}
 	.budget {
 		grid-area: budget;

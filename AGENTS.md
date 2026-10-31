@@ -8,8 +8,8 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 
 ## Status
 
-- M0 to M7 are done. M7 shipped v0.1.0: one-time invites, Tailscale identity mode, rewritten self-hosting docs, and the multi-arch image on GHCR.
-- M8 is next. Refresh the UI with the design-taste-frontend skill. Keep routes, behavior, API and tests. Check 360 px and desktop, light and dark, contrast, touch targets, screenshots, and a phone pass.
+- M0 to M8 are done. M7 shipped v0.1.0: one-time invites, Tailscale identity mode, rewritten self-hosting docs, and the multi-arch image on GHCR. M8 refreshed the UI: the Mineral palette on the Pantry layout, self-hosted Manrope, new Today, Activity, Trends and Settings screens, server-side trend averages and meal mix, and new docs screenshots.
+- Next: v0.2. Start with the known gaps below.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
@@ -36,6 +36,7 @@ web/                    SvelteKit app: /, /activity, /trends, /settings, /login,
   src/lib/sync/         op builders, uuidv7, sendOps
   src/lib/offline/      IndexedDB queue, cache, overlay, session cache, sync UI
   src/lib/{today,products,settings,activity,trends}/   screens and their logic
+  static/fonts/         self-hosted Manrope woff2 and its OFL licence
   src/service-worker.ts PWA shell cache, navigation fallback, update prompt
   e2e/                  Playwright against the real server
 docs/                   design, offline, import-export, backups, providers, google-health, shortcuts, decisions
