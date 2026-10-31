@@ -16,10 +16,8 @@
 		<span class="lead">Added to this day's budget</span>
 		<span class="terms">
 			<span>Steps <span class="num">+{formatKcal(budget.steps_kcal)}</span> kcal</span>
-			<span aria-hidden="true">·</span>
 			<span>Gym <span class="num">+{formatKcal(budget.gym_kcal)}</span> kcal</span>
-			<span aria-hidden="true">→</span>
-			<span><span class="num strong">{formatKcal(budget.budget)}</span> kcal budget</span>
+			<span>= <span class="num strong">{formatKcal(budget.budget)}</span> kcal budget</span>
 		</span>
 	</p>
 {/if}
@@ -27,9 +25,8 @@
 <style>
 	.added {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--space-1) var(--space-3);
+		flex-direction: column;
+		gap: var(--space-1);
 		font-size: var(--text-sm);
 		min-width: 0;
 	}
@@ -39,7 +36,10 @@
 	.terms {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0 var(--space-2);
+		gap: 0 var(--space-4);
+	}
+	.terms > span {
+		white-space: nowrap;
 	}
 	.strong {
 		font-weight: var(--weight-bold);

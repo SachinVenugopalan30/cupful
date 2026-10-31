@@ -128,6 +128,35 @@ a:hover {
 	padding: var(--space-4);
 }
 
+/* ---- menu: a <details> with an absolutely placed panel (see dismiss.ts) ---- */
+
+.menu {
+	position: relative;
+}
+.menu > summary {
+	list-style: none;
+	cursor: pointer;
+}
+.menu > summary::-webkit-details-marker {
+	display: none;
+}
+.menu-panel {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: calc(100% + var(--space-1));
+	z-index: 5;
+	padding: var(--space-3);
+	background: var(--surface);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sheet);
+}
+.menu-panel.up {
+	top: auto;
+	bottom: calc(100% + var(--space-1));
+}
+
 /* ---- buttons ---- */
 
 .btn {

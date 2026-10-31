@@ -47,10 +47,16 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await page.getByLabel('Gym minutes').fill('45');
 	await page.getByLabel('Gym minutes').blur();
 	await expect(page.getByRole('status').filter({ hasText: 'Gym minutes saved.' })).toHaveCount(1);
-	await page.getByRole('button', { name: 'Chest' }).click();
-	await expect(page.getByRole('button', { name: 'Chest' })).toHaveAttribute('aria-pressed', 'true');
-	await page.getByRole('button', { name: 'Legs' }).click();
-	await expect(page.getByRole('button', { name: 'Legs' })).toHaveAttribute('aria-pressed', 'true');
+	const trainedMenu = page.locator('details.trained');
+	await trainedMenu.locator('summary').click();
+	await trainedMenu.getByRole('checkbox', { name: 'Chest' }).check();
+	await expect(page.getByRole('status').filter({ hasText: 'Chest added.' })).toHaveCount(1);
+	await trainedMenu.getByRole('checkbox', { name: 'Legs' }).check();
+	await expect(page.getByRole('status').filter({ hasText: 'Legs added.' })).toHaveCount(1);
+	await expect(trainedMenu.locator('summary')).toContainText('Trained: Chest, Legs');
+	await page.keyboard.press('Escape');
+	await expect(trainedMenu).not.toHaveAttribute('open', '');
+	await expect(trainedMenu.locator('summary')).toBeFocused();
 	await page.getByLabel(`Weigh-in (${unit})`).fill(unit === 'kg' ? '81.4' : '179.5');
 	await page.getByLabel(`Weigh-in (${unit})`).blur();
 	await expect(page.getByRole('status').filter({ hasText: 'Weigh-in saved.' })).toHaveCount(1);
@@ -63,8 +69,12 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await expect(stepsField(page)).toHaveValue('8123');
 	await expect(stepsChip(page)).toHaveText('Manual');
 	await expect(page.getByLabel('Gym minutes')).toHaveValue('45');
-	await expect(page.getByRole('button', { name: 'Chest' })).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.getByRole('button', { name: 'Back' })).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('details.trained summary')).toContainText('Trained: Chest, Legs');
+	await page.locator('details.trained summary').click();
+	await expect(page.getByRole('checkbox', { name: 'Chest' })).toBeChecked();
+	await expect(page.getByRole('checkbox', { name: 'Back' })).not.toBeChecked();
+	await page.getByRole('button', { name: 'Done' }).click();
+	await expect(page.locator('details.trained')).not.toHaveAttribute('open', '');
 	await expect(page.getByLabel(`Weigh-in (${unit})`)).toHaveValue(unit === 'kg' ? '81.4' : '179.5');
 });
 

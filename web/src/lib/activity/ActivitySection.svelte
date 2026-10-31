@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
   ActivitySection — steps, gym minutes, body parts trained and weigh-in for one day, each with
-  the source of its value. A field saves when it loses focus (or on Enter); a chip saves on tap.
+  the source of its value. A field saves when it loses focus (or on Enter); a body part saves when ticked in the "Trained" menu.
   Props (Today and the Activity tab pass these):
     date: string             YYYY-MM-DD, the selected day
     refreshKey: number       bumped after any write to the day; refetch when it changes
@@ -18,6 +18,7 @@
 	import { formatWeight, round, weightToKg } from '#lib/format.ts';
 	import { session, today } from '#lib/session.svelte.ts';
 	import { dayPatch, sendOps, type DayFields } from '#lib/sync/index.ts';
+	import { dismiss } from '#lib/dismiss.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
 	import {
@@ -62,7 +63,7 @@
 	let weight = $state('');
 	let error = $state('');
 	let status = $state('');
-	let busy = $state(false);
+	let trained = $state<string[]>([]);
 
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	const typicalSteps = $derived(session.profile?.version?.typical_steps ?? null);
@@ -112,30 +113,37 @@
 				steps = r.steps?.toString() ?? '';
 				gym = r.gym_minutes?.toString() ?? '';
 				weight = shown(r.weight_kg);
+				trained = r.trained;
 			},
 			(e) => !stale && (loadError = errorMessage(e))
 		);
 		return () => (stale = true);
 	});
 
-	async function save(fields: DayFields, done: string) {
+	async function save(fields: DayFields, done: string): Promise<boolean> {
 		error = status = '';
-		busy = true;
 		try {
 			const [r] = await sendOps([dayPatch(date, fields)]);
 			if (r.status === 'rejected') throw new Error(`Not saved: ${r.error ?? 'rejected'}.`);
 			if (r.status === 'stale') {
 				error = staleNotice('day');
 				onChanged();
-				return;
+				return false;
 			}
 			status = r.status === 'queued' ? `${done} Waiting to sync.` : done;
 			onChanged();
+			return true;
 		} catch (e) {
 			error = errorMessage(e);
-		} finally {
-			busy = false;
+			return false;
 		}
+	}
+
+	/** Ticks a body part at once and saves the list; a failed save puts the saved list back. */
+	async function togglePart(part: string) {
+		const on = trained.includes(part);
+		trained = toggle(trained, part);
+		if (!(await save({ trained }, `${part} ${on ? 'removed' : 'added'}.`)) && data) trained = data.trained;
 	}
 
 	/** Saves a text field if it changed; a bad value shows its error and keeps what's typed. */
@@ -250,22 +258,28 @@
 					/>
 					<span class="unit" aria-hidden="true">minutes</span>
 				</div>
-				<fieldset class="trained">
-					<legend class="visually-hidden">Trained body parts</legend>
-					<div class="parts">
-						{#each BODY_PARTS as part (part)}
-							{@const on = d.trained.includes(part)}
-							<button
-								type="button"
-								class="part"
-								aria-pressed={on}
-								disabled={future || busy}
-								onclick={() => save({ trained: toggle(d.trained, part) }, `${part} ${on ? 'removed' : 'added'}.`)}
-								>{part}</button
-							>
-						{/each}
+				<details class="menu trained" use:dismiss>
+					<summary class="btn trained-btn" aria-label="Trained body parts: {trained.length ? trained.join(', ') : 'none'}">
+						<span class="trained-text">Trained: {trained.length ? trained.join(', ') : 'none'}</span>
+					</summary>
+					<div class="menu-panel">
+						<fieldset class="parts">
+							<legend class="visually-hidden">Trained body parts</legend>
+							{#each BODY_PARTS as part (part)}
+								<label class="part">
+									<input
+										type="checkbox"
+										checked={trained.includes(part)}
+										disabled={future}
+										onchange={() => togglePart(part)}
+									/>
+									{part}
+								</label>
+							{/each}
+						</fieldset>
+						<button type="button" class="btn done" data-close>Done</button>
 					</div>
-				</fieldset>
+				</details>
 				{#if gym7}
 					{@const n = sessionsIn(gym7, week)}
 					<p class="fact">
@@ -273,7 +287,7 @@
 						{n === 1 ? 'session' : 'sessions'} in the last 7 days{#if last}; last trained {dayLabel(last, today())}{/if}
 					</p>
 				{/if}
-				<p class="caption">Tap the parts you trained.</p>
+				<p class="caption">Pick the parts you trained.</p>
 			</div>
 
 			<div class="card stat stat-weight">
@@ -466,53 +480,59 @@
 		vector-effect: non-scaling-stroke;
 	}
 
-	.trained {
-		border: 0;
-		margin: 0;
-		padding: 0;
+	.trained-btn {
+		justify-content: flex-start;
+		width: 100%;
 		min-width: 0;
+		font-size: var(--text-sm);
+	}
+	.trained-text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.trained-btn::after {
+		content: '';
+		flex: none;
+		width: 0.5rem;
+		height: 0.5rem;
+		margin-left: auto;
+		border: solid currentColor;
+		border-width: 0 2px 2px 0;
+		transform: translateY(-2px) rotate(45deg);
+	}
+	.trained[open] .trained-btn::after {
+		transform: translateY(2px) rotate(-135deg);
 	}
 	.parts {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0 var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		border: 0;
+		min-width: 0;
 	}
 	.part {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		min-height: var(--touch);
-		padding: 0 var(--space-3);
-		border: 1px solid var(--control-border);
-		border-radius: var(--radius-pill);
-		background: var(--surface);
-		color: var(--text);
-		font: inherit;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
+		font-size: var(--text-sm);
 		cursor: pointer;
-		transition:
-			background-color var(--dur-fast) var(--ease),
-			border-color var(--dur-fast) var(--ease),
-			color var(--dur-fast) var(--ease),
-			opacity var(--dur-fast) var(--ease);
 	}
-	.part:hover:not(:disabled) {
-		background: var(--surface-2);
+	.part input {
+		width: 1.125rem;
+		height: 1.125rem;
+		accent-color: var(--accent);
 	}
-	/* Selected: accent soft fill, bold text and an accent outline, so it reads without color. */
-	.part[aria-pressed='true'] {
-		background: var(--accent-soft);
-		border-color: var(--accent);
-		color: var(--accent);
-		box-shadow: inset 0 0 0 1px var(--accent);
-		font-weight: var(--weight-bold);
-	}
-	.part:focus-visible {
-		outline: 2px solid var(--focus-ring);
-		outline-offset: 2px;
-		border-radius: var(--radius-pill);
-	}
-	.part:disabled {
+	.part:has(input:disabled) {
 		opacity: 0.55;
 		cursor: not-allowed;
+	}
+	.done {
+		width: 100%;
 	}
 
 	@media (min-width: 30rem) {
@@ -526,7 +546,6 @@
 	@media (min-width: 46rem) {
 		.stats {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
-			align-items: start; /* each card is as tall as its own content, not the Gym card's */
 		}
 		.stat-weight {
 			grid-column: auto;
@@ -537,8 +556,7 @@
 			animation: none;
 		}
 		.stat,
-		.figure input,
-		.part {
+		.figure input {
 			transition: none;
 		}
 	}

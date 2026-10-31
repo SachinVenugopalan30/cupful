@@ -88,6 +88,20 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	await noSideScroll();
 });
 
+test('a busy day shows six workouts and "Show N more"', async () => {
+	await page.unroute('**/api/workouts?**');
+	await page.route('**/api/workouts?**', (route) =>
+		route.fulfill({ json: { workouts: Array.from({ length: 9 }, (_, i) => workout(100 + i, TODAY, { name: `Session ${i + 1}` })) } })
+	);
+	await page.goto('/activity');
+	const panel = page.getByRole('region', { name: 'Workouts' });
+	await expect(panel.getByTestId('workout')).toHaveCount(6);
+	await panel.getByRole('button', { name: 'Show 3 more' }).click();
+	await expect(panel.getByTestId('workout')).toHaveCount(9);
+	await expect(panel.getByRole('button', { name: 'Show fewer' })).toHaveAttribute('aria-expanded', 'true');
+	await noSideScroll();
+});
+
 test('an empty day says so', async () => {
 	await page.goto('/activity');
 	await page.getByLabel('Previous day').click();

@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { ApiError, errorMessage, getBudget, getMeals, type Budget, type Macros } from '#lib/api.ts';
+	import { dismiss } from '#lib/dismiss.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
@@ -141,21 +142,21 @@
 			{/each}
 		</ul>
 
-		<details class="working">
+		<details class="menu working" use:dismiss={true}>
 			<summary>How it's worked out</summary>
-			<dl class="terms">
-				{#each breakdown(b, unit) as t (t.label)}
-					<div>
-						<dt>{t.label}</dt>
+			<div class="menu-panel up" role="group" aria-label="How the budget is worked out">
+				<dl class="terms">
+					{#each breakdown(b, unit) as t (t.label)}
+						<dt title={t.note}>{t.label}</dt>
 						<dd class="num">{t.value}</dd>
-						<dd class="note small muted">{t.note}</dd>
-					</div>
-				{/each}
-			</dl>
-			<p class="small muted">
-				Budgets are worked out again from current data each time. Past days use the profile and
-				weights recorded for those days, so changing your profile today doesn't change them.
-			</p>
+					{/each}
+				</dl>
+				<p class="small muted">
+					Worked out again from current data each time. Past days use the profile and weights
+					recorded for them.
+				</p>
+				<button type="button" class="btn done" data-close>Close</button>
+			</div>
 		</details>
 	{/if}
 </section>
@@ -254,24 +255,24 @@
 		text-underline-offset: 0.15em;
 	}
 	.terms {
-		margin: 0 0 var(--space-3);
-	}
-	.terms > div {
 		display: grid;
 		grid-template-columns: 1fr auto;
-		column-gap: var(--space-3);
-		padding: var(--space-2) 0;
-		border-bottom: 1px solid var(--border);
+		gap: 0 var(--space-4);
+		margin: 0 0 var(--space-2);
+		font-size: var(--text-xs);
+		line-height: 1.7;
+		font-variant-numeric: tabular-nums;
 	}
 	dt {
-		font-weight: var(--weight-medium);
+		color: var(--text-muted);
 	}
 	dd {
 		margin: 0;
 		text-align: right;
+		font-weight: var(--weight-medium);
 	}
-	.terms .note {
-		grid-column: 1 / -1;
-		text-align: left;
+	.working .done {
+		width: 100%;
+		margin-top: var(--space-2);
 	}
 </style>

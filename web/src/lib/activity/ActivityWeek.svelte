@@ -72,7 +72,7 @@
 							{/if}
 						</span>
 						<span class="mark" aria-hidden="true">{#if r.gym}<i class="dot"></i>{/if}</span>
-						<span class="count num" aria-hidden="true">{r.workouts || ''}</span>
+						<span class="count num" class:zero={!r.workouts} aria-hidden="true">{r.workouts || ''}</span>
 						<span class="dow" aria-hidden="true">{weekday(r.date)}</span>
 						<span class="dom num" aria-hidden="true">{dom(r.date)}</span>
 					</button>
@@ -173,10 +173,12 @@
 		right: 0;
 		border-top: 1px dashed var(--text-muted);
 	}
+	/* Two fixed rows under each bar, so dots and counts line up across days and never touch. */
 	.mark {
 		display: flex;
 		align-items: center;
 		height: 0.75rem;
+		margin-top: var(--space-1);
 	}
 	.dot {
 		display: inline-block;
@@ -186,8 +188,21 @@
 		background: var(--accent);
 	}
 	.count {
-		min-height: 1em;
-		line-height: 1;
+		min-width: 1.5rem;
+		height: 1.25rem;
+		padding: 0 0.25rem;
+		margin-bottom: var(--space-1);
+		border-radius: var(--radius-pill);
+		background: var(--surface-2);
+		color: var(--text);
+		line-height: 1.25rem;
+		text-align: center;
+	}
+	.col[aria-current='date'] .count {
+		background: var(--surface);
+	}
+	.count.zero {
+		visibility: hidden;
 	}
 	.dom {
 		line-height: 1;

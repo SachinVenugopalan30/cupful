@@ -16,6 +16,10 @@
 	const tz = $derived(session.profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
 	const list = $derived(win && win.date === date ? win.workouts.filter((w) => w.date === date) : null);
 
+	const CAP = 6;
+	let expandedFor = $state(''); // the date whose full list is open; another day starts collapsed
+	const all = $derived(expandedFor === date);
+
 	// Only to decide whether to point at Settings; offline or unconfigured shows nothing extra.
 	let status = $state<GoogleStatus | null>(null);
 	$effect(() => {
@@ -53,27 +57,35 @@
 		</div>
 	{:else}
 		<ul class="rows">
-			{#each list as w (w.id)}
+			{#each all ? list : list.slice(0, CAP) as w (w.id)}
 				<li class="row-w" data-testid="workout">
 					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d={PATHS[workoutKind(w.type)]} /></svg>
 					<div class="body">
 						<p class="title">
-							<span>{w.name || w.type_label}</span>
+							<span class="name">{w.name || w.type_label}</span>
 							{#if w.counts_as_gym}<span class="chip chip-gym">Counts as gym</span>{/if}
+							<span class="time small muted num">{formatClock(w.start, tz)}</span>
 						</p>
-						<p class="sub small muted">
-							{w.name ? `${w.type_label} · ` : ''}{formatClock(w.start, tz)}
-						</p>
-						<p class="stats small">
-							<span class="num">{formatDuration(w.active_minutes)}</span>
-							{#if w.distance_m !== null}<span class="num">{formatKm(w.distance_m)}</span>{/if}
-							{#if w.kcal !== null}<span class="num">{Math.round(w.kcal)} kcal</span>{/if}
-							{#if w.avg_hr !== null}<span class="num">{w.avg_hr} bpm avg</span>{/if}
+						<p class="stats small muted">
+							{[
+								w.name ? w.type_label : null,
+								formatDuration(w.active_minutes),
+								w.distance_m !== null ? formatKm(w.distance_m) : null,
+								w.kcal !== null ? `${Math.round(w.kcal)} kcal` : null,
+								w.avg_hr !== null ? `${w.avg_hr} bpm avg` : null
+							]
+								.filter(Boolean)
+								.join(' · ')}
 						</p>
 					</div>
 				</li>
 			{/each}
 		</ul>
+		{#if list.length > CAP}
+			<button type="button" class="btn more" aria-expanded={all} onclick={() => (expandedFor = all ? '' : date)}>
+				{all ? 'Show fewer' : `Show ${list.length - CAP} more`}
+			</button>
+		{/if}
 	{/if}
 </section>
 
@@ -106,8 +118,8 @@
 	.row-w {
 		display: flex;
 		gap: var(--space-3);
-		padding: var(--space-3) 0;
-		border-top: 1px solid var(--border-strong);
+		padding: var(--space-2) 0;
+		border-top: 1px solid var(--border);
 	}
 	.row-w:first-child {
 		border-top: 0;
@@ -115,8 +127,8 @@
 	}
 	.icon {
 		flex: none;
-		width: 1.5rem;
-		height: 1.5rem;
+		width: 1.25rem;
+		height: 1.25rem;
 		margin-top: 0.125rem;
 		fill: none;
 		stroke: var(--steps);
@@ -132,18 +144,21 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-1) var(--space-2);
+		gap: 0 var(--space-2);
 		font-weight: var(--weight-bold);
 	}
+	.time {
+		margin-left: auto;
+		flex: none;
+		font-weight: var(--weight-regular);
+	}
 	.chip-gym {
+		flex: none;
 		background: var(--accent-soft);
 		color: var(--accent);
 		font-weight: var(--weight-medium);
 	}
-	.stats {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0 var(--space-3);
-		margin-top: var(--space-1);
+	.more {
+		align-self: flex-start;
 	}
 </style>

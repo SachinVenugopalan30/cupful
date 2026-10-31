@@ -64,6 +64,10 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(budget.getByText('BMR', { exact: true })).toBeVisible();
 	await expect(budget.getByText('Weight used')).toBeVisible();
 	await expect(budget.getByText(/170 lb/)).toBeVisible();
+	await expect(budget.getByRole('button', { name: 'Close' })).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(budget.getByText('BMR', { exact: true })).toBeHidden();
+	await expect(budget.getByText("How it's worked out")).toBeFocused();
 	await noSideScroll(page);
 
 	// Providers: add one that can't be reached, test it, edit without touching the key, delete it.
