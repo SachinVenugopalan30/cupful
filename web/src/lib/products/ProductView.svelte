@@ -16,6 +16,7 @@
 
 	// svelte-ignore state_referenced_locally
 	const sg = p.serving_g;
+	const unit = $derived(p.serving_unit === 'ml' ? 'ml' : 'g');
 	// svelte-ignore state_referenced_locally
 	let grams = $state<number | null>(sg ? servingsToGrams(servings ?? 1, sg) : 100);
 	let mealType = $state<MealType>(defaultMealType(new Date().getHours()));
@@ -65,8 +66,8 @@
 		<thead>
 			<tr>
 				<td></td>
-				{#if sg}<th scope="col">Per serving<br /><span class="muted">{p.serving_text ?? `${formatGrams(sg)} g`}</span></th>{/if}
-				<th scope="col">Per 100 g</th>
+				{#if sg}<th scope="col">Per serving<br /><span class="muted">{p.serving_text ?? `${formatGrams(sg)} ${unit}`}</span></th>{/if}
+				<th scope="col">Per 100 {unit}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -92,7 +93,7 @@
 			</div>
 		{/if}
 		<div class="field">
-			<label for="product-grams">Grams</label>
+			<label for="product-grams">{unit === 'ml' ? 'Millilitres' : 'Grams'}</label>
 			<input
 				id="product-grams"
 				type="number"

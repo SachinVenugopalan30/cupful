@@ -45,12 +45,12 @@ export function stepServings(s: number, dir: 1 | -1): number {
 	return Math.max(0.5, next);
 }
 
-/** "1.5 servings (45 g)", "1 serving (30 g)", or "45 g" without a serving size. */
-export function portionText(grams: number, servingG: number | null): string {
-	const g = `${formatGrams(grams)} g`;
-	if (!servingG) return g;
+/** "1.5 servings (45 g)", "1 serving (330 ml)", or "45 g" without a serving size. */
+export function portionText(grams: number, servingG: number | null, unit = 'g'): string {
+	const amount = `${formatGrams(grams)} ${unit}`;
+	if (!servingG) return amount;
 	const s = gramsToServings(grams, servingG);
-	return `${s} serving${s === 1 ? '' : 's'} (${g})`;
+	return `${s} serving${s === 1 ? '' : 's'} (${amount})`;
 }
 
 /** The meal Add logs: one `food_db` item for `grams` of the product. */
@@ -65,7 +65,7 @@ export function buildMeal(p: Product, grams: number, date: string, mealType: Mea
 		confidence: null,
 		source: 'manual',
 		provider_id: null,
-		items: [itemFromPer100(p, grams, portionText(grams, p.serving_g))]
+		items: [itemFromPer100(p, grams, portionText(grams, p.serving_g, p.serving_unit))]
 	};
 }
 

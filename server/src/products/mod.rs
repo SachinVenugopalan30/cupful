@@ -82,6 +82,26 @@ struct Food {
 }
 
 impl Food {
+    /// Liquids keep a millilitre serving; everything else is grams.
+    fn serving_unit(&self) -> &'static str {
+        let Some(text) = self.serving_text.as_deref() else {
+            return "g";
+        };
+        let t = text.to_ascii_lowercase();
+        let volume = t.contains("ml")
+            || t.contains("millilit")
+            || t.contains("litre")
+            || t.contains("liter")
+            || t.split(|c: char| !c.is_ascii_alphanumeric())
+                .any(|w| matches!(w, "l" | "cl" | "fl"));
+        if volume { "ml" } else { "g" }
+    }
+
+    /// Older liquid rows stored before millilitre servings were supported have no amount.
+    fn needs_liquid_refetch(&self) -> bool {
+        self.source == "off" && self.serving_g.is_none() && self.serving_unit() == "ml"
+    }
+
     fn json(&self) -> Value {
         let attribution = (self.source == "off").then(|| {
             json!({
@@ -101,6 +121,7 @@ impl Food {
             "carbs_g": r1(self.carbs_g),
             "fat_g": r1(self.fat_g),
             "serving_g": self.serving_g.map(r1),
+            "serving_unit": self.serving_unit(),
             "serving_text": self.serving_text,
             "attribution": attribution,
         })

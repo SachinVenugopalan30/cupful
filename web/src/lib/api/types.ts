@@ -193,6 +193,8 @@ export type Product = Macros & {
 	name: string;
 	brand: string | null;
 	serving_g: number | null;
+	/** `ml` for liquids, `g` for solids. Nutrient math still treats 1 ml as 1 g. */
+	serving_unit: 'g' | 'ml';
 	serving_text: string | null;
 	/** Set for Open Food Facts data: show it on the product sheet. */
 	attribution: { text: string; url: string } | null;

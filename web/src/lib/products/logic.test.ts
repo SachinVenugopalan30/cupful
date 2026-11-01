@@ -25,6 +25,7 @@ const product: Product = {
 	name: 'Oat biscuits',
 	brand: 'Acme',
 	serving_g: 30,
+	serving_unit: 'g',
 	serving_text: '2 biscuits',
 	kcal: 480,
 	protein_g: 8,
@@ -78,6 +79,7 @@ describe('servings and grams', () => {
 	it('portion text', () => {
 		expect(portionText(45, 30)).toBe('1.5 servings (45 g)');
 		expect(portionText(30, 30)).toBe('1 serving (30 g)');
+		expect(portionText(330, 330, 'ml')).toBe('1 serving (330 ml)');
 		expect(portionText(125.5, null)).toBe('125.5 g');
 	});
 });

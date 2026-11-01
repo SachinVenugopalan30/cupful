@@ -31,7 +31,13 @@ pub async fn lookup(
     }
     let now = now_ms();
     let food = match stored(&s.db, user.id, &barcode).await? {
-        Some(f) if f.source != "off" || f.fetched_at.unwrap_or(0) > now - REFETCH_AFTER_MS => f,
+        Some(f)
+            if f.source != "off"
+                || (f.fetched_at.unwrap_or(0) > now - REFETCH_AFTER_MS
+                    && !f.needs_liquid_refetch()) =>
+        {
+            f
+        }
         // Missing or due for a refetch; a failed refetch keeps the stored copy.
         stored => match (fetch(&s, user.id, &barcode).await, stored) {
             (Ok(Some(f)), _) => store_off(&s.db, f, now).await?,
@@ -119,6 +125,41 @@ fn num(v: &Value) -> Option<f64> {
     v.as_f64().or_else(|| v.as_str()?.trim().parse().ok())
 }
 
+/// A serving quantity in millilitres or grams. Liquids are treated as 1 ml = 1 g for nutrient
+/// math; the product sheet and logged portion keep the millilitre label.
+fn serving_amount(p: &Value) -> Option<(f64, &'static str)> {
+    let q = num(&p["serving_quantity"])?;
+    let unit = p["serving_quantity_unit"]
+        .as_str()
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    let (amount, unit) = match unit.as_str() {
+        "g" => (q, "g"),
+        "ml" => (q, "ml"),
+        "cl" => (q * 10.0, "ml"),
+        "l" => (q * 1000.0, "ml"),
+        "oz" => (q * 28.3495, "g"),
+        "fl oz" | "floz" => (q * 29.5735, "ml"),
+        _ => return None,
+    };
+    (amount > 0.0 && amount <= 10_000.0).then_some((amount, unit))
+}
+
+fn mentions_unit(text: &str, unit: &str) -> bool {
+    let t = text.to_ascii_lowercase();
+    if unit == "ml" {
+        t.contains("ml")
+            || t.contains("millilit")
+            || t.contains("litre")
+            || t.contains("liter")
+            || t.split(|c: char| !c.is_ascii_alphanumeric())
+                .any(|w| matches!(w, "l" | "cl" | "fl"))
+    } else {
+        t.contains('g') || t.contains("gram")
+    }
+}
+
 /// Maps an Open Food Facts v2 product; `None` without plausible per-100 g values.
 fn from_off(barcode: &str, body: &Value) -> Option<Food> {
     if body["status"] != 1 {
@@ -134,11 +175,20 @@ fn from_off(barcode: &str, body: &Value) -> Option<Food> {
         num(&n["fat_100g"])?,
     );
     check_per_100g(kcal, protein_g, carbs_g, fat_g).ok()?;
-    let serving_g = (p["serving_quantity_unit"] == "g")
-        .then(|| num(&p["serving_quantity"]))
-        .flatten()
-        .filter(|g| *g > 0.0 && *g <= 2000.0);
     let cap = |s: String, n: usize| s.chars().take(n).collect::<String>();
+    let serving = serving_amount(p);
+    let serving_g = serving.map(|(amount, _)| amount);
+    let mut serving_text = text(p["serving_size"].as_str()).map(|s| cap(s, 100));
+    if let Some((amount, unit)) = serving
+        && !serving_text
+            .as_deref()
+            .is_some_and(|text| mentions_unit(text, unit))
+    {
+        serving_text = Some(match serving_text {
+            Some(text) => format!("{text} ({amount} {unit})"),
+            None => format!("{amount} {unit}"),
+        });
+    }
     Some(Food {
         id: 0,
         source: "off".into(),
@@ -153,7 +203,7 @@ fn from_off(barcode: &str, body: &Value) -> Option<Food> {
         carbs_g,
         fat_g,
         serving_g,
-        serving_text: text(p["serving_size"].as_str()).map(|s| cap(s, 100)),
+        serving_text,
         fetched_at: None,
     })
 }

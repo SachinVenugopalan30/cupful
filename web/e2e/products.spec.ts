@@ -113,4 +113,34 @@ test('typed barcode, label entry, log 1.5 servings, saved products, re-log, remo
 	await noSideScroll(page);
 	await sheet.getByRole('button', { name: 'Close' }).click();
 	await expect(sheet).toBeHidden();
+
+	// Liquids keep the carton's millilitres: per-serving and amount labels use ml, not g.
+	await page.route('**/api/products/5449000000996', (route) =>
+		route.fulfill({
+			json: {
+				food_id: 999,
+				source: 'off',
+				barcode: '5449000000996',
+				name: 'Coca-Cola Original',
+				brand: 'Coca-Cola',
+				serving_g: 330,
+				serving_unit: 'ml',
+				serving_text: '1 portion (330 ml)',
+				kcal: 42,
+				protein_g: 0,
+				carbs_g: 10.6,
+				fat_g: 0,
+				attribution: null
+			}
+		})
+	);
+	await page.getByRole('button', { name: 'Scan barcode' }).click();
+	await sheet.getByLabel('Or type the barcode').fill('5449000000996');
+	await sheet.getByRole('button', { name: 'Look up' }).click();
+	await expect(sheet.getByRole('heading', { name: 'Coca-Cola Original' })).toBeVisible();
+	await expect(sheet.getByLabel('Millilitres')).toHaveValue('330');
+	await expect(sheet.getByText('Per 100 ml')).toBeVisible();
+	await expect(sheet.getByText('1 portion (330 ml)')).toBeVisible();
+	await sheet.getByRole('button', { name: 'Close' }).click();
+	await expect(sheet).toBeHidden();
 });

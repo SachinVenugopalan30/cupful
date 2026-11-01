@@ -40,6 +40,7 @@ async fn hit_is_mapped_stored_and_saved() {
     assert_eq!(p["carbs_g"], 76.0);
     assert_eq!(p["fat_g"], 13.5);
     assert_eq!(p["serving_g"], 12.0);
+    assert_eq!(p["serving_unit"], "g");
     assert_eq!(p["serving_text"], "1 biscuit (12 g)");
     assert_eq!(
         p["attribution"]["text"],
@@ -85,14 +86,78 @@ async fn kj_only_is_converted() {
 }
 
 #[tokio::test]
-async fn serving_only_in_grams() {
+async fn millilitre_servings_are_kept() {
     let (off, _, _, mut a) = setup(true).await;
     let mut p = parle(nutriments());
+    p["product_name"] = serde_json::json!("Milk");
+    p["serving_size"] = serde_json::json!("1 cup (240 ml)");
+    p["serving_quantity"] = serde_json::json!(240);
     p["serving_quantity_unit"] = serde_json::json!("ml");
     off_returns(p).mount(&off).await;
     let (_, p) = lookup(&mut a, BC).await;
-    assert_eq!(p["serving_g"], serde_json::json!(null));
-    assert_eq!(p["serving_text"], "1 biscuit (12 g)");
+    assert_eq!(p["serving_g"], 240.0);
+    assert_eq!(p["serving_unit"], "ml");
+    assert_eq!(p["serving_text"], "1 cup (240 ml)");
+}
+
+#[tokio::test]
+async fn old_liquid_rows_are_refetched_once() {
+    let (off, _, state, mut a) = setup(true).await;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    sqlx::query(
+        "INSERT INTO foods (source, source_ref, name, name_norm, barcode, kcal, protein_g, carbs_g,
+             fat_g, serving_text, fetched_at)
+         VALUES ('off', ?, 'Milk', 'milk', ?, 42, 3.4, 5, 1, '1 cup (240 ml)', ?)",
+    )
+    .bind(BC)
+    .bind(BC)
+    .bind(now)
+    .execute(&state.db)
+    .await
+    .unwrap();
+    let mut p = parle(nutriments());
+    p["product_name"] = serde_json::json!("Milk");
+    p["serving_size"] = serde_json::json!("1 cup (240 ml)");
+    p["serving_quantity"] = serde_json::json!(240);
+    p["serving_quantity_unit"] = serde_json::json!("ml");
+    off_returns(p).expect(1).mount(&off).await;
+
+    let (status, p) = lookup(&mut a, BC).await;
+    assert_eq!(status, StatusCode::OK, "{p}");
+    assert_eq!(p["serving_g"], 240.0);
+    assert_eq!(p["serving_unit"], "ml");
+}
+
+#[tokio::test]
+async fn litre_servings_become_millilitres() {
+    let (off, _, _, mut a) = setup(true).await;
+    let mut p = parle(nutriments());
+    p["product_name"] = serde_json::json!("Water");
+    p["serving_size"] = serde_json::json!("1 L");
+    p["serving_quantity"] = serde_json::json!(1);
+    p["serving_quantity_unit"] = serde_json::json!("l");
+    off_returns(p).mount(&off).await;
+    let (_, p) = lookup(&mut a, BC).await;
+    assert_eq!(p["serving_g"], 1000.0);
+    assert_eq!(p["serving_unit"], "ml");
+    assert_eq!(p["serving_text"], "1 L");
+}
+
+#[tokio::test]
+async fn missing_serving_text_gets_the_volume() {
+    let (off, _, _, mut a) = setup(true).await;
+    let mut p = parle(nutriments());
+    p.as_object_mut().unwrap().remove("serving_size");
+    p["serving_quantity"] = serde_json::json!(330);
+    p["serving_quantity_unit"] = serde_json::json!("ml");
+    off_returns(p).mount(&off).await;
+    let (_, p) = lookup(&mut a, BC).await;
+    assert_eq!(p["serving_g"], 330.0);
+    assert_eq!(p["serving_unit"], "ml");
+    assert_eq!(p["serving_text"], "330 ml");
 }
 
 #[tokio::test]
