@@ -40,6 +40,8 @@ test('first run: setup, Today, stays logged in, theme, logout and login', async 
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	await noSideScroll(page);
 
+	await page.getByRole('link', { name: 'Open profile' }).click();
+	await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
 	await page.getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
 	await page.goto('/');

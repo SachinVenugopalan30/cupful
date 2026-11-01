@@ -3,6 +3,7 @@
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/global.css';
 	import Wordmark from '#lib/Wordmark.svelte';
+	import UserMenu from '#lib/UserMenu.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -83,10 +84,7 @@
 					<span>Settings</span>
 				</a>
 			</div>
-			<span class="user-chip" title={session.user.username}>
-				{session.user.username.slice(0, 1).toUpperCase()}
-				<span class="visually-hidden">Signed in as {session.user.username}</span>
-			</span>
+			<UserMenu />
 		</nav>
 	{/if}
 	<main class="page" class:with-tabs={!!session.user}>
@@ -123,9 +121,6 @@
 		border-top: 1px solid var(--border);
 	}
 	.brand {
-		display: none;
-	}
-	.user-chip {
 		display: none;
 	}
 	.nav-links {
@@ -191,18 +186,6 @@
 			letter-spacing: -0.02em;
 			color: var(--text);
 			text-decoration: none;
-		}
-		.user-chip {
-			display: grid;
-			place-items: center;
-			width: 2.25rem;
-			height: 2.25rem;
-			margin-left: auto;
-			border-radius: 50%;
-			background: var(--accent-soft);
-			color: var(--accent);
-			font-size: var(--text-sm);
-			font-weight: var(--weight-bold);
 		}
 		.nav-links {
 			flex: none;

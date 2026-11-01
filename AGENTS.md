@@ -31,7 +31,7 @@ server/                 Rust crate `cupful`
   .sqlx/                committed offline query metadata
   tests/                integration tests on the real router, in-memory SQLite
   tests/{isolation,products}/   route isolation and barcode wiremock suites
-web/                    SvelteKit app: /, /activity, /trends, /settings, /login, /setup, /invite
+web/                    SvelteKit app: /, /activity, /trends, /settings, /profile, /login, /setup, /invite
   src/lib/api.ts        API barrel. `api/` holds types and endpoints by resource
   src/lib/sync/         op builders, uuidv7, sendOps
   src/lib/offline/      IndexedDB queue, cache, overlay, session cache, sync UI

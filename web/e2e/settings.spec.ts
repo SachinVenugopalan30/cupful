@@ -34,7 +34,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 		await expect(budget.getByText('Set up your profile to see your daily budget')).toBeVisible();
 		await budget.getByRole('link', { name: 'Set up your profile' }).click();
 	} else {
-		await page.getByRole('link', { name: 'Settings' }).click();
+		await page.goto('/profile');
 	}
 
 	const profile = page.getByRole('region', { name: 'Profile and targets' });
@@ -110,4 +110,17 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	expect(await (await page.request.get('/api/google')).json()).toEqual({ configured: false });
 	expect((await page.request.get('/api/google/connect', { maxRedirects: 0 })).status()).toBe(404);
 	await expect(page.getByRole('heading', { name: 'Google Health' })).toHaveCount(0);
+
+	// Settings links to the profile page; the avatar opens the same page and logout.
+	await page.getByRole('link', { name: 'Open profile' }).click();
+	await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.getByLabel('Account menu for admin').click();
+	const menu = page.getByRole('group', { name: 'Account menu' });
+	await menu.getByRole('link', { name: 'Profile' }).click();
+	await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
+
+	await page.getByLabel('Account menu for admin').click();
+	await page.getByRole('group', { name: 'Account menu' }).getByRole('button', { name: 'Log out' }).click();
+	await expect(page).toHaveURL(/\/login$/);
 });

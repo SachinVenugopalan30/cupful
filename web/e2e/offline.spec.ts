@@ -228,6 +228,8 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 	// The offline boot may reload the shell and load the queue from IndexedDB; CI is slow.
 	await expect(syncOpRows(page)).toHaveCount(1, { timeout: 30_000 });
+	await page.getByRole('link', { name: 'Open profile' }).click();
+	await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
 
 	// Offline, logging out is refused before anything local is deleted.
 	await page.getByRole('button', { name: 'Log out', exact: true }).click();
@@ -240,7 +242,7 @@ test('logout warns about queued changes: cancel keeps A, accepting clears A, and
 	await page.getByRole('button', { name: 'Log out', exact: true }).click();
 	await expect(page.getByRole('group', { name: 'Confirm logout' })).toContainText(/1\s+change/);
 	await page.getByRole('button', { name: 'Cancel' }).click();
-	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
 	await expect(page.getByText(/Logged in as/)).toContainText(USER_A.username);
 	expect(await queueCount(page)).toBeGreaterThan(0);
 

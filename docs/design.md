@@ -7,7 +7,7 @@ People open Cupful many times a day, on a phone, for a few seconds. They check w
 
 **Mineral.** Cool pale stone, white panels, one deep sea blue. The light theme sits on `#f2f5f6`, not a warm tint. The dark theme sits on `#0e1418`, a green-black rather than navy. The palette is quiet and slightly cool, like a kitchen scale and a glass of water.
 
-**Pantry layout.** Soft surfaces, generous spacing and large radii. White cards sit on the pale ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and a user chip. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text, never an accent fill.
+**Pantry layout.** Soft surfaces, generous spacing and large radii. White cards sit on the pale ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and an account menu. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text, never an accent fill.
 
 Nothing shouts. Strong colors carry meaning. Teal means "left". Brick means "over". Amber means "check this". Data hues come from pantry food: blue protein, ochre carbs, brick fat, teal steps, berry weight, and orange, teal, blue and gold for the four meals.
 
@@ -94,9 +94,10 @@ One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font
 
 ## Shell
 
-- From 48 rem the top bar is sticky. It holds the wordmark, four plain links (Today, Activity, Trends, Settings) and a user chip.
+- From 48 rem the top bar is sticky. It holds the wordmark, four plain links (Today, Activity, Trends, Settings) and an avatar. The avatar opens a menu with **Profile** and **Log out**.
 - Brand: use the shipped logo set, not styled text. `web/src/lib/Wordmark.svelte` renders the light and dark wordmark SVGs and picks one from the active theme. Its colors match `--accent` and `--gold`. Favicons live in `web/static/favicon.svg`, `web/static/favicon.ico` and `web/static/icons/`.
 - The date navigation is one right-aligned group: **Back to today** when needed, previous, date, next. The phone label shortens to **Today**. It never centers when the back button appears.
+- Profile and account live at `/profile`, reached from the avatar menu on wide screens and from Settings on phones. Settings itself keeps the instance and device controls and uses the full page width.
 - Below 48 rem the top bar becomes fixed bottom tabs with an icon and a short label per tab.
 - The current route uses `--surface-2` with `--text`. It is never an accent fill or accent text.
 - Every tab is at least 44 px tall. The bar adds `env(safe-area-inset-bottom)` on phones. The page reserves room for the bar.

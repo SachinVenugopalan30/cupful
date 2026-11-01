@@ -38,12 +38,13 @@ test('the header signs sam in without a password and hides invites', async ({ br
 	expect(state.user?.is_admin).toBe(false);
 	expect(state.identity_mode).toBe('tailscale');
 
-	// Settings shows the account the header created; the Users section is admin-only.
+	// Settings links to the account page; the Users section is admin-only.
 	await page.getByRole('link', { name: 'Settings' }).click();
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-	await expect(page.getByText('Logged in as')).toContainText('sam');
 	await expect(page.getByRole('region', { name: 'Users' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Create invite' })).toHaveCount(0);
+	await page.getByRole('link', { name: 'Open profile' }).click();
+	await expect(page.getByText('Logged in as')).toContainText('sam');
 	await context.close();
 
 	// An admin sees the mode notice and no invite controls.

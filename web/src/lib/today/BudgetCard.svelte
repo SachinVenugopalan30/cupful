@@ -75,7 +75,7 @@
 	{:else if s.kind === 'no-profile'}
 		<div class="empty stack">
 			<p>Set up your profile to see your daily budget. It needs your height, weight and goal.</p>
-			<p><a class="btn btn-primary" href="/settings#profile-h">Set up your profile</a></p>
+			<p><a class="btn btn-primary" href="/profile">Set up your profile</a></p>
 		</div>
 	{:else if s.kind === 'error'}
 		<div class="notice notice-error" role="alert">
