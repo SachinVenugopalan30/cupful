@@ -38,7 +38,7 @@
 	const per = (p: SavedProduct) =>
 		p.serving_g
 			? `${formatKcal((p.kcal * p.serving_g) / 100)} kcal per serving`
-			: `${formatKcal(p.kcal)} kcal per 100 ${p.serving_unit}`;
+			: `${formatKcal(p.kcal)} kcal per 100 ${p.serving_unit ?? 'g'}`;
 </script>
 
 <div class="stack" aria-busy={list === null && !error}>
