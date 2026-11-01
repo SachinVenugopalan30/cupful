@@ -85,6 +85,12 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	await expect(panel.getByText('Strength training').first()).toBeVisible();
 	await expect(panel.getByText('Counts as gym')).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Yesterday:/ })).toHaveAttribute('aria-current', 'date');
+	const back = await page.getByRole('button', { name: 'Back to today' }).boundingBox();
+	const picker = await page.getByLabel('Date').boundingBox();
+	expect(back).not.toBeNull();
+	expect(picker).not.toBeNull();
+	expect(back!.x).toBeLessThan(picker!.x);
+	expect(Math.abs(back!.y - picker!.y)).toBeLessThan(8);
 	await noSideScroll();
 });
 
@@ -107,6 +113,23 @@ test('an empty day says so', async () => {
 	await page.getByLabel('Previous day').click();
 	await page.getByLabel('Previous day').click();
 	await expect(page.getByText('No workouts synced for this day.')).toBeVisible();
+});
+
+test('selecting a week date keeps the page in place', async () => {
+	await page.goto('/activity');
+	const week = page.getByRole('region', { name: 'This week' });
+	await expect(week.getByRole('button')).toHaveCount(7);
+
+	await page.route(/\/api\/days(\/|\?)/, async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 500));
+		return route.continue();
+	});
+	await page.getByRole('button', { name: /^Yesterday:/ }).click();
+	// The old window still contains yesterday, so the strip and cards stay on screen while the
+	// new day loads instead of collapsing into skeletons.
+	await expect(week.getByRole('button')).toHaveCount(7);
+	await expect(page.getByLabel('Weigh-in (kg)')).toHaveValue('80.4');
+	await page.unroute(/\/api\/days(\/|\?)/);
 });
 
 test('Activity carries the last weigh-in forward', async () => {

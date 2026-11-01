@@ -16,6 +16,7 @@ import {
 	stepsVsTypical,
 	toggle,
 	weekWindow,
+	windowCovers,
 	weightDelta,
 	lastWeight,
 	workoutKind
@@ -126,6 +127,15 @@ describe('week and insights', () => {
 		expect(lastWeight(days, '2026-10-25')).toEqual({ kg: 80.4, date: '2026-10-20' });
 		expect(lastWeight(days, '2026-10-15')).toEqual({ kg: 81, date: '2026-10-10' });
 		expect(lastWeight(days, '2026-10-05')).toBeNull();
+	});
+
+	it('windowCovers includes empty days inside the fetched range', () => {
+		const win = { date: '2026-10-31', days: [], workouts: [] };
+		expect(windowCovers(win, '2026-10-31', 30)).toBe(true);
+		expect(windowCovers(win, '2026-10-02', 30)).toBe(true);
+		expect(windowCovers(win, '2026-10-01', 30)).toBe(false);
+		expect(windowCovers(win, '2026-10-25', 7)).toBe(true);
+		expect(windowCovers(win, '2026-10-24', 7)).toBe(false);
 	});
 	it('groupByDate keeps order within a day', () => {
 		const m = groupByDate([wo('2026-10-29', { id: 1 }), wo('2026-10-30', { id: 2 }), wo('2026-10-29', { id: 3 })]);

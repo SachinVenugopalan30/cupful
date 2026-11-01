@@ -36,9 +36,10 @@
 		void refreshKey;
 		void dataVersion.n;
 		void attempt;
-		// A different day: show the skeleton, not the last day's numbers. Same day: keep them.
+		// Keep the last numbers on screen while a different day loads. The card is read-only, so a
+		// brief stale value is calmer than a skeleton flash.
 		untrack(() => {
-			if (s.kind !== 'ready' || s.budget.date !== date) s = { kind: 'loading' };
+			if (s.kind !== 'ready') s = { kind: 'loading' };
 		});
 		let stale = false;
 		Promise.all([getBudget(date), getMeals(date)]).then(

@@ -9,12 +9,21 @@
 <script lang="ts">
 	import { google, type GoogleStatus } from '#lib/api.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { formatClock, formatDuration, formatKm, workoutKind, type ActivityWindow } from './logic.ts';
+	import {
+		formatClock,
+		formatDuration,
+		formatKm,
+		windowCovers,
+		workoutKind,
+		type ActivityWindow
+	} from './logic.ts';
 
 	let { date, win }: { date: string; win: ActivityWindow | null } = $props();
 
 	const tz = $derived(session.profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
-	const list = $derived(win && win.date === date ? win.workouts.filter((w) => w.date === date) : null);
+	const list = $derived(
+		win && windowCovers(win, date, 7) ? win.workouts.filter((w) => w.date === date) : null
+	);
 
 	const CAP = 6;
 	let expandedFor = $state(''); // the date whose full list is open; another day starts collapsed

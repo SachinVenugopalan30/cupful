@@ -42,6 +42,11 @@ export const sourceLabel = (s: ActivitySource) => s[0].toUpperCase() + s.slice(1
 /** What the cards and the week strip share: day rows (30 days) and workouts (7) ending on `date`. */
 export type ActivityWindow = { date: string; days: Day[]; workouts: Workout[] };
 
+/** Whether `date` falls inside the window fetched for `win.date`, even if that day has no row. */
+export function windowCovers(win: ActivityWindow, date: string, span: number): boolean {
+	return date <= win.date && date >= addDays(win.date, -(span - 1));
+}
+
 // ---- the week around the selected day ----
 
 /** The 7 dates ending on `date`, oldest first. */

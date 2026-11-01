@@ -46,6 +46,7 @@
 		stepsVsTypical,
 		toggle,
 		weekWindow,
+		windowCovers,
 		weightDelta,
 		type ActivityWindow,
 		type Parsed
@@ -79,13 +80,14 @@
 	let googleStatus = $state<GoogleStatus | null>(null);
 	let syncing = $state(false);
 	let syncNote = $state('');
+	let loading = $state(false);
 
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	const typicalSteps = $derived(session.profile?.version?.typical_steps ?? null);
 	const future = $derived(date > today());
 
 	// Facts under the figures. They come from the window and only show once it is for this date.
-	const w = $derived(win && win.date === date ? win : null);
+	const w = $derived(win && windowCovers(win, date, 30) ? win : null);
 	const week = $derived(weekWindow(date));
 	const pct = $derived(data ? stepsVsTypical(data.steps, typicalSteps) : null);
 	const avg = $derived(w ? stepsAverage(w.days, week) : null);
@@ -131,8 +133,9 @@
 		void retry;
 		if (!d) return;
 		if (d !== loaded) {
-			data = null; // a new day shows the skeleton; a refresh keeps the form
-			win = null;
+			// Keep the previous numbers and week on screen while the new day loads. Clearing them
+			// made a date tap look like a full page reload.
+			loading = true;
 		}
 		loaded = d;
 		let stale = false;
@@ -147,12 +150,17 @@
 			(r) => {
 				if (stale) return;
 				data = r;
+				loading = false;
 				steps = r.steps?.toString() ?? '';
 				gym = r.gym_minutes?.toString() ?? '';
 				weight = shown(r.weight_kg);
 				trained = r.trained;
 			},
-			(e) => !stale && (loadError = errorMessage(e))
+			(e) => {
+				if (stale) return;
+				loadError = errorMessage(e);
+				loading = false;
+			}
 		);
 		return () => (stale = true);
 	});
@@ -206,7 +214,7 @@
 	}
 </script>
 
-<section class="activity" aria-label="Activity" aria-busy={data === null && !loadError}>
+<section class="activity" aria-label="Activity" aria-busy={loading || (data === null && !loadError)}>
 	{#if heading}
 		<header class="head">
 			<h2>Activity</h2>
@@ -258,14 +266,19 @@
 						inputmode="numeric"
 						placeholder="0"
 						bind:value={steps}
-						disabled={future}
+						disabled={future || loading}
 						onchange={() => commit(d.steps, parseCount(steps, MAX_STEPS, 'Steps'), 'steps', 'Steps saved.')}
 					/>
 					<span class="unit" aria-hidden="true">steps</span>
 				</div>
 				{#if canSync}
 					<div class="sync-row">
-						<button type="button" class="btn btn-quiet sync" onclick={syncFromGoogle} disabled={syncing}>
+						<button
+							type="button"
+							class="btn btn-quiet sync"
+							onclick={syncFromGoogle}
+							disabled={syncing || loading}
+						>
 							{syncing ? 'Syncing…' : 'Sync steps'}
 						</button>
 						{#if !heading && syncNote}<span class="small muted">{syncNote}</span>{/if}
@@ -313,7 +326,7 @@
 						inputmode="numeric"
 						placeholder="0"
 						bind:value={gym}
-						disabled={future}
+						disabled={future || loading}
 						onchange={() => commit(d.gym_minutes, parseCount(gym, MAX_GYM, 'Gym minutes'), 'gym_minutes', 'Gym minutes saved.')}
 					/>
 					<span class="unit" aria-hidden="true">minutes</span>
@@ -330,7 +343,7 @@
 									<input
 										type="checkbox"
 										checked={trained.includes(part)}
-										disabled={future}
+										disabled={future || loading}
 										onchange={() => togglePart(part)}
 									/>
 									{part}
@@ -369,7 +382,7 @@
 						inputmode="decimal"
 						placeholder="0.0"
 						bind:value={weight}
-						disabled={future}
+						disabled={future || loading}
 						onchange={() =>
 							commit(d.weight_kg, parseWeight(weight, unit), 'weight_kg', 'Weigh-in saved.')}
 					/>

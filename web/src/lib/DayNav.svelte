@@ -18,7 +18,13 @@
 </script>
 
 <nav class="daynav" aria-label="Day">
-	<button class="btn btn-quiet" onclick={() => (day.date = addDays(day.date, -1))} aria-label="Previous day">
+	{#if !isToday}
+		<button class="btn btn-quiet back" onclick={() => (day.date = now)} aria-label="Back to today">
+			<span class="back-long">Back to today</span>
+			<span class="back-short" aria-hidden="true">Today</span>
+		</button>
+	{/if}
+	<button class="btn btn-quiet step" onclick={() => (day.date = addDays(day.date, -1))} aria-label="Previous day">
 		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
 	</button>
 	<div class="current">
@@ -26,7 +32,7 @@
 		<input id="day-picker" type="date" value={day.date} max={now} onchange={pick} />
 	</div>
 	<button
-		class="btn btn-quiet"
+		class="btn btn-quiet step"
 		onclick={() => (day.date = addDays(day.date, 1))}
 		disabled={isToday}
 		aria-label="Next day"
@@ -35,9 +41,6 @@
 	</button>
 	<p class="visually-hidden" aria-live="polite">{dayLabel(day.date, now)}</p>
 </nav>
-{#if !isToday}
-	<p class="back"><button class="btn btn-quiet" onclick={() => (day.date = now)}>Back to today</button></p>
-{/if}
 
 <style>
 	.daynav {
@@ -45,11 +48,17 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
+		flex-wrap: wrap;
+		margin-left: auto;
 	}
 	.current {
 		display: flex;
 		align-items: center;
 		min-width: 0;
+	}
+	.step {
+		width: var(--touch);
+		padding: 0;
 	}
 	input {
 		width: auto;
@@ -68,7 +77,26 @@
 		stroke-linejoin: round;
 	}
 	.back {
-		text-align: right;
-		margin-top: calc(-1 * var(--space-2));
+		flex: none;
+	}
+	.back-short {
+		display: none;
+	}
+	@media (max-width: 47.99rem) {
+		.daynav {
+			gap: var(--space-1);
+		}
+		input {
+			width: 8.5rem;
+		}
+		.back {
+			padding-inline: var(--space-2);
+		}
+		.back-long {
+			display: none;
+		}
+		.back-short {
+			display: inline;
+		}
 	}
 </style>

@@ -9,13 +9,13 @@
 <script lang="ts">
 	import { dayLabel } from '#lib/date.ts';
 	import { day, session, today } from '#lib/session.svelte.ts';
-	import { groupByDate, gymDates, weekWindow, type ActivityWindow } from './logic.ts';
+	import { groupByDate, gymDates, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
 
 	let { date, win }: { date: string; win: ActivityWindow | null } = $props();
 
 	const typical = $derived(session.profile?.version?.typical_steps ?? null);
 	const cols = $derived.by(() => {
-		if (!win || win.date !== date) return null;
+		if (!win || !windowCovers(win, date, 30)) return null;
 		const gym = gymDates(win.days, win.workouts);
 		const byDay = groupByDate(win.workouts);
 		const rows = weekWindow(date).map((d) => ({
