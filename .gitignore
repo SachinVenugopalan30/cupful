@@ -7,6 +7,9 @@ web/.svelte-kit/
 *.db
 *.db-shm
 *.db-wal
+secret.key
+cupful-data.tgz
+tailscale-state.tgz
 .claude/worktrees/
 
 # local coding skills and their lockfile

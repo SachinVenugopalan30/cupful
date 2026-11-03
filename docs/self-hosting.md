@@ -248,25 +248,42 @@ Backup and restore steps, including the nightly SQLite copy and file ownership: 
 
 Back up first. Every release runs its database migrations at startup.
 
-Compose path, from your checkout:
+Pin the image to an exact release, such as `0.1.0`. Do not use `latest` on a server you care about. A `latest` pull can jump several releases, run migrations you cannot undo, and leave you unable to start the previous image against the migrated database. `0.1` is a middle ground that follows patch releases, but still back up first.
+
+### Upgrade checklist
+
+1. Back up the whole data volume, including `cupful.db` and `secret.key`. See [backups.md](backups.md).
+2. Read the release notes.
+3. Change the image tag to the new exact version.
+4. Pull and recreate the container.
+5. Check `/api/health`, Settings → About, a login, and one write.
+6. Keep the previous image tag and backup until you are satisfied.
+
+Compose path with the published image:
+
+```sh
+# Edit compose.yaml: image: ghcr.io/sachinvenugopalan30/cupful:X.Y.Z
+docker compose pull cupful
+docker compose up -d
+```
+
+Compose path when building from source:
 
 ```sh
 git pull
 docker compose up -d --build
 ```
 
-Image path:
+Plain Docker path:
 
 ```sh
-docker pull ghcr.io/sachinvenugopalan30/cupful:0.1.0
+docker pull ghcr.io/sachinvenugopalan30/cupful:X.Y.Z
 docker stop cupful
 docker rm cupful
 # Run the docker run command again with the same -v cupful-data:/data.
 ```
 
-Pin an exact version. `latest` may move to a build that has not been tested on your host. Do not start an older image against a database that a newer version has migrated. Restore a backup instead.
-
-The app shell updates itself. When a new build is available, an **Update available** banner appears; **Reload** switches to it.
+The app shell updates itself. When a new build is available, an **Update available** banner appears; **Reload** switches to it. That banner does not update the server image. Server updates are always the deliberate step above.
 
 ## Reset a password
 

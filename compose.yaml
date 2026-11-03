@@ -23,6 +23,9 @@ services:
   cupful:
     build: .
     image: cupful:local
+    # A deployed instance should pin a release image instead of building here:
+    #   image: ghcr.io/sachinvenugopalan30/cupful:0.1.0
+    # Remove `build: .` when you do. Do not use `latest`; back up /data before changing the tag.
     # Shares the sidecar's network: only reachable through Tailscale Serve.
     network_mode: service:tailscale
     env_file:
