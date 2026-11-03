@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  ActivityWeek — the seven days ending on the selected one: steps as bars (scaled to the week's
-  highest, with a dashed line at your typical day), a dot on gym days, a count of synced workouts.
-  Tapping a day selects it (writes `day.date`). Props:
-    date: string                 the selected day, the last column
+  ActivityWeek — a fixed seven-day window: steps as bars (scaled to the week's highest, with a
+  dashed line at your typical day), a dot on gym days, a count of synced workouts. Tapping a day
+  selects it (writes `day.date`) without moving the window. Props:
+    date: string                 the selected day, highlighted in the window
+    end: string                  the last day of the fixed window
     win: ActivityWindow | null   from ActivitySection's `win`; null shows a skeleton
 -->
 <script lang="ts">
@@ -11,14 +12,14 @@
 	import { day, session, today } from '#lib/session.svelte.ts';
 	import { groupByDate, gymDates, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
 
-	let { date, win }: { date: string; win: ActivityWindow | null } = $props();
+	let { date, end, win }: { date: string; end: string; win: ActivityWindow | null } = $props();
 
 	const typical = $derived(session.profile?.version?.typical_steps ?? null);
 	const cols = $derived.by(() => {
-		if (!win || !windowCovers(win, date, 30)) return null;
+		if (!win || !windowCovers(win, end, 30)) return null;
 		const gym = gymDates(win.days, win.workouts);
 		const byDay = groupByDate(win.workouts);
-		const rows = weekWindow(date).map((d) => ({
+		const rows = weekWindow(end).map((d) => ({
 			date: d,
 			steps: win.days.find((x) => x.date === d)?.steps ?? null,
 			gym: gym.has(d),

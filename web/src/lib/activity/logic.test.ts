@@ -16,6 +16,7 @@ import {
 	stepsVsTypical,
 	toggle,
 	weekWindow,
+	weekEndFor,
 	windowCovers,
 	weightDelta,
 	lastWeight,
@@ -136,6 +137,14 @@ describe('week and insights', () => {
 		expect(windowCovers(win, '2026-10-01', 30)).toBe(false);
 		expect(windowCovers(win, '2026-10-25', 7)).toBe(true);
 		expect(windowCovers(win, '2026-10-24', 7)).toBe(false);
+	});
+
+	it('weekEndFor keeps the window until the day leaves it', () => {
+		expect(weekEndFor('2026-11-02', '2026-11-02')).toBe('2026-11-02');
+		expect(weekEndFor('2026-11-01', '2026-11-02')).toBe('2026-11-02');
+		expect(weekEndFor('2026-10-27', '2026-11-02')).toBe('2026-11-02');
+		expect(weekEndFor('2026-10-26', '2026-11-02')).toBe('2026-10-26');
+		expect(weekEndFor('2026-11-03', '2026-11-02')).toBe('2026-11-03');
 	});
 	it('groupByDate keeps order within a day', () => {
 		const m = groupByDate([wo('2026-10-29', { id: 1 }), wo('2026-10-30', { id: 2 }), wo('2026-10-29', { id: 3 })]);

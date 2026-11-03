@@ -5,7 +5,7 @@
 	import ActivitySection from '#lib/activity/ActivitySection.svelte';
 	import ActivityWeek from '#lib/activity/ActivityWeek.svelte';
 	import WorkoutsPanel from '#lib/activity/WorkoutsPanel.svelte';
-	import type { ActivityWindow } from '#lib/activity/logic.ts';
+	import { weekEndFor, type ActivityWindow } from '#lib/activity/logic.ts';
 	import type { Budget } from '#lib/api.ts';
 	import BudgetCard from '#lib/today/BudgetCard.svelte';
 	import { day } from '#lib/session.svelte.ts';
@@ -15,6 +15,11 @@
 	// ActivitySection fetches the days and workouts once; the week strip and workouts share them.
 	let win = $state<ActivityWindow | null>(null);
 	let budget = $state<Budget | null>(null);
+	// The seven-day graph stays put while the selected day is inside it.
+	let weekEnd = $state(day.date);
+	$effect(() => {
+		weekEnd = weekEndFor(day.date, weekEnd);
+	});
 </script>
 
 <svelte:head><title>Activity · Cupful</title></svelte:head>
@@ -32,9 +37,10 @@
 				onChanged={changed}
 				heading={false}
 				syncSteps
+				windowEnd={weekEnd}
 				bind:win
 			/>
-			<ActivityWeek date={day.date} {win} />
+			<ActivityWeek date={day.date} end={weekEnd} {win} />
 			<WorkoutsPanel date={day.date} {win} />
 		</div>
 		<div class="side">

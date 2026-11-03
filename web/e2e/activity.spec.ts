@@ -61,6 +61,12 @@ test.afterAll(async () => {
 const noSideScroll = async () =>
 	expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
+const weekDates = () =>
+	page
+		.getByRole('region', { name: 'This week' })
+		.locator('button')
+		.evaluateAll((buttons) => buttons.map((button) => button.getAttribute('data-date')));
+
 test('cards, week strip and workouts panel; tapping a day selects it (workouts mocked)', async () => {
 	await page.goto('/activity');
 	await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
@@ -79,8 +85,10 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, gym, 1 workout/ })).toBeVisible();
 	await noSideScroll();
 
+	const weekBefore = await weekDates();
 	await page.getByRole('button', { name: /^Yesterday:/ }).click();
 	await expect(page.locator('#day-picker')).toHaveValue(YESTERDAY);
+	expect(await weekDates()).toEqual(weekBefore);
 	await expect(panel.getByTestId('workout')).toHaveCount(1);
 	await expect(panel.getByText('Strength training').first()).toBeVisible();
 	await expect(panel.getByText('Counts as gym')).toBeVisible();
@@ -92,6 +100,24 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	expect(back!.x).toBeLessThan(picker!.x);
 	expect(Math.abs(back!.y - picker!.y)).toBeLessThan(8);
 	await noSideScroll();
+});
+
+test('the week window only shifts when the selected day leaves it', async () => {
+	await page.goto('/activity');
+	const week = page.getByRole('region', { name: 'This week' });
+	await expect(week.getByRole('button')).toHaveCount(7);
+	const start = await weekDates();
+	expect(start).toHaveLength(7);
+
+	await week.locator(`button[data-date="${start[0]}"]`).click();
+	await expect(page.locator('#day-picker')).toHaveValue(start[0]!);
+	expect(await weekDates()).toEqual(start);
+
+	await page.getByLabel('Previous day').click();
+	await expect(page.locator('#day-picker')).toHaveValue(addDays(start[0]!, -1));
+	const shifted = await weekDates();
+	expect(shifted).not.toEqual(start);
+	expect(shifted[6]).toBe(addDays(start[0]!, -1));
 });
 
 test('a busy day shows six workouts and "Show N more"', async () => {

@@ -8,8 +8,9 @@
     onChanged: () => void    call after a write is applied (the budget card refreshes)
     heading?: boolean        show the section heading and saved status (default true)
     syncSteps?: boolean      show a Google Health sync button on the steps card (Today)
-    win?: ActivityWindow|null  bindable: the 30 days of day rows and 7 days of workouts around
-                             `date`, for the week strip and workouts panel to share one fetch
+    windowEnd?: string       end of the fixed seven-day window; defaults to `date`
+    win?: ActivityWindow|null  bindable: the day rows and workouts around `windowEnd`, for the
+                             week strip and workouts panel to share one fetch
   Data: getDay(date). Writes only through #lib/sync (dayPatch + sendOps).
   The server never lets Shortcut or import values overwrite a manual one; typing here is manual.
 -->
@@ -58,6 +59,7 @@
 		onChanged,
 		heading = true,
 		syncSteps = false,
+		windowEnd = undefined,
 		win = $bindable(null)
 	}: {
 		date: string;
@@ -65,6 +67,7 @@
 		onChanged: () => void;
 		heading?: boolean;
 		syncSteps?: boolean;
+		windowEnd?: string;
 		win?: ActivityWindow | null;
 	} = $props();
 
@@ -138,14 +141,15 @@
 			loading = true;
 		}
 		loaded = d;
+		const end = windowEnd ?? d;
 		let stale = false;
 		loadError = '';
 		// The window never blocks the form: if it fails, the cards simply show no extras. Workouts
 		// fail separately (the endpoint may be empty or absent) and then read as none.
 		Promise.all([
-			getDays(addDays(d, -29), d).catch(() => [] as Day[]),
-			getWorkouts(addDays(d, -6), d).catch(() => [])
-		]).then(([days, workouts]) => !stale && (win = { date: d, days, workouts }));
+			getDays(addDays(end, -35), end).catch(() => [] as Day[]),
+			getWorkouts(addDays(end, -6), end).catch(() => [])
+		]).then(([days, workouts]) => !stale && (win = { date: end, days, workouts }));
 		getDay(d).then(
 			(r) => {
 				if (stale) return;

@@ -39,7 +39,7 @@ export function toggle(list: string[], part: string): string[] {
 
 export const sourceLabel = (s: ActivitySource) => s[0].toUpperCase() + s.slice(1);
 
-/** What the cards and the week strip share: day rows (30 days) and workouts (7) ending on `date`. */
+/** What the cards and the week strip share: day rows and workouts ending on the window end. */
 export type ActivityWindow = { date: string; days: Day[]; workouts: Workout[] };
 
 /** Whether `date` falls inside the window fetched for `win.date`, even if that day has no row. */
@@ -51,6 +51,11 @@ export function windowCovers(win: ActivityWindow, date: string, span: number): b
 
 /** The 7 dates ending on `date`, oldest first. */
 export const weekWindow = (date: string): string[] => Array.from({ length: 7 }, (_, i) => addDays(date, i - 6));
+
+/** Keep the current 7-day window while `date` is inside it; otherwise the window ends on `date`. */
+export function weekEndFor(date: string, end: string): string {
+	return date >= addDays(end, -6) && date <= end ? end : date;
+}
 
 /** Whole percent of the typical day; null without steps or a usable typical figure. */
 export function stepsVsTypical(steps: number | null, typical: number | null): number | null {
