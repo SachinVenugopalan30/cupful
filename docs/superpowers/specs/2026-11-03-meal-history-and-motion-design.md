@@ -1,7 +1,7 @@
 # Meal history and motion refresh
 
 Date: 2026-11-03
-Status: Draft for review
+Status: Revised after independent review
 Scope: Cupful web and API
 
 ## 1. Problem
@@ -9,14 +9,14 @@ Scope: Cupful web and API
 Two gaps in daily use:
 
 1. Trends shows what the range averaged, but not what was eaten most often. The owner wants a count of common meals.
-2. Repeating a meal is hidden inside an expanded meal row and only logs onto the day being viewed. Copying yesterday's dinner to today means navigating back to yesterday and using an action that writes to yesterday. The owner wants an easy way to copy a meal and its macros to today or a later day.
+2. Repeating a meal is hidden inside an expanded meal row and only logs onto the day being viewed. Copying yesterday's dinner to today means navigating back to yesterday and using an action that writes to yesterday. The owner wants an easy way to copy a meal and its macros onto the day they are logging now, including a day a few days after the original.
 
 The current motion is also tuned for speed over readability. Feedback is quick, but sheets appear instantly, bars pop, and chart entrances feel abrupt. The owner wants motion that is calmer, smoother and more refined without making the app feel slow.
 
 ## 2. Goals
 
 - Show the most frequently logged meals for the selected Trends range.
-- Make a previously logged meal repeatable onto the selected day in a few taps.
+- Make a previously logged meal repeatable onto the selected day in a few taps. The selected day is today or a past day, because the app does not schedule future meals.
 - Always show the copied meal in Review before it is saved, because portions and macros may change.
 - Keep logged-data writes on the existing sync path.
 - Keep the repeat flow usable offline.
@@ -26,6 +26,7 @@ The current motion is also tuned for speed over readability. Feedback is quick, 
 ## 3. Non-goals
 
 - Named saved-meal templates or favourites. History is the library for now.
+- Scheduling a meal for a future date. The user opens the app on the day they eat it and repeats from history.
 - Re-estimating a repeated meal with AI.
 - Sharing meals between users.
 - Automatic meal detection or photo history.
@@ -70,19 +71,37 @@ Under `prefers-reduced-motion: reduce`, set all duration tokens to `0ms` as toda
   - Backdrop fades over `--dur-exit`.
   - Panel fades in, rises 16 px and scales from 0.985 over `--dur-enter`.
   - Close runs in `--dur-exit`.
-  - Use CSS `@starting-style` with `transition-behavior: allow-discrete` and `overlay` for the native `<dialog>`. If browser support is a concern, use a Svelte transition on the dialog content instead.
-  - Reduced motion opens and closes instantly.
+  - Use CSS `@starting-style` for the entrance. The supported baseline is Chrome 117+, Safari 17.5+ and Firefox 129+. On older browsers the sheet opens instantly and still works. Do not add a Svelte transition fallback.
+  - Exit needs an explicit `closing` state. `requestClose()` sets `closing = true` and leaves the dialog open. A `[data-closing]` style runs the exit transition. On `transitionend`, call `dialog.close()` and then the parent's close callback. The native `cancel` event is prevented and routed to `requestClose()`.
+  - Reduced motion calls `dialog.close()` and the close callback immediately.
+  - Apply the same lifecycle to `Review.svelte`, `BarcodeEntry.svelte` and the new `RepeatSheet.svelte`. Today, `Review` and `BarcodeEntry` unmount from `onclose`, so the exit never plays.
+  - Keep focus predictable. Closing a sheet returns focus to its trigger. Opening Review from the repeat sheet focuses the Review heading or its first control. Closing Review returns focus to the composer's "Repeat a meal" button, or to the picked row if the sheet is restored.
 - Every explicit animation keeps its `prefers-reduced-motion` override.
 - No page transitions. No entrance animations on Today, Activity, Settings, login or setup.
 
 ### 4.4 Trends
 
-- Intake and steps bars: 760 ms, 16 ms stagger, capped at 15 bars so the wave adds at most 240 ms.
+- Intake and steps bars: 760 ms, 16 ms stagger, capped at 15 bars so the wave adds at most 224 ms.
 - Consistency cells: 360 ms, 18 ms stagger, capped at 14 cells. Fade from 0.94 scale and 0 opacity. No pop, no overshoot.
 - Macro balance and meal mix bars: 760 ms, 80 ms stagger.
 - Headline count-up: 800 ms with the existing ease-out cubic.
 - Weight area: 600 ms with a 120 ms delay.
 - The weight line keeps no dash animation.
+
+Update these files, not just the tokens:
+
+| File | Change |
+|---|---|
+| `web/src/lib/trends/Charts.svelte` | bars 760 ms, 16 ms stagger, `Math.min(i, 14)`; weight area 600 ms with 120 ms delay |
+| `web/src/lib/trends/Consistency.svelte` | 360 ms, 18 ms stagger, `Math.min(i, 13)`, fade from 0.94 scale |
+| `web/src/lib/trends/Analytics.svelte` | 760 ms, 80 ms stagger |
+| `web/src/lib/trends/CountUp.svelte` | 800 ms |
+| `web/src/lib/trends/count-up.ts` | update the comment and any timing test |
+| `web/src/lib/activity/ActivityWeek.svelte` | bar height `--dur-slow`, background `--dur-fast` |
+| `web/src/lib/activity/ActivitySection.svelte` | saved text `--dur-med` |
+| `web/src/lib/styles/global.css` | control transitions use `--ease-state`; skeleton 1.8 s |
+
+The new `FrequentMeals.svelte` uses the same bar timing. Its rows animate only on the first mount of a range, not when a data refresh adds a row.
 
 ### 4.5 Activity
 
@@ -97,6 +116,7 @@ Under `prefers-reduced-motion: reduce`, set all duration tokens to `0ms` as toda
 - Activity week bars change height smoothly when the selected day changes.
 - `prefers-reduced-motion` shows the final state immediately.
 - No animation runs on a data refresh that is not a range change or first mount.
+- Changing the Trends range replays the entrance. A meal write that refreshes Trends does not.
 
 ## 5. Phase 1: meal history
 
@@ -142,18 +162,21 @@ Extend `GET /api/trends` with `top_meals`. The rest of the response is unchanged
 ]
 ```
 
-- Top five groups by `times` descending, then `last_date` descending.
+- Top five groups by `times` descending, then `last_date` descending, then `label` ascending.
 - `avg_kcal` is rounded on serialize.
 - Empty array when the range has no meals.
 - No items in this payload.
+- Group all meals in the range first, then sort groups, then take the top five. Do not apply a SQL `LIMIT` to meals before grouping.
 
 #### History
 
-Add `GET /api/meals/history?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=20`.
+Add `GET /api/meals/history?limit=50`.
 
-- `from` and `to` are required and must satisfy the existing `check_span` rule, at most 400 days.
-- `limit` defaults to 20 and must be between 1 and 50.
-- Sort by `last_date` descending, then `times` descending.
+- The server computes the window from the user's local today: `to = time::user_today`, `from = to - 364 days`.
+- The stable URL is deliberate. It keeps one cache entry per user and does not roll at midnight.
+- `limit` defaults to 20 and must be between 1 and 50. The sheet requests 50.
+- Sort by `last_date` descending, then `times` descending, then `label` ascending.
+- Group all meals in the window first, then sort groups, then apply the limit. A SQL `LIMIT` before grouping would return duplicate groups and fewer than `limit` distinct meals.
 - Response:
 
 ```json
@@ -163,6 +186,7 @@ Add `GET /api/meals/history?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=20`.
       "id": "019...",
       "date": "2026-11-02",
       "meal_type": "breakfast",
+      "label": "Oats with banana",
       "description": "Oats with banana",
       "scale": 1,
       "assumptions": null,
@@ -195,18 +219,19 @@ Add `GET /api/meals/history?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=20`.
 - Each entry is the latest meal in its group, with the full items and totals, plus `times` and `last_date`.
 - The client uses the items to build a repeat draft. It does not need a second request.
 - The `source` and `provider_id` are the latest meal's values. The repeat draft overrides them.
+- Each entry also carries `label`, the normalized group label, so the sheet and search do not duplicate the description/item-name fallback.
 
 Both endpoints use the same grouping helper. Extract a shared `meal_json` helper used by `reads::meals` and `reads::meal_history` so the meal serialization stays in one place.
 
 Add the client types and reads:
 
-- `TopMeal` and `HistoryMeal` in `web/src/lib/api/types.ts`. `Trends` gains `top_meals?: TopMeal[]`, optional because an older cached body may not have it.
-- `getMealHistory(from, to, limit)` in `web/src/lib/api/reads.ts`, using `cachedGet`.
+- `TopMeal` and `HistoryMeal` in `web/src/lib/api/types.ts`. `HistoryMeal` is `Meal & { label: string; times: number; last_date: string }`. `Trends` gains `top_meals?: TopMeal[]`, optional because an older cached body may not have it.
+- `getMealHistory(limit = 50)` in `web/src/lib/api/reads.ts`, using `cachedGet` and returning `HistoryMeal[]`.
 
 #### Route and storage
 
-- Add `("GET", "/api/meals/history", User, get(reads::meal_history))` to `route_table()`.
-- Add the route to `server/tests/isolation/routes.rs`.
+- Add `("GET", "/api/meals/history", User, get(reads::meal_history))` to `routes()` in `server/src/lib.rs`.
+- Add the route to `server/tests/isolation/routes.rs` and a behavioral test to `server/tests/isolation/users.rs`.
 - Refresh `.sqlx` after adding queries.
 - No new outbound HTTP.
 
@@ -222,23 +247,29 @@ Add `web/src/lib/trends/FrequentMeals.svelte`.
   - Meal type, `N times`, `last 2 Nov`.
   - Right: `420 kcal avg`.
   - A thin bar behind or beside the row, width relative to the top count.
+- Do not rely on `title` for the full label. Give the row an `aria-label` with the full label, count, average and last date. If the bar sits behind text, use a low-contrast track and keep the text on the surface, or put the bar below the row.
 - Display only. No logging action from Trends.
 - Empty state: "No meals logged in this range."
+- If `top_meals` is missing from an older cached body, hide the card instead of showing the empty state.
 - Render after `Analytics` and before the footnote on the Trends page.
 - Use the motion tokens from Phase 0. The bars grow on mount with the same capped stagger as the other Trends bars.
+- Change `web/src/routes/trends/+page.svelte` so a `dataVersion` refresh keeps the previous data on screen and only the initial load shows skeletons. Today it sets `data = null` on every refresh, which unmounts the `{#key range}` block and replays every entrance. The `{#key range}` stays, so a range change still replays the entrance.
 
 ### 5.4 Today UI
 
 #### Composer
 
-- Add a "Repeat a meal" button to the composer header.
+- Add a "Repeat a meal" button to the composer header. It must be `type="button"` because it sits inside the estimate form.
 - It opens `web/src/lib/today/RepeatSheet.svelte`.
-- The sheet fetches history for the last 365 days, limit 20.
-- Search filters by label and item names.
+- The sheet title names the target: "Repeat onto Today" or "Repeat onto Mon 2 Nov". The subtitle says "Recent meals, last year." It fetches `GET /api/meals/history?limit=50`.
+- Search filters the 50 most recent distinct groups by label and the latest meal's item names. It is a recent-meals picker, not a full archive search. Say so in the subtitle.
 - Each row is a button showing label, meal type, kcal and macros, last date, and count.
-- Loading, error with retry, and empty states.
-- On pick, close the sheet and open the existing Review sheet with a repeat draft for the selected day.
-- Close the repeat sheet before opening Review so only one modal dialog is open. Keep the picked meal in composer state and open Review from the sheet's close handler.
+- Each row's accessible name includes the full label, kcal, last date and count. Truncation is visual only.
+- Loading, error with retry, no-history, and no-search-results states. The no-results state says "No recent meals match ..." and offers Clear search.
+- On pick, store the picked meal and the current search query in composer state. Close the sheet with the exit lifecycle from §4.3. After the close callback, open Review with a repeat draft for the selected day.
+- If Review is cancelled, reopen the sheet with the same query and list. Do not make the user search again. Track `repeatSaved` in Composer: `Review.onSaved` sets it, and `Review.onClose` reopens the sheet only when it is false.
+- On a past day, the composer repeat button targets that past day, and the title says so.
+- Do not reuse the estimate/manual `saved()` callback. A repeat save only calls `onSaved()` and must not clear the composer description or photo.
 
 #### Per-meal action
 
@@ -248,6 +279,8 @@ Add `web/src/lib/trends/FrequentMeals.svelte`.
 - The composer sheet remains the way to repeat onto a past day.
 - Refactor `MealList` from `editing: Draft | null` to a `review: { draft: Draft; title: string } | null` so edit and repeat share one Review instance.
 - `MealList` compares its `date` prop with `today()` to choose the label and target date.
+- Compute the target date when the button is clicked, not at render, so a tab left open across midnight still targets the right day.
+- After a past-day copy, the status says "Copied to today." and offers a "View today" button that sets `day.date = today()`. Refreshing the past day alone is not enough feedback.
 
 #### Repeat draft
 
@@ -257,23 +290,27 @@ Add to `web/src/lib/today/meal.ts`:
 export function repeatDraft(m: Meal, date: string): Draft
 ```
 
-- New meal id and new item ids.
-- Target `date`.
+Start from `draftFromMeal(m)`, which already divides stored items by `scale` and maps them to `DraftItem` with `editable`, `phrase`, `swapped`, `remember`, `options` and `chosen`. Then:
+
+- Replace the meal id with `uuidv7()`.
+- Replace every item id with `uuidv7()`. Reusing source item ids is rejected by the server as an item owned by another meal.
+- Set `date` to the target.
 - Keep `meal_type`, `description` and `scale`.
 - Set `source: 'repeat'`, `provider_id: null`.
 - Clear `assumptions` and `confidence`.
 - Clear `warnings`.
-- Items are `scaleItems(m.items, 1 / m.scale)`, so Review shows the base items and reapplies the multiplier on save. This mirrors `draftFromMeal`.
 - Keep each item's `food_id` and `origin`.
+
+Do not call `scaleItems` directly on `m.items` and treat the result as a `Draft`. It preserves ids and returns `MealItem[]`, which is the wrong shape.
 
 Add `repeatTitle(date: string, today: string): string`:
 
-- "Repeat meal for today" when the target is today.
-- "Repeat meal for 2 Nov" otherwise, using `dayLabel`.
+- "Repeat meal for Today" when the target is today.
+- "Repeat meal for Mon 2 Nov" otherwise, using `dayLabel`.
 
 Replace `repeatMeal` and its test with `repeatDraft` and its test. The old function built a payload for an immediate save and is no longer used.
 
-Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal.ts` for the sheet's search, so the filter is unit-tested without the component.
+Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal.ts` for the sheet's search, so the filter is unit-tested without the component. It matches `label` and the latest meal's item names, case-insensitively.
 
 ### 5.5 Review
 
@@ -284,35 +321,40 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
 
 ### 5.6 Offline
 
-- Add `/api/meals/history` with a query string to `isCacheable` in `web/src/lib/offline/cache.ts`.
+- Add `/api/meals/history` to `isCacheable` in `web/src/lib/offline/cache.ts`. The URL has only `limit`, so it is one stable entry per user.
 - `getMealHistory` uses `cachedGet`.
 - The sheet shows the cached list when offline.
 - A repeat write goes through the existing queue and identity guard.
+- On an applied meal upsert or delete, invalidate the cached `/api/meals/history` body and the cached `/api/trends` bodies for that user. Today `writeThrough` in `web/src/lib/offline/queue.ts` patches only `/api/meals?date=` and invalidates trends only for `day.patch`. Add a queue-write test for both.
 - The history list reflects synced meals. A meal logged while offline appears after it syncs. The current day's meal list still overlays queued meals through the existing path.
 - No new offline write path.
 
 ### 5.7 Error handling
 
 - History fetch failure: notice in the sheet with "Try again". The sheet stays open.
-- Empty history: "No past meals yet. Log one and it will show up here."
+- Empty history: "No meals in the last year. Log one and it will show up here."
+- No search results: "No recent meals match ..." with Clear search.
 - Offline with no cache: the existing offline read message.
 - Review save failure: existing behavior.
-- Invalid range or limit: server returns a JSON `{"error": ...}` through `error::Query`.
+- Invalid limit: server returns a JSON `{"error": ...}` through `error::Query`.
 
 ## 6. Edge cases
 
 - Empty description: fall back to item names. If there are no items, skip the meal.
+- Empty item names: skip them when building the fallback label.
 - Meals with no items: skipped from counts and history.
 - Same label, different items: merge the count. The latest meal is the one repeated.
 - Same label at different meal types: merge the count. The latest type is shown.
 - Deleted meals: excluded from counts and history.
-- Long labels: truncate visually, keep the full label in the title attribute.
-- Meals with many items: the history response is capped at 20 groups, so the payload stays bounded.
+- Long labels: truncate visually, keep the full label in the accessible name.
+- Meals with many items: the history response is capped at 50 groups, so the payload stays bounded.
 - Same meal already logged on the target day: allowed. Review is the confirmation.
 - Multiplier: preserved through `scale`.
-- Timezone: the client computes `from` and `to` from the user's local today.
-- A history range with no meals: empty card and empty sheet.
-- Older cached Trends bodies may lack `top_meals`. The card treats a missing value as an empty array.
+- Timezone: Trends uses the client's local range. History uses `time::user_today` on the server, so its window follows the profile timezone.
+- A history window with no meals: empty card and empty sheet.
+- Older cached Trends bodies may lack `top_meals`. Hide the card when it is missing. Do not show "No meals logged" for a value that was never loaded.
+- Order ties deterministically: top meals by `times`, then `last_date`, then `label`; history by `last_date`, then `times`, then `label`.
+- The history window is one year. A meal older than that is not in the picker. The empty state says "No meals in the last year" so it is not mistaken for "never logged."
 
 ## 7. Testing
 
@@ -326,24 +368,31 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
   - average kcal
 - Integration tests for `GET /api/meals/history`:
   - counts and average
-  - range filtering
+  - one-year window from `time::user_today`
   - deleted meals excluded
   - limit and invalid limit
-  - invalid span
   - empty description fallback
-- Trends test for `top_meals` ordering and empty range.
-- Isolation test for the new route.
+  - grouping happens before the limit: more meals than the limit share one label
+  - deterministic ordering
+- Trends test for `top_meals` ordering, empty range, and grouping before the top-five limit.
+- Behavioral isolation in `server/tests/isolation/users.rs`: user B's history and `top_meals` are empty, user A's are unchanged.
+- Anonymous isolation request includes `?limit=50`.
 - `.sqlx` metadata refreshed.
 
 ### Web
 
-- `repeatDraft` test: new ids, target date, source, cleared assumptions, preserved scale, item count.
+- `repeatDraft` test: new meal and item ids, target date, source, cleared assumptions, preserved scale, item count, and `mealFromDraft(repeatDraft(...))` reproduces the original totals.
 - `repeatTitle` test.
 - `filterHistory` test: label match, item-name match, case-insensitive, empty query.
-- Trends card test: missing `top_meals` renders the empty state.
+- Trends card test: missing `top_meals` hides the card; an empty array shows the empty state.
+- Offline queue-write test: meal upsert/delete invalidates cached history and trends.
+- Cache allowlist test: `/api/meals/history?limit=50` is cacheable, while auth and provider routes are not.
+- Repeat sheet test: no search results shows the no-match state, not the no-history state.
+- Composer test: a repeat save does not clear the description or photo.
 - Playwright:
-  - Log a meal, move to the next day, open Repeat a meal, pick the meal, Review shows the same macros, save, meal appears.
+  - Log a meal on yesterday, select today, open Repeat a meal, pick the meal, Review shows the same macros, save, meal appears.
   - On a past day, "Copy to today" opens Review for today.
+  - Cancel Review from a repeat and the repeat sheet returns with the same search.
   - Trends "Eaten most" shows the count after two logs.
 
 ### Motion
@@ -353,19 +402,22 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
 - Activity week bar change.
 - `prefers-reduced-motion` shows the final state immediately.
 - No animation on data refresh.
+- A meal write does not replay the Trends entrance.
 
 ## 8. Docs and rollout
 
 - Update `docs/design.md`:
   - Motion section with the new hierarchy, tokens and timings.
+  - Amend the old "There are no entrance animations" and "popping consistency cells" lines, and the 12 ms stagger note, so the doc matches the new plan.
   - "Eaten most" card.
   - Repeat sheet and per-meal action.
 - Update `docs/decisions.md`:
   - History is the meal library, no saved-meal table.
   - Grouping by normalized description.
+  - Repeat targets the selected day. No future scheduling.
   - Motion refresh.
-- Update `AGENTS.md` layout with `web/src/lib/today/RepeatSheet.svelte` and `web/src/lib/trends/FrequentMeals.svelte`.
-- Update `docs/offline.md` if the cache allowlist description needs the history endpoint.
+- Update `AGENTS.md` and `CLAUDE.md` layout with `web/src/lib/today/RepeatSheet.svelte` and `web/src/lib/trends/FrequentMeals.svelte`.
+- Update `docs/offline.md` with the history cache entry and the meal-write invalidation rule.
 - Phase 0 lands first so the new sheet and card inherit the new motion.
 - Phase 1 lands the API and tests.
 - Phase 2 lands the Trends card.
@@ -375,9 +427,12 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
 ## 9. Risks and trade-offs
 
 - **Description grouping merges different meals.** Accepted. The latest meal is repeated, and the count is a rough frequency signal, not an exact recipe count.
-- **History payload size.** Twenty groups with full items is bounded. If a user has many 100-item meals, the response grows. The limit and 365-day range keep it acceptable for a self-hosted app.
+- **History payload size.** Fifty groups with full items is bounded. If a user has many 100-item meals, the response grows. The limit and one-year window keep it acceptable for a self-hosted app.
+- **Recent-meals search is not a full archive.** The sheet searches the 50 most recent distinct groups in the last year. A meal outside that set is not reachable. This is stated in the sheet, and a full archive search is a later feature.
+- **Cache invalidation touches existing write-through.** Meal upserts and deletes must invalidate cached history and trends. This is a small change to `queue.ts` but it affects existing offline behavior, so it needs its own test.
 - **Motion changes affect the whole app.** Feedback stays at 160 ms, so controls still feel responsive. Movement gets slower. Review on a real phone before shipping.
-- **`@starting-style` support.** Modern browsers support it. A Svelte transition is the fallback if needed.
+- **`@starting-style` support.** The supported baseline is Chrome 117+, Safari 17.5+ and Firefox 129+. Older browsers open sheets instantly. Functionality is unchanged.
+- **Sheet exit lifecycle.** Every sheet needs a `closing` state so the exit can play before unmount. This is the riskiest motion change because it touches Review and BarcodeEntry, not just the new sheet.
 
 ## 10. Acceptance criteria
 
@@ -386,6 +441,8 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
 - The per-meal action opens Review, targets today on a past day, and never saves immediately.
 - A repeated meal keeps its multiplier and item values, and gets new ids.
 - The repeat flow works offline through the existing queue.
+- Meal writes invalidate cached history and trends.
 - The motion tokens and timings from Phase 0 are applied across the app.
+- Sheets open and close with the new lifecycle. Reduced motion skips the delay.
 - Reduced motion turns all of it off.
 - Backend, Vitest, svelte-check, build and Playwright are green.
