@@ -146,7 +146,7 @@
 	input,
 	select {
 		transition:
-			border-color var(--dur-fast) var(--ease),
-			background var(--dur-fast) var(--ease);
+			border-color var(--dur-fast) var(--ease-state),
+			background var(--dur-fast) var(--ease-state);
 	}
 </style>

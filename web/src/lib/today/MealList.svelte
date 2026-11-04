@@ -246,7 +246,7 @@
 		cursor: pointer;
 		list-style: none;
 		border-radius: var(--radius-md);
-		transition: background var(--dur-fast) var(--ease);
+		transition: background var(--dur-fast) var(--ease-state);
 	}
 	summary:hover {
 		background: var(--surface-2);

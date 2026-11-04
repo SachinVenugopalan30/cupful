@@ -120,8 +120,8 @@
 		font-weight: var(--weight-medium);
 		cursor: pointer;
 		transition:
-			background var(--dur-fast) var(--ease),
-			transform var(--dur-fast) var(--ease);
+			background var(--dur-fast) var(--ease-state),
+			transform var(--dur-fast) var(--ease-state);
 	}
 	.bar-action:hover {
 		background: var(--surface-2);

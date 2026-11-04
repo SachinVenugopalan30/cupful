@@ -137,10 +137,13 @@
 	--shadow-sheet: 0 24px 64px -24px rgb(7 24 32 / 0.38);
 
 	/* ---- motion ---- */
-	--dur-fast: 120ms;
-	--dur-med: 180ms;
-	--dur-slow: 240ms;
-	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--dur-fast: 160ms; /* hover, press, focus, chips */
+	--dur-med: 240ms; /* saved text, small state changes */
+	--dur-slow: 360ms; /* meters, week bars, progress fills */
+	--dur-enter: 420ms; /* sheets */
+	--dur-exit: 200ms; /* sheet close, backdrop fade */
+	--ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-state: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root[data-theme='light'] {
@@ -155,5 +158,7 @@
 		--dur-fast: 0ms;
 		--dur-med: 0ms;
 		--dur-slow: 0ms;
+		--dur-enter: 0ms;
+		--dur-exit: 0ms;
 	}
 }

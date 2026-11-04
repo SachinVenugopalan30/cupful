@@ -458,7 +458,7 @@
 		flex-direction: column;
 		gap: var(--space-2);
 		min-width: 0;
-		transition: border-color var(--dur-fast) var(--ease);
+		transition: border-color var(--dur-fast) var(--ease-state);
 	}
 	.stat:focus-within {
 		border-color: var(--accent);
@@ -500,7 +500,7 @@
 		letter-spacing: -0.03em;
 		font-variant-numeric: tabular-nums;
 		font-feature-settings: 'tnum' 1;
-		transition: background-color var(--dur-fast) var(--ease);
+		transition: background-color var(--dur-fast) var(--ease-state);
 	}
 	.stat-gym .figure input {
 		width: 3ch;

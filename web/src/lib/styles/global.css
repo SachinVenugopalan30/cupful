@@ -71,6 +71,7 @@ p {
 a {
 	color: var(--accent);
 	text-underline-offset: 0.15em;
+	transition: color var(--dur-fast) var(--ease-state);
 }
 a:hover {
 	color: var(--accent-hover);
@@ -176,10 +177,10 @@ a:hover {
 	text-decoration: none;
 	cursor: pointer;
 	transition:
-		background var(--dur-fast) var(--ease),
-		border-color var(--dur-fast) var(--ease),
-		color var(--dur-fast) var(--ease),
-		transform var(--dur-fast) var(--ease);
+		background var(--dur-fast) var(--ease-state),
+		border-color var(--dur-fast) var(--ease-state),
+		color var(--dur-fast) var(--ease-state),
+		transform var(--dur-fast) var(--ease-state);
 }
 .btn:hover {
 	background: var(--surface-2);
@@ -354,7 +355,7 @@ textarea:focus-visible {
 	pointer-events: none;
 }
 .segmented label {
-	transition: background var(--dur-fast) var(--ease);
+	transition: background var(--dur-fast) var(--ease-state);
 }
 .segmented label:hover {
 	background: var(--surface);
@@ -418,6 +419,10 @@ textarea:focus-visible {
 	font-size: var(--text-xs);
 	font-weight: var(--weight-medium);
 	white-space: nowrap;
+	transition:
+		background var(--dur-fast) var(--ease-state),
+		border-color var(--dur-fast) var(--ease-state),
+		color var(--dur-fast) var(--ease-state);
 }
 .chip-db {
 	background: var(--src-db-soft);
@@ -535,11 +540,11 @@ textarea:focus-visible {
 	min-height: 1em;
 	border-radius: var(--radius-sm);
 	background: var(--surface-2);
-	animation: pulse 1.4s ease-in-out infinite;
+	animation: pulse 1.8s ease-in-out infinite;
 }
 @keyframes pulse {
 	50% {
-		opacity: 0.55;
+		opacity: 0.65;
 	}
 }
 @media (prefers-reduced-motion: reduce) {

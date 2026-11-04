@@ -117,8 +117,8 @@
 		text-align: left;
 		cursor: pointer;
 		transition:
-			background var(--dur-fast) var(--ease),
-			border-color var(--dur-fast) var(--ease);
+			background var(--dur-fast) var(--ease-state),
+			border-color var(--dur-fast) var(--ease-state);
 	}
 	.pick .name {
 		font-weight: var(--weight-medium);
