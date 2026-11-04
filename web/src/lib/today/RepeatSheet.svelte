@@ -106,7 +106,7 @@
 		</div>
 
 		<p class="visually-hidden" aria-live="polite">
-			{meals === null ? 'Loading recent meals.' : `${shown.length} recent meals.`}
+			{error ? '' : meals === null ? 'Loading recent meals.' : `${shown.length} recent meals.`}
 		</p>
 
 		{#if error}
@@ -129,19 +129,15 @@
 			<ul class="list">
 				{#each shown as m (m.id)}
 					<li>
-						<button
-							type="button"
-							class="pick"
-							onclick={() => pick(m)}
-						>
+						<button type="button" class="pick" onclick={() => pick(m)}>
 							<span class="name">{m.label}</span>
 							<span class="small muted">
 								{m.meal_type} · last {dayLabel(m.last_date, today())}
 								{#if m.times > 1}· eaten {m.times} times{/if}
 							</span>
 							<span class="small muted num">{macros(m)}</span>
+							<span class="num kcal">{formatKcal(m.totals.kcal)} kcal</span>
 						</button>
-						<span class="num kcal">{formatKcal(m.totals.kcal)} kcal</span>
 					</li>
 				{/each}
 			</ul>
@@ -151,9 +147,9 @@
 
 <style>
 	.pick {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		width: 100%;
 		gap: 0.125rem;
 		min-width: 0;
 		min-height: var(--touch);
@@ -179,17 +175,15 @@
 		overflow-wrap: anywhere;
 	}
 	li {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
 		border-bottom: 1px solid var(--border);
 	}
 	li:last-child {
 		border-bottom: 0;
 	}
 	.kcal {
-		flex: none;
+		grid-column: 2;
+		grid-row: 1 / span 3;
+		align-self: center;
 		font-weight: var(--weight-medium);
 	}
 </style>
