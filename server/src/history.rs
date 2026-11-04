@@ -3,7 +3,11 @@
 
 use std::collections::{HashMap, hash_map::Entry};
 
-#[allow(dead_code)] // every field is read by meal_json in Task 7
+use serde_json::{Value, json};
+use sqlx::SqlitePool;
+
+use crate::error::Result;
+
 struct ItemRow {
     id: String,
     name: String,
@@ -17,9 +21,8 @@ struct ItemRow {
     origin: String,
 }
 
-#[allow(dead_code)] // every field is read by meal_json in Task 7
 pub(crate) struct MealRow {
-    id: String,
+    pub(crate) id: String,
     date: String,
     meal_type: String,
     description: String,
@@ -109,6 +112,106 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
         group.avg_kcal /= group.times as f64;
     }
     out
+}
+
+pub(crate) async fn load_meals(
+    db: &SqlitePool,
+    user_id: i64,
+    from: &str,
+    to: &str,
+) -> Result<Vec<MealRow>> {
+    let meals = sqlx::query!(
+        "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,
+                provider_id, updated_at
+         FROM meals
+         WHERE user_id = ? AND date BETWEEN ? AND ? AND deleted_at IS NULL
+         ORDER BY date, updated_at, id",
+        user_id,
+        from,
+        to
+    )
+    .fetch_all(db)
+    .await?;
+    let items = sqlx::query!(
+        "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g,
+                i.carbs_g, i.fat_g, i.food_id, i.origin
+         FROM meal_items i JOIN meals m ON m.id = i.meal_id
+         WHERE m.user_id = ? AND m.date BETWEEN ? AND ? AND m.deleted_at IS NULL
+         ORDER BY i.meal_id, i.position",
+        user_id,
+        from,
+        to
+    )
+    .fetch_all(db)
+    .await?;
+    let mut by_meal: HashMap<String, Vec<ItemRow>> = HashMap::new();
+    for i in items {
+        by_meal.entry(i.meal_id.clone()).or_default().push(ItemRow {
+            id: i.id,
+            name: i.name,
+            portion_text: i.portion_text,
+            grams: i.grams,
+            kcal: i.kcal,
+            protein_g: i.protein_g,
+            carbs_g: i.carbs_g,
+            fat_g: i.fat_g,
+            food_id: i.food_id,
+            origin: i.origin,
+        });
+    }
+    Ok(meals
+        .into_iter()
+        .map(|m| {
+            let items = by_meal.remove(&m.id).unwrap_or_default();
+            MealRow {
+                id: m.id,
+                date: m.date,
+                meal_type: m.meal_type,
+                description: m.description,
+                scale: m.scale,
+                assumptions: m.assumptions,
+                confidence: m.confidence,
+                source: m.source,
+                provider_id: m.provider_id,
+                updated_at: m.updated_at,
+                items,
+            }
+        })
+        .collect())
+}
+
+pub(crate) fn meal_json(m: &MealRow) -> Value {
+    let sum = |f: fn(&ItemRow) -> f64| m.items.iter().map(f).sum::<f64>();
+    json!({
+        "id": m.id,
+        "date": m.date,
+        "meal_type": m.meal_type,
+        "description": m.description,
+        "scale": m.scale,
+        "assumptions": m.assumptions,
+        "confidence": m.confidence,
+        "source": m.source,
+        "provider_id": m.provider_id,
+        "updated_at": m.updated_at,
+        "items": m.items.iter().map(|i| json!({
+            "id": i.id,
+            "name": i.name,
+            "portion_text": i.portion_text,
+            "grams": i.grams,
+            "kcal": i.kcal,
+            "protein_g": i.protein_g,
+            "carbs_g": i.carbs_g,
+            "fat_g": i.fat_g,
+            "food_id": i.food_id,
+            "origin": i.origin,
+        })).collect::<Vec<_>>(),
+        "totals": {
+            "kcal": sum(|i| i.kcal),
+            "protein_g": sum(|i| i.protein_g),
+            "carbs_g": sum(|i| i.carbs_g),
+            "fat_g": sum(|i| i.fat_g),
+        },
+    })
 }
 
 #[cfg(test)]

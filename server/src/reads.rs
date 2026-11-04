@@ -16,6 +16,7 @@ use crate::AppState;
 use crate::auth::User;
 use crate::budget::{self, DayActivity, ProfileVersion};
 use crate::error::{Error, Result};
+use crate::history::{load_meals, meal_json};
 use crate::time::parse_date;
 
 const MAX_RANGE_DAYS: i32 = 400;
@@ -160,60 +161,11 @@ pub async fn meals(
     Query(q): Query<DateQuery>,
 ) -> Result<Json<Value>> {
     let date = parse_date(&q.date)?.to_string();
-    // UUIDv7 ids sort by creation time.
-    let meals = sqlx::query!(
-        "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,
-                provider_id, updated_at
-         FROM meals WHERE user_id = ? AND date = ? AND deleted_at IS NULL ORDER BY id",
-        user.id,
-        date
-    )
-    .fetch_all(&s.db)
-    .await?;
-    // One query for the whole day's items, grouped by meal.
-    let all_items = sqlx::query!(
-        "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g, i.carbs_g,
-                i.fat_g, i.food_id, i.origin
-         FROM meal_items i JOIN meals m ON m.id = i.meal_id
-         WHERE m.user_id = ? AND m.date = ? AND m.deleted_at IS NULL
-         ORDER BY i.meal_id, i.position",
-        user.id,
-        date
-    )
-    .fetch_all(&s.db)
-    .await?;
-    let mut by_meal: HashMap<String, Vec<_>> = HashMap::new();
-    for i in all_items {
-        by_meal.entry(i.meal_id.clone()).or_default().push(i);
-    }
-    let mut out = Vec::with_capacity(meals.len());
-    for m in meals {
-        let items = by_meal.remove(&m.id).unwrap_or_default();
-        let sum = |f: fn(&_) -> f64| items.iter().map(f).sum::<f64>();
-        let totals = json!({
-            "kcal": sum(|i| i.kcal),
-            "protein_g": sum(|i| i.protein_g),
-            "carbs_g": sum(|i| i.carbs_g),
-            "fat_g": sum(|i| i.fat_g),
-        });
-        let items: Vec<Value> = items
-            .iter()
-            .map(|i| {
-                json!({
-                    "id": i.id, "name": i.name, "portion_text": i.portion_text, "grams": i.grams,
-                    "kcal": i.kcal, "protein_g": i.protein_g, "carbs_g": i.carbs_g,
-                    "fat_g": i.fat_g, "food_id": i.food_id, "origin": i.origin,
-                })
-            })
-            .collect();
-        out.push(json!({
-            "id": m.id, "date": m.date, "meal_type": m.meal_type, "description": m.description,
-            "scale": m.scale, "assumptions": m.assumptions, "confidence": m.confidence,
-            "source": m.source, "provider_id": m.provider_id, "updated_at": m.updated_at,
-            "items": items, "totals": totals,
-        }));
-    }
-    Ok(Json(json!({ "meals": out })))
+    let mut meals = load_meals(&s.db, user.id, &date, &date).await?;
+    meals.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(Json(json!({
+        "meals": meals.iter().map(meal_json).collect::<Vec<_>>(),
+    })))
 }
 
 /// The budget for `date` from already-loaded inputs (`weight` = latest weigh-in on or before

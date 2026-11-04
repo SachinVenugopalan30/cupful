@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,\n                provider_id, updated_at\n         FROM meals WHERE user_id = ? AND date = ? AND deleted_at IS NULL ORDER BY id",
+  "query": "SELECT id, date, meal_type, description, scale, assumptions, confidence, source,\n                provider_id, updated_at\n         FROM meals\n         WHERE user_id = ? AND date BETWEEN ? AND ? AND deleted_at IS NULL\n         ORDER BY date, updated_at, id",
   "describe": {
     "columns": [
       {
@@ -115,7 +115,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
@@ -130,5 +130,5 @@
       false
     ]
   },
-  "hash": "8645aec153d756d2d72e688d44e0eeca0f0813d3d0725be12149f11b112d17c9"
+  "hash": "8b93e5b3f1e1b4a0644a7023f26dd4c83d76e8960c38147c19d25364fcdc4b46"
 }

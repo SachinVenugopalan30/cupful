@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g, i.carbs_g,\n                i.fat_g, i.food_id, i.origin\n         FROM meal_items i JOIN meals m ON m.id = i.meal_id\n         WHERE m.user_id = ? AND m.date = ? AND m.deleted_at IS NULL\n         ORDER BY i.meal_id, i.position",
+  "query": "SELECT i.meal_id, i.id, i.name, i.portion_text, i.grams, i.kcal, i.protein_g,\n                i.carbs_g, i.fat_g, i.food_id, i.origin\n         FROM meal_items i JOIN meals m ON m.id = i.meal_id\n         WHERE m.user_id = ? AND m.date BETWEEN ? AND ? AND m.deleted_at IS NULL\n         ORDER BY i.meal_id, i.position",
   "describe": {
     "columns": [
       {
@@ -126,7 +126,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
@@ -142,5 +142,5 @@
       false
     ]
   },
-  "hash": "6d45050aefcfd95529e579f59266d9ec9c61d955047fc818607d500ae59fe037"
+  "hash": "896d0ffaae11dd5b5a629978538de0f260fca31e48543503fbad2f2b33992243"
 }
