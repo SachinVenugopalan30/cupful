@@ -133,7 +133,7 @@
 		font: inherit;
 		font-size: var(--text-xs);
 		cursor: pointer;
-		transition: background-color var(--dur-fast) var(--ease);
+		transition: background-color var(--dur-fast) var(--ease-state);
 	}
 	.col:hover {
 		background: var(--surface-2);
