@@ -4,17 +4,16 @@
   Props: meals: TopMeal[]; days: number.
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import type { TopMeal } from '../api';
 	import { formatNumber, shortDate } from './logic.ts';
 
 	let { meals, days }: { meals: TopMeal[]; days: number } = $props();
 	const top = $derived(Math.max(1, ...meals.map((m) => m.times)));
 	// Only the rows present when the range mounted animate. A data refresh may add a row;
-	// that row should not replay the entrance.
-	const initial = new Set(untrack(() => meals.map((m) => m.label)));
-	const type = (t: string) => t[0].toUpperCase() + t.slice(1);
-	const times = (n: number) => (n === 1 ? '1 time' : `${n} times`);
+	// that row should not replay the entrance. The closure runs once, untracked.
+	const initial = (() => new Set(meals.map((m) => m.label)))();
+	const mealTypeLabel = (t: string) => t[0].toUpperCase() + t.slice(1);
+	const timesLabel = (n: number) => (n === 1 ? '1 time' : `${n} times`);
 </script>
 
 <section class="card frequent" aria-labelledby="frequent-h">
@@ -25,18 +24,19 @@
 	{#if !meals.length}
 		<p class="empty">No meals logged in this range.</p>
 	{:else}
-		<ul class="list">
+		<ul class="list" role="list">
 			{#each meals as m, i (m.label)}
 				<li
-					aria-label="{m.label}, {times(m.times)}, {formatNumber(m.avg_kcal)} kcal average, last {shortDate(m.last_date)}"
+					aria-label="{m.label}, {mealTypeLabel(m.meal_type)}, {timesLabel(m.times)}, {formatNumber(m.avg_kcal)} kcal average, last {shortDate(m.last_date)}"
 				>
 					<span class="label">{m.label}</span>
 					<span class="meta small muted">
-						{type(m.meal_type)} · {times(m.times)} · last {shortDate(m.last_date)}
+						{mealTypeLabel(m.meal_type)} · {timesLabel(m.times)} · last {shortDate(m.last_date)}
 					</span>
 					<span class="num">{formatNumber(m.avg_kcal)} kcal avg</span>
 					<i
 						class="bar"
+						aria-hidden="true"
 						class:animate={initial.has(m.label)}
 						style:width={`${(m.times / top) * 100}%`}
 						style:--i={i}
@@ -95,6 +95,7 @@
 		align-self: center;
 		font-size: var(--text-xs);
 		color: var(--text-muted);
+		white-space: nowrap;
 	}
 	.bar {
 		position: absolute;

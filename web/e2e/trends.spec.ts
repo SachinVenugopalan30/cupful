@@ -210,6 +210,11 @@ test('Eaten most hides when top_meals is missing and shows the empty state for [
 		})
 	);
 	await page.goto('/trends');
+	await expect(
+		page
+			.getByRole('region', { name: 'Average intake against budget' })
+			.getByText(/Log a meal on Today/)
+	).toBeVisible();
 	await expect(page.getByRole('region', { name: 'Eaten most' })).toHaveCount(0);
 	await page.unroute('**/api/trends?*');
 
