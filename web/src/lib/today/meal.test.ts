@@ -10,10 +10,12 @@ import {
 	draftFromEstimate,
 	draftFromMeal,
 	type DraftItem,
+	filterHistory,
 	fitWithin,
 	itemReady,
 	mealFromDraft,
-	repeatMeal,
+	repeatDraft,
+	repeatTitle,
 	sumItems,
 	useProduct,
 	withGrams,
@@ -226,14 +228,44 @@ describe('draftFromMeal (edit)', () => {
 	});
 });
 
-describe('repeatMeal', () => {
-	it('copies the full meal to a date with new ids and source repeat', () => {
-		const m = repeatMeal(saved, '2026-10-28');
-		expect(m.id).not.toBe(saved.id);
-		expect(m.id).toMatch(UUIDV7);
-		expect(m.items[0].id).not.toBe(saved.items[0].id);
-		expect(m).toMatchObject({ date: '2026-10-28', meal_type: 'dinner', source: 'repeat', scale: 2, provider_id: null });
-		expect(m.items[0]).toMatchObject({ grams: 300, kcal: 390, food_id: 1 });
+describe('repeatDraft', () => {
+	it('copies the meal to a date with new ids and source repeat', () => {
+		const d = repeatDraft(saved, '2026-10-28');
+		expect(d.id).not.toBe(saved.id);
+		expect(d.id).toMatch(UUIDV7);
+		expect(d.items[0].id).not.toBe(saved.items[0].id);
+		expect(d).toMatchObject({
+			date: '2026-10-28',
+			meal_type: 'dinner',
+			source: 'repeat',
+			scale: 2,
+			provider_id: null,
+			assumptions: null,
+			confidence: null
+		});
+		expect(d.items[0]).toMatchObject({ grams: 150, kcal: 195, food_id: 1 });
+		// Re-saving unchanged gives the original stored values.
+		expect(mealFromDraft(d).items[0]).toMatchObject({ grams: 300, kcal: 390 });
+	});
+});
+
+describe('repeatTitle', () => {
+	it('names the target day', () => {
+		expect(repeatTitle('2026-10-28', '2026-10-28')).toBe('Repeat meal for Today');
+		expect(repeatTitle('2026-10-27', '2026-10-28')).toBe('Repeat meal for Yesterday');
+	});
+});
+
+describe('filterHistory', () => {
+	const history = [
+		{ ...saved, label: 'Oats with banana', times: 2, last_date: '2026-10-28' },
+		{ ...saved, label: 'Chicken rice', times: 1, last_date: '2026-10-27' }
+	];
+
+	it('matches the label and item names, case-insensitively', () => {
+		expect(filterHistory(history, 'OATS')).toHaveLength(1);
+		expect(filterHistory(history, 'rice')).toHaveLength(2);
+		expect(filterHistory(history, '')).toHaveLength(2);
 	});
 });
 

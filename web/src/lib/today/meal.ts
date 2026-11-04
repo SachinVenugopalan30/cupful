@@ -5,6 +5,7 @@ import type {
 	Confidence,
 	Estimate,
 	EstimateItem,
+	HistoryMeal,
 	Macros,
 	Meal,
 	MealItem,
@@ -13,6 +14,7 @@ import type {
 	Origin,
 	SavedProduct
 } from '#lib/api.ts';
+import { dayLabel } from '#lib/date.ts';
 import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -264,6 +266,36 @@ export function repeatMeal(m: Meal, date: string): MealIn {
 		provider_id: null,
 		items: m.items.map((i) => ({ ...i, id: uuidv7() }))
 	};
+}
+
+/** Repeat: a new meal on `date`, new ids, no model call. */
+export function repeatDraft(m: Meal, date: string): Draft {
+	const d = draftFromMeal(m);
+	return {
+		...d,
+		id: uuidv7(),
+		date,
+		source: 'repeat',
+		provider_id: null,
+		assumptions: null,
+		confidence: null,
+		warnings: [],
+		items: d.items.map((i) => ({ ...i, id: uuidv7() }))
+	};
+}
+
+export function repeatTitle(date: string, today: string): string {
+	return `Repeat meal for ${dayLabel(date, today)}`;
+}
+
+export function filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[] {
+	const q = query.trim().toLowerCase();
+	if (!q) return meals;
+	return meals.filter(
+		(m) =>
+			m.label.toLowerCase().includes(q) ||
+			m.items.some((i) => i.name.toLowerCase().includes(q))
+	);
 }
 
 const zero = (): Macros => ({ kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 });
