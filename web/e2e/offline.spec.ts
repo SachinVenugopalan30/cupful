@@ -40,11 +40,14 @@ test.beforeEach(async ({ page }) => {
 	await login(page);
 });
 
-/** Expands the meal whose summary contains `description` and clicks "Eat this again". */
+/** Expands the meal whose summary contains `description` and saves a repeat through Review. */
 async function repeatMeal(page: import('@playwright/test').Page, description: string) {
 	const meal = page.getByTestId('meal').filter({ hasText: description });
 	await meal.locator('summary').click();
-	await meal.getByRole('button', { name: 'Eat this again' }).click();
+	await meal.getByRole('button', { name: 'Repeat', exact: true }).click();
+	const review = page.getByRole('dialog', { name: /Repeat meal for/ });
+	await review.getByRole('button', { name: 'Save meal' }).click();
+	await expect(review).toBeHidden();
 }
 
 /** Settings → Sync op rows. */

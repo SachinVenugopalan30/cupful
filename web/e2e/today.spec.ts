@@ -2,7 +2,7 @@
 // Today meal flow. Each describe starts its own server (the debug binary the shared webServer just
 // built) on a fresh data dir, so these meals don't mix with other specs' and the AI path can have
 // a provider: a tiny mock OpenAI-compatible server answering with a canned estimate.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -42,9 +42,18 @@ async function startCupful(port: number, env: Record<string, string>): Promise<C
 	return proc;
 }
 
+// The server allows five logins per username per minute. This file now has more tests than that,
+// so the first login's session is reused in the later tests' fresh contexts.
+let savedAuth: Awaited<ReturnType<BrowserContext['storageState']>> | null = null;
+
 async function login(page: Page) {
-	const res = await page.request.post('/api/auth/login', { headers: { 'X-Cupful': '1' }, data: USER });
-	expect(res.ok()).toBe(true);
+	if (savedAuth) {
+		await page.context().addCookies(savedAuth.cookies);
+	} else {
+		const res = await page.request.post('/api/auth/login', { headers: { 'X-Cupful': '1' }, data: USER });
+		expect(res.ok()).toBe(true);
+		savedAuth = await page.context().storageState();
+	}
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Log a meal' })).toBeVisible();
 }
@@ -63,7 +72,10 @@ test.describe('without an AI provider', () => {
 	const port = randomPort();
 	let server: ChildProcess;
 	test.use({ baseURL: `http://127.0.0.1:${port}` });
-	test.beforeAll(async () => (server = await startCupful(port, {})));
+	test.beforeAll(async () => {
+		server = await startCupful(port, {});
+		savedAuth = null;
+	});
 	test.afterAll(() => void server?.kill());
 	test.beforeEach(({ page }) => login(page));
 
@@ -108,9 +120,15 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByTestId('meal')).toHaveCount(1);
 	});
 
-	test('"Eat this again" duplicates the meal', async ({ page }) => {
+	test('Repeat opens Review and logs a copy', async ({ page }) => {
+		// Depends on the previous edit test: the meal is 332 kcal.
 		await page.getByTestId('meal').locator('summary').click();
-		await page.getByRole('button', { name: 'Eat this again' }).click();
+		await page.getByTestId('meal').getByRole('button', { name: 'Repeat', exact: true }).click();
+		const sheet = page.getByRole('dialog', { name: /Repeat meal for/ });
+		await expect(sheet).toBeVisible();
+		await expect(sheet.locator('.totals')).toContainText('332 kcal');
+		await sheet.getByRole('button', { name: 'Save meal' }).click();
+		await expect(sheet).toBeHidden();
 		await expect(page.getByTestId('meal')).toHaveCount(2);
 		await expect(dayTotal(page)).toContainText('664 kcal');
 		await expect(page.getByTestId('meal').nth(1)).toContainText('Eaten again');
@@ -124,6 +142,70 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByTestId('meal')).toHaveCount(1);
 		await expect(dayTotal(page)).toContainText('332 kcal');
 	});
+
+	test('Repeat a meal from a previous day', async ({ page }) => {
+		await page.getByRole('button', { name: 'Previous day' }).click();
+		await page.getByLabel('What did you eat?').fill('yesterday oats');
+		await page.getByRole('button', { name: 'Enter by hand' }).click();
+		const entry = page.getByRole('dialog', { name: 'Enter by hand' });
+		await fillItem(page, 0, ['Oats', '100', '380', '12', '60', '7']);
+		await entry.getByRole('button', { name: 'Save meal' }).click();
+		await expect(entry).toBeHidden();
+
+		await page.getByRole('button', { name: 'Back to today' }).click();
+		await page.getByRole('button', { name: 'Repeat a meal' }).click();
+		const picker = page.getByRole('dialog', { name: /Repeat onto Today/ });
+		await picker.getByLabel('Search recent meals').fill('no-such-meal');
+		await expect(picker.getByText(/No recent meals match/)).toBeVisible();
+		await picker.getByRole('button', { name: 'Clear search' }).click();
+		await picker.getByLabel('Search recent meals').fill('yesterday');
+		await picker.getByRole('button', { name: /yesterday oats/ }).click();
+		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		await expect(review.locator('.totals')).toContainText('380 kcal');
+		await review.getByRole('button', { name: 'Cancel' }).click();
+		await expect(review).toBeHidden();
+		await expect(picker).toBeVisible();
+		await expect(picker.getByLabel('Search recent meals')).toHaveValue('yesterday');
+		await picker.getByRole('button', { name: /yesterday oats/ }).click();
+		const reviewAgain = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		await expect(reviewAgain.locator('.totals')).toContainText('380 kcal');
+		await reviewAgain.getByRole('button', { name: 'Save meal' }).click();
+		await expect(reviewAgain).toBeHidden();
+		await expect(page.getByTestId('meal').filter({ hasText: 'yesterday oats' })).toHaveCount(1);
+	});
+
+	test('Copy a past meal to today', async ({ page }) => {
+		await page.getByRole('button', { name: 'Previous day' }).click();
+		await page.getByLabel('What did you eat?').fill('copy seed');
+		await page.getByRole('button', { name: 'Enter by hand' }).click();
+		const entry = page.getByRole('dialog', { name: 'Enter by hand' });
+		await fillItem(page, 0, ['Copy seed', '100', '250', '10', '30', '8']);
+		await entry.getByRole('button', { name: 'Save meal' }).click();
+		await expect(entry).toBeHidden();
+
+		const meal = page.getByTestId('meal').filter({ hasText: 'copy seed' });
+		await meal.locator('summary').click();
+		await meal.getByRole('button', { name: 'Copy to today' }).click();
+		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		await expect(review).toBeVisible();
+		await review.getByRole('button', { name: 'Save meal' }).click();
+		await expect(review).toBeHidden();
+		await expect(page.getByText('Copied to today.')).toBeVisible();
+		await page.getByRole('button', { name: 'View today' }).click();
+		await expect(page.getByTestId('meal').filter({ hasText: 'copy seed' })).toHaveCount(1);
+	});
+
+	test('Repeat does not clear the composer draft', async ({ page }) => {
+		await page.getByLabel('What did you eat?').fill('keep this description');
+		await page.getByRole('button', { name: 'Repeat a meal' }).click();
+		const picker = page.getByRole('dialog', { name: /Repeat onto Today/ });
+		await picker.locator('ul.list button').first().click();
+		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		await review.getByRole('button', { name: 'Save meal' }).click();
+		await expect(review).toBeHidden();
+		await expect(page.getByLabel('What did you eat?')).toHaveValue('keep this description');
+		await expect(page.getByRole('button', { name: 'Repeat a meal' })).toBeFocused();
+	});
 });
 
 test.describe('with a mock AI provider', () => {
@@ -134,6 +216,7 @@ test.describe('with a mock AI provider', () => {
 	test.use({ baseURL: `http://127.0.0.1:${port}` });
 
 	test.beforeAll(async () => {
+		savedAuth = null;
 		const reply = {
 			items: [
 				{ food: 'fish', amount: 1, unit: 'piece', grams: 120, cooking: 'none', mentions_oil: false,
@@ -232,6 +315,7 @@ test.describe('numbers and my products', () => {
 	test.use({ baseURL: `http://127.0.0.1:${port}` });
 
 	test.beforeAll(async () => {
+		savedAuth = null;
 		const reply = {
 			items: [
 				{ food: 'chocolate protein powder', amount: 1, unit: 'scoop', grams: 15, cooking: 'none', mentions_oil: false,
@@ -347,6 +431,7 @@ test.describe('numbers and my products', () => {
 		await expect(sheet.getByText('chocolate protein powder', { exact: true })).toBeVisible();
 		await expect(sheet.getByRole('button', { name: 'Remove chocolate protein powder' })).toBeVisible();
 		await sheet.getByRole('button', { name: 'Close' }).click();
+		await expect(sheet).toBeHidden();
 
 		const next = await estimate(page);
 		await expect(next.locator('.item').first().getByText('Database')).toBeVisible();
