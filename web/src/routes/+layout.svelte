@@ -143,7 +143,9 @@
 		font-size: var(--text-xs);
 		font-weight: var(--weight-medium);
 		text-decoration: none;
-		transition: background-color var(--dur-fast) var(--ease-state);
+		transition:
+			background-color var(--dur-fast) var(--ease-state),
+			color var(--dur-fast) var(--ease-state);
 	}
 	.nav-links a:hover {
 		background: var(--surface-2);
