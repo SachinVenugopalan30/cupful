@@ -64,7 +64,8 @@
 		heading?.focus();
 	});
 
-	function close() {
+	function close(force = false) {
+		if (saving && !force) return;
 		closeSheet(dialog, () => {
 			returnFocus?.focus();
 			onClose();
@@ -100,6 +101,8 @@
 
 	async function save() {
 		if (saving || dialog.dataset.closing === 'true') return;
+		// The parent may swap onSaved while this sheet is open; the save started under the old prop.
+		const done = onSaved;
 		error = '';
 		if (!d.items.length) return void (error = 'Add at least one item.');
 		if (missing) return void (error = 'Fill in the highlighted items first.');
@@ -117,18 +120,18 @@
 			}
 			// Queued is saved. Aliases are online-only configuration, so close without writing them.
 			if (r.status === 'queued' || !connection.online) {
-				onSaved();
-				close();
+				done();
+				close(true);
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
 			const failed = await rememberAliases(d.items, foods.alias);
-			onSaved();
+			done();
 			if (failed.length) {
 				error = aliasFailure(failed);
 				return;
 			}
-			close();
+			close(true);
 		} catch (e) {
 			error = errorMessage(e);
 		} finally {
@@ -149,7 +152,7 @@
 	<form class="stack" method="dialog" onsubmit={(e) => (e.preventDefault(), save())} novalidate>
 		<header class="sheet-head">
 			<h2 id="review-title-{uid}" tabindex="-1" bind:this={heading}>{title}</h2>
-			<button type="button" class="btn btn-quiet" onclick={close}>Cancel</button>
+			<button type="button" class="btn btn-quiet" onclick={() => close()}>Cancel</button>
 		</header>
 
 		<fieldset class="segmented" aria-label="Meal">

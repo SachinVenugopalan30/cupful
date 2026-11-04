@@ -42,6 +42,7 @@
 	let reviewFromRepeat = $state(false);
 	let repeatSaved = $state(false);
 	let repeatBtn: HTMLButtonElement;
+	let estimateSeq = 0;
 
 	const RETRY = ['timeout', 'unreachable', 'unparseable', 'rate_limited', 'provider_error', 'offline'];
 	const SETTINGS = ['no_provider', 'provider_auth'];
@@ -72,15 +73,18 @@
 			failure = { code: 'offline', message: errorMessage(new TypeError('offline'), 'estimate') };
 			return;
 		}
+		const seq = ++estimateSeq;
 		busy = true;
 		try {
 			const est = await estimate(text, photo ?? undefined);
+			if (seq !== estimateSeq) return;
 			reviewFromRepeat = false;
 			review = {
 				draft: draftFromEstimate(est, { date, meal_type: mealType, description: text }),
 				title: 'Review estimate'
 			};
 		} catch (e) {
+			if (seq !== estimateSeq) return;
 			const code = e instanceof ApiError ? (e.code ?? String(e.status)) : e instanceof TypeError ? 'offline' : 'other';
 			failure = { code, message: errorMessage(e, 'estimate') };
 		} finally {
@@ -90,6 +94,7 @@
 
 	function byHand() {
 		failure = null;
+		estimateSeq++;
 		reviewFromRepeat = false;
 		review = {
 			draft: manualDraft({ date, meal_type: mealType, description: description.trim() }),
@@ -98,11 +103,13 @@
 	}
 
 	function openRepeat() {
+		estimateSeq++;
 		repeatQuery = '';
 		repeatOpen = true;
 	}
 
-	function picked(meal: HistoryMeal, query: string) {
+	function repeatPicked(meal: HistoryMeal, query: string) {
+		estimateSeq++;
 		repeatQuery = query;
 		repeatOpen = false;
 		reviewFromRepeat = true;
@@ -125,7 +132,7 @@
 		repeatSaved = false;
 	}
 
-	function repeatSavedHandler() {
+	function onRepeatSaved() {
 		repeatSaved = true;
 		onSaved();
 	}
@@ -145,7 +152,14 @@
 				<h2 id="composer-title">Log a meal</h2>
 				<p class="small muted">Words or a photo, then check the estimate.</p>
 			</div>
-			<button type="button" class="btn btn-quiet" bind:this={repeatBtn} onclick={openRepeat}>Repeat a meal</button>
+			<button
+				type="button"
+				class="btn btn-quiet"
+				bind:this={repeatBtn}
+				onclick={openRepeat}
+				aria-haspopup="dialog"
+				disabled={busy}>Repeat a meal</button
+			>
 		</header>
 		<fieldset class="segmented" aria-label="Meal">
 			{#each MEAL_TYPES as t (t)}
@@ -221,16 +235,18 @@
 </section>
 
 {#if review}
-	<Review
-		draft={review.draft}
-		title={review.title}
-		onClose={reviewClosed}
-		onSaved={reviewFromRepeat ? repeatSavedHandler : saved}
-	/>
+	{#key review.draft.id}
+		<Review
+			draft={review.draft}
+			title={review.title}
+			onClose={reviewClosed}
+			onSaved={reviewFromRepeat ? onRepeatSaved : saved}
+		/>
+	{/key}
 {/if}
 
 {#if repeatOpen}
-	<RepeatSheet {date} query={repeatQuery} onClose={repeatClosed} onPick={picked} />
+	<RepeatSheet {date} query={repeatQuery} onClose={repeatClosed} onPick={repeatPicked} />
 {/if}
 
 <style>
@@ -240,7 +256,7 @@
 	.panel-head {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: baseline;
+		align-items: start;
 		justify-content: space-between;
 		gap: var(--space-1) var(--space-3);
 	}
