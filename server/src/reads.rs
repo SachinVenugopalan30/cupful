@@ -255,6 +255,8 @@ pub async fn trends(
         })
     };
     // Budgets carry the latest weigh-in forward (§7), starting from before the range.
+    let history = crate::history::load_meals(&s.db, user.id, &f, &t).await?;
+    let top = crate::history::top_meals(history, 5);
     let mut weight = sqlx::query_scalar!(
         "SELECT weight_kg AS \"w!: f64\" FROM days
          WHERE user_id = ? AND date < ? AND weight_kg IS NOT NULL ORDER BY date DESC LIMIT 1",
@@ -282,7 +284,7 @@ pub async fn trends(
         })
         .collect();
     Ok(Json(
-        json!({ "days": days, "averages": averages, "meal_mix": meal_mix }),
+        json!({ "days": days, "averages": averages, "meal_mix": meal_mix, "top_meals": top }),
     ))
 }
 

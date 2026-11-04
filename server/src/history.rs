@@ -46,7 +46,6 @@ struct MealGroup {
     /// Exact spellings seen in the group and how often, to pick a canonical display label.
     labels: HashMap<String, usize>,
     times: usize,
-    #[allow(dead_code)] // read by top_meals in Task 9
     avg_kcal: f64,
     last_date: String,
     latest: MealRow,
@@ -127,6 +126,30 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
             .expect("a group has at least one label");
     }
     out
+}
+
+/// The most-eaten meals as compact summaries, grouped by normalized label before the limit.
+pub(crate) fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
+    let mut groups = group_meals(meals);
+    groups.sort_by(|a, b| {
+        b.times
+            .cmp(&a.times)
+            .then_with(|| b.last_date.cmp(&a.last_date))
+            .then_with(|| a.label.cmp(&b.label))
+    });
+    groups.truncate(limit);
+    groups
+        .into_iter()
+        .map(|g| {
+            json!({
+                "label": g.label,
+                "meal_type": g.latest.meal_type,
+                "times": g.times,
+                "avg_kcal": g.avg_kcal.round() as i64,
+                "last_date": g.last_date,
+            })
+        })
+        .collect()
 }
 
 #[derive(Deserialize)]

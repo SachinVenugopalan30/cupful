@@ -88,6 +88,58 @@ async fn range_is_validated() {
 }
 
 #[tokio::test]
+async fn top_meals_counts_by_description() {
+    let mut a = setup().await;
+    a.sync(vec![op(
+        "meal.upsert",
+        &at(-30),
+        meal(&uuid(), D3, json!([item(&uuid(), 100.0)])),
+    )])
+    .await;
+
+    let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D3}")).await;
+    let top = t["top_meals"].as_array().unwrap();
+    assert_eq!(top.len(), 1);
+    assert_eq!(top[0]["label"], "rice and chicken");
+    assert_eq!(top[0]["times"], 2);
+    assert_eq!(top[0]["avg_kcal"], 425);
+    assert_eq!(top[0]["last_date"], D3);
+}
+
+#[tokio::test]
+async fn top_meals_is_empty_without_meals() {
+    let mut a = setup().await;
+    let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D1}")).await;
+    assert_eq!(t["top_meals"], json!([]));
+}
+
+#[tokio::test]
+async fn top_meals_orders_by_count_and_groups_before_the_limit() {
+    let mut a = setup().await;
+    let mut ops = vec![];
+    // Six meals share one label; five other labels appear once each.
+    for _ in 0..5 {
+        ops.push(op(
+            "meal.upsert",
+            &at(-30),
+            meal(&uuid(), D3, json!([item(&uuid(), 100.0)])),
+        ));
+    }
+    for name in ["alpha", "bravo", "charlie", "delta", "echo"] {
+        let mut m = meal(&uuid(), D3, json!([item(&uuid(), 100.0)]));
+        m["description"] = json!(name);
+        ops.push(op("meal.upsert", &at(-30), m));
+    }
+    a.sync(ops).await;
+
+    let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D3}")).await;
+    let top = t["top_meals"].as_array().unwrap();
+    assert_eq!(top.len(), 5);
+    assert_eq!(top[0]["label"], "rice and chicken");
+    assert_eq!(top[0]["times"], 6);
+}
+
+#[tokio::test]
 async fn deleted_meals_do_not_count() {
     let mut a = setup().await;
     let id = uuid();
