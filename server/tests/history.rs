@@ -157,3 +157,128 @@ async fn history_orders_ties_by_label() {
         .collect();
     assert_eq!(labels, ["Apple bowl", "Zebra bowl"]);
 }
+
+#[tokio::test]
+async fn history_prefers_a_newer_group_over_a_more_frequent_older_one() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let (old, new) = (date(5), date(1));
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(-30),
+            meal_with(&uuid(), &old, "Older", 100.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(-29),
+            meal_with(&uuid(), &old, "Older", 110.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(-28),
+            meal_with(&uuid(), &old, "Older", 120.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(-10),
+            meal_with(&uuid(), &new, "Newer", 200.0),
+        ),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Newer", "Older"]);
+}
+
+#[tokio::test]
+async fn history_prefers_the_group_with_more_meals_on_the_same_date() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = date(1);
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &d, "Only once", 100.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &d, "Twice", 200.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &d, "Twice", 210.0),
+        ),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Twice", "Only once"]);
+}
+
+#[tokio::test]
+async fn history_window_includes_363_days_ago_and_excludes_365() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &date(363), "Inside", 100.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &date(365), "Outside", 200.0),
+        ),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Inside"]);
+}
+
+#[tokio::test]
+async fn limit_defaults_to_20() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = date(1);
+    let ops = (0..21)
+        .map(|i| {
+            op(
+                "meal.upsert",
+                &at(0),
+                meal_with(&uuid(), &d, &format!("Meal {i:02}"), 100.0),
+            )
+        })
+        .collect();
+    a.sync(ops).await;
+
+    let (status, body) = a.get("/api/meals/history").await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let meals = body["meals"].as_array().unwrap();
+    assert_eq!(meals.len(), 20);
+    assert_eq!(meals[0]["label"], "Meal 00");
+    assert_eq!(meals[19]["label"], "Meal 19");
+}

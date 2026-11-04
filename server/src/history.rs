@@ -41,12 +41,12 @@ pub(crate) struct MealRow {
     items: Vec<ItemRow>,
 }
 
-#[allow(dead_code)] // used by the history handler and top_meals in Tasks 8-9
 struct MealGroup {
     label: String,
     /// Exact spellings seen in the group and how often, to pick a canonical display label.
     labels: HashMap<String, usize>,
     times: usize,
+    #[allow(dead_code)] // read by top_meals in Task 9
     avg_kcal: f64,
     last_date: String,
     latest: MealRow,
@@ -74,7 +74,6 @@ fn meal_key(label: &str) -> String {
 }
 
 /// Returns one group per normalized label, in no particular order.
-#[allow(dead_code)] // used by the history handler and top_meals in Tasks 8-9
 fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
     let mut groups: HashMap<String, MealGroup> = HashMap::new();
     for meal in meals {
