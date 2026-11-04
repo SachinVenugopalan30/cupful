@@ -13,9 +13,8 @@
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { errorMessage, foods, products, type SavedProduct } from '#lib/api.ts';
+	import { errorMessage, foods } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
-	import { filterSaved } from '#lib/products/logic.ts';
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
@@ -37,6 +36,7 @@
 		type NumKey
 	} from './meal';
 	import { MACROS, aliasFailure, rememberAliases } from './review';
+	import ReviewProductPicker from './ReviewProductPicker.svelte';
 
 	let {
 		draft,
@@ -87,24 +87,9 @@
 	let opened = $state<string[]>([]);
 	const toggle = (id: string) => (opened = opened.includes(id) ? opened.filter((x) => x !== id) : [...opened, id]);
 	let picking = $state<string | null>(null);
-	let query = $state('');
-	let saved = $state<SavedProduct[] | null>(null);
-	let savedError = $state('');
-	const matches = $derived(filterSaved(saved ?? [], query));
 
 	function pick(id: string) {
-		query = '';
 		picking = picking === id ? null : id;
-		if (saved === null && !savedError) {
-			products.list().then(
-				(l) => (saved = l),
-				(e) => (savedError = errorMessage(e))
-			);
-		}
-	}
-	function swap(n: number, p: SavedProduct) {
-		d.items[n] = useProduct(d.items[n], p);
-		picking = null;
 	}
 
 	function addItem() {
@@ -306,32 +291,13 @@
 					</div>
 
 					{#if picking === item.id}
-						<div class="picker stack" id="picker-{item.id}">
-							{#if savedError}
-								<p class="notice notice-error" role="alert">{savedError}</p>
-							{:else if saved === null}
-								<p class="small muted" role="status">Loading…</p>
-							{:else if saved.length === 0}
-								<p class="small muted">No saved products yet. Scan a barcode to add one.</p>
-							{:else}
-								<div class="field">
-									<label for="search-{item.id}">Search my products</label>
-									<input id="search-{item.id}" type="search" bind:value={query} />
-								</div>
-								<ul class="list">
-									{#each matches as p (p.food_id)}
-										<li>
-											<button type="button" class="btn btn-quiet pick" onclick={() => swap(n, p)}>
-												<span>{p.name}</span>
-												{#if p.brand}<span class="muted small">{p.brand}</span>{/if}
-											</button>
-										</li>
-									{:else}
-										<li class="small muted">No match.</li>
-									{/each}
-								</ul>
-							{/if}
-						</div>
+						<ReviewProductPicker
+							itemId={item.id}
+							onSwap={(p) => {
+								d.items[n] = useProduct(d.items[n], p);
+								picking = null;
+							}}
+						/>
 					{/if}
 
 					{#if item.swapped && item.phrase.trim()}
@@ -475,17 +441,6 @@
 	}
 	.m-fat {
 		color: var(--fat-text);
-	}
-	.picker {
-		padding: var(--space-3) var(--space-4);
-		background: var(--surface-2);
-		border-radius: var(--radius-md);
-	}
-	.pick {
-		flex: 1;
-		justify-content: flex-start;
-		gap: var(--space-2);
-		text-align: left;
 	}
 	.add {
 		align-self: flex-start;

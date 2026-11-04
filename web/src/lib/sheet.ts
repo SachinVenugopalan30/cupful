@@ -5,15 +5,17 @@
 const EXIT_FALLBACK_MS = 400;
 
 export function closeSheet(dialog: HTMLDialogElement, onClosed: () => void): void {
+	// An already-closed dialog needs no exit, and a second call must not repeat the callback.
+	if (!dialog.open || dialog.dataset.closing === 'true') return;
+	dialog.dataset.closing = 'true';
 	const reduced =
 		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 	if (reduced) {
+		delete dialog.dataset.closing;
 		dialog.close();
 		onClosed();
 		return;
 	}
-	if (dialog.dataset.closing === 'true') return;
-	dialog.dataset.closing = 'true';
 
 	let done = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
