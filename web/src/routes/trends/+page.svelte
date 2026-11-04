@@ -8,6 +8,7 @@
 	import Charts from '#lib/trends/Charts.svelte';
 	import Consistency from '#lib/trends/Consistency.svelte';
 	import CountUp from '#lib/trends/CountUp.svelte';
+	import FrequentMeals from '#lib/trends/FrequentMeals.svelte';
 
 	let range = $state<Range>(loadRange());
 	let data = $state<Trends | null>(null);
@@ -126,6 +127,10 @@
 				{targets}
 				days={range}
 			/>
+
+			{#if data.top_meals}
+				<FrequentMeals meals={data.top_meals} days={range} />
+			{/if}
 
 			<p class="footnote">Past budgets use the weights recorded for those days.</p>
 		{/key}

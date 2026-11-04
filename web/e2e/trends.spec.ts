@@ -152,6 +152,79 @@ test('Trends: charts, range switch remembered, empty state, no side scroll', asy
 	).toBeVisible();
 });
 
+test('Trends shows the meals eaten most often', async () => {
+	const tz = (await (await page.request.get('/api/profile')).json()).timezone as string;
+	const today = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+	const yesterday = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(
+		new Date(Date.now() - 864e5)
+	);
+	const id = () => crypto.randomUUID();
+	const meal = (date: string, kcal: number) => ({
+		id: id(),
+		date,
+		meal_type: 'lunch',
+		description: 'e2e oats',
+		scale: 1,
+		assumptions: null,
+		confidence: null,
+		source: 'manual',
+		provider_id: null,
+		items: [
+			{
+				id: id(),
+				name: 'oats',
+				portion_text: '1 bowl',
+				grams: 100,
+				kcal,
+				protein_g: 5,
+				carbs_g: 30,
+				fat_g: 3,
+				food_id: null,
+				origin: 'manual'
+			}
+		]
+	});
+	const now = new Date().toISOString();
+	const synced = await page.request.post('/api/sync', {
+		headers: { 'X-Cupful': '1' },
+		data: {
+			ops: [
+				{ op_id: id(), kind: 'meal.upsert', at: now, payload: meal(yesterday, 300) },
+				{ op_id: id(), kind: 'meal.upsert', at: now, payload: meal(today, 300) }
+			]
+		}
+	});
+	expect(synced.ok()).toBe(true);
+
+	await page.goto('/trends');
+	const card = page.getByRole('region', { name: 'Eaten most' });
+	await expect(card).toBeVisible();
+	await expect(card).toContainText('e2e oats');
+	await expect(card).toContainText('2 times');
+});
+
+test('Eaten most hides when top_meals is missing and shows the empty state for []', async () => {
+	await page.route('**/api/trends?*', (route) =>
+		route.fulfill({
+			json: { days: [], averages: null, meal_mix: null }
+		})
+	);
+	await page.goto('/trends');
+	await expect(page.getByRole('region', { name: 'Eaten most' })).toHaveCount(0);
+	await page.unroute('**/api/trends?*');
+
+	await page.route('**/api/trends?*', (route) =>
+		route.fulfill({
+			json: { days: [], averages: null, meal_mix: null, top_meals: [] }
+		})
+	);
+	await page.goto('/trends');
+	const card = page.getByRole('region', { name: 'Eaten most' });
+	await expect(card).toBeVisible();
+	await expect(card.getByText('No meals logged in this range.')).toBeVisible();
+	await page.unroute('**/api/trends?*');
+});
+
 test('Activity uses the desktop width: budget beside the stat cards', async () => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.goto('/activity');
