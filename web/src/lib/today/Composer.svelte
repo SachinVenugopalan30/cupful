@@ -5,13 +5,17 @@
     date: string          YYYY-MM-DD the meal is logged on
     onSaved: () => void   call after sendOps reports the meal applied
   Writes only through #lib/sync/index.ts (mealUpsert + sendOps, in Review); scaleItems before saving.
+  Repeat a meal opens RepeatSheet; a pick opens Review with the repeat draft, and cancelling that
+  Review returns to the picker with its search query. A saved repeat leaves the composer untouched.
   AI errors: errorMessage(e, 'estimate'), branched on ApiError.code. Photos are re-encoded through a
   canvas before upload and kept in memory until saved or removed, so a retry needs no new photo.
 -->
 <script lang="ts">
-	import { ApiError, errorMessage, estimate } from '#lib/api.ts';
+	import { ApiError, errorMessage, estimate, type HistoryMeal } from '#lib/api.ts';
 	import { defaultMealType } from '#lib/products/logic.ts';
+	import { today } from '#lib/session.svelte.ts';
 	import Review from './Review.svelte';
+	import RepeatSheet from './RepeatSheet.svelte';
 	import {
 		MAX_DESCRIPTION,
 		MEAL_TYPES,
@@ -19,6 +23,8 @@
 		draftFromEstimate,
 		manualDraft,
 		reencodePhoto,
+		repeatDraft,
+		repeatTitle,
 		type Draft
 	} from './meal';
 
@@ -31,6 +37,11 @@
 	let busy = $state(false);
 	let failure = $state<{ code: string; message: string } | null>(null);
 	let review = $state<{ draft: Draft; title: string } | null>(null);
+	let repeatOpen = $state(false);
+	let repeatQuery = $state('');
+	let reviewFromRepeat = $state(false);
+	let repeatSaved = $state(false);
+	let repeatBtn: HTMLButtonElement;
 
 	const RETRY = ['timeout', 'unreachable', 'unparseable', 'rate_limited', 'provider_error', 'offline'];
 	const SETTINGS = ['no_provider', 'provider_auth'];
@@ -64,6 +75,7 @@
 		busy = true;
 		try {
 			const est = await estimate(text, photo ?? undefined);
+			reviewFromRepeat = false;
 			review = {
 				draft: draftFromEstimate(est, { date, meal_type: mealType, description: text }),
 				title: 'Review estimate'
@@ -78,10 +90,44 @@
 
 	function byHand() {
 		failure = null;
+		reviewFromRepeat = false;
 		review = {
 			draft: manualDraft({ date, meal_type: mealType, description: description.trim() }),
 			title: 'Enter by hand'
 		};
+	}
+
+	function openRepeat() {
+		repeatQuery = '';
+		repeatOpen = true;
+	}
+
+	function picked(meal: HistoryMeal, query: string) {
+		repeatQuery = query;
+		repeatOpen = false;
+		reviewFromRepeat = true;
+		repeatSaved = false;
+		review = {
+			draft: repeatDraft(meal, date),
+			title: repeatTitle(date, today())
+		};
+	}
+
+	function repeatClosed() {
+		repeatOpen = false;
+	}
+
+	function reviewClosed() {
+		review = null;
+		if (reviewFromRepeat && repeatSaved) repeatBtn?.focus();
+		if (reviewFromRepeat && !repeatSaved) repeatOpen = true;
+		reviewFromRepeat = false;
+		repeatSaved = false;
+	}
+
+	function repeatSavedHandler() {
+		repeatSaved = true;
+		onSaved();
 	}
 
 	function saved() {
@@ -95,8 +141,11 @@
 <section class="card composer" aria-labelledby="composer-title">
 	<form class="stack" onsubmit={(e) => (e.preventDefault(), runEstimate())}>
 		<header class="panel-head">
-			<h2 id="composer-title">Log a meal</h2>
-			<p class="small muted">Words or a photo, then check the estimate.</p>
+			<div>
+				<h2 id="composer-title">Log a meal</h2>
+				<p class="small muted">Words or a photo, then check the estimate.</p>
+			</div>
+			<button type="button" class="btn btn-quiet" bind:this={repeatBtn} onclick={openRepeat}>Repeat a meal</button>
 		</header>
 		<fieldset class="segmented" aria-label="Meal">
 			{#each MEAL_TYPES as t (t)}
@@ -172,7 +221,16 @@
 </section>
 
 {#if review}
-	<Review draft={review.draft} title={review.title} onClose={() => (review = null)} onSaved={saved} />
+	<Review
+		draft={review.draft}
+		title={review.title}
+		onClose={reviewClosed}
+		onSaved={reviewFromRepeat ? repeatSavedHandler : saved}
+	/>
+{/if}
+
+{#if repeatOpen}
+	<RepeatSheet {date} query={repeatQuery} onClose={repeatClosed} onPick={picked} />
 {/if}
 
 <style>
@@ -185,9 +243,6 @@
 		align-items: baseline;
 		justify-content: space-between;
 		gap: var(--space-1) var(--space-3);
-	}
-	.panel-head p {
-		text-align: right;
 	}
 	fieldset {
 		min-width: 0;
