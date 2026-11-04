@@ -184,19 +184,17 @@ async function writeThrough(userId: number, item: QueuedOp): Promise<void> {
 		const date = item.op.payload.date;
 		await updateDays(userId, item, date);
 		await deleteCacheEntry(userId, `/api/budget/${date}`);
-		for (const entry of await allCacheForUser(userId)) {
-			if (entry.path.startsWith('/api/trends')) await deleteCacheEntry(userId, entry.path);
-		}
+		await invalidateCache(userId, ['/api/trends']);
 		return;
 	}
 	await updateMeals(userId, item);
-	await invalidateMealHistoryAndTrends(userId);
+	await invalidateCache(userId, ['/api/meals/history', '/api/trends']);
 }
 
-/** Drops cached meal history and trends for this user; both go stale on any meal write. */
-async function invalidateMealHistoryAndTrends(userId: number): Promise<void> {
+/** Drops this user's cached reads whose path starts with any of `prefixes`, in one scan. */
+async function invalidateCache(userId: number, prefixes: string[]): Promise<void> {
 	for (const entry of await allCacheForUser(userId)) {
-		if (entry.path.startsWith('/api/meals/history') || entry.path.startsWith('/api/trends')) {
+		if (prefixes.some((prefix) => entry.path.startsWith(prefix))) {
 			await deleteCacheEntry(userId, entry.path);
 		}
 	}

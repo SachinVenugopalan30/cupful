@@ -107,6 +107,8 @@ describe('write-through', () => {
 		await boot(userId);
 		await putCachedBody(userId, historyPath, { meals: [] });
 		await putCachedBody(userId, trendsPath, { days: [], top_meals: [] });
+		expect(await getCachedBody(userId, historyPath)).toBeDefined();
+		expect(await getCachedBody(userId, trendsPath)).toBeDefined();
 
 		await enqueue([mealUpsert(mealIn('m1', date, [item('i1', 300)]))], userId);
 		serving(userId, applied);
@@ -114,6 +116,20 @@ describe('write-through', () => {
 
 		expect(await getCachedBody(userId, historyPath)).toBeUndefined();
 		expect(await getCachedBody(userId, trendsPath)).toBeUndefined();
+	});
+
+	it('invalidates cached history on a meal delete', async () => {
+		const userId = newUser();
+		const historyPath = '/api/meals/history?limit=50';
+		await boot(userId);
+		await putCachedBody(userId, historyPath, { meals: [meal('m1', '2026-10-29', [])] });
+		expect(await getCachedBody(userId, historyPath)).toBeDefined();
+
+		await enqueue([mealDelete('m1')], userId);
+		serving(userId, applied);
+		await flush(userId);
+
+		expect(await getCachedBody(userId, historyPath)).toBeUndefined();
 	});
 
 	it('updates cached day detail and ranges, and drops budget and trends', async () => {
