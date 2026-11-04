@@ -272,7 +272,7 @@ export function repeatTitle(date: string, today: string): string {
 	return `Repeat meal for ${dayLabel(date, today)}`;
 }
 
-/** A repeat on the shown day is another meal; on any other day it's a copy to that day. */
+/** Repeating onto the shown day logs there; repeating onto another day is a copy. */
 export function repeatOutcome(target: string, viewDate: string): { copied: boolean; status: string } {
 	const copied = target !== viewDate;
 	return { copied, status: copied ? 'Meal copied.' : 'Meal logged.' };

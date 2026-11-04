@@ -295,7 +295,7 @@ describe('repeatOutcome', () => {
 	it('logs a repeat on the day being viewed', () => {
 		expect(repeatOutcome('2026-10-28', '2026-10-28')).toEqual({ copied: false, status: 'Meal logged.' });
 	});
-	it('copies a repeat from a past day to today', () => {
+	it('copies when the target differs from the shown day', () => {
 		expect(repeatOutcome('2026-10-28', '2026-10-27')).toEqual({ copied: true, status: 'Meal copied.' });
 	});
 });

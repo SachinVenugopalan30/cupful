@@ -154,7 +154,6 @@
 		min-width: 0;
 		min-height: var(--touch);
 		padding: var(--space-1) var(--space-2);
-		margin-left: calc(-1 * var(--space-2));
 		border: 1px solid transparent;
 		border-radius: var(--radius-md);
 		background: transparent;

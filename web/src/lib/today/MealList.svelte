@@ -143,8 +143,8 @@
 	</header>
 	<p class="visually-hidden" role="status">{status}</p>
 	{#if copiedToToday}
-		<div class="notice notice-info row" role="status">
-			<p>Copied to today.</p>
+		<div class="notice notice-info row">
+			<p role="status">Copied to today.</p>
 			<button class="btn" onclick={viewToday}>View today</button>
 			<button class="btn btn-quiet" onclick={dismissCopy}>Dismiss</button>
 		</div>
@@ -250,13 +250,15 @@
 </section>
 
 {#if review}
-	<Review
-		draft={review.draft}
-		title={review.title}
-		onClose={reviewClosed}
-		onSaved={reviewSaved}
-		onStale={onChanged}
-	/>
+	{#key review.draft.id}
+		<Review
+			draft={review.draft}
+			title={review.title}
+			onClose={reviewClosed}
+			onSaved={reviewSaved}
+			onStale={onChanged}
+		/>
+	{/key}
 {/if}
 
 <style>

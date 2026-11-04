@@ -88,7 +88,7 @@
 			const code = e instanceof ApiError ? (e.code ?? String(e.status)) : e instanceof TypeError ? 'offline' : 'other';
 			failure = { code, message: errorMessage(e, 'estimate') };
 		} finally {
-			busy = false;
+			if (seq === estimateSeq) busy = false;
 		}
 	}
 

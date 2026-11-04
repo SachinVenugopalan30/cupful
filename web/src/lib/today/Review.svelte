@@ -160,7 +160,7 @@
 	<form class="stack" method="dialog" onsubmit={(e) => (e.preventDefault(), save())} novalidate>
 		<header class="sheet-head">
 			<h2 id="review-title-{uid}" tabindex="-1" bind:this={heading}>{title}</h2>
-			<button type="button" class="btn btn-quiet" onclick={() => close()}>Cancel</button>
+			<button type="button" class="btn btn-quiet" onclick={() => close()} disabled={saving}>Cancel</button>
 		</header>
 
 		<fieldset class="segmented" aria-label="Meal">
