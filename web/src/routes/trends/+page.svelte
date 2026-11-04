@@ -14,6 +14,7 @@
 	let targets = $state<Budget | null>(null);
 	let error = $state('');
 	let retry = $state(0);
+	let loadedRange: Range | null = null;
 
 	$effect(() => {
 		saveRange(range);
@@ -21,7 +22,10 @@
 		void retry;
 		const { from, to } = rangeDates(range, today());
 		let stale = false;
-		data = null;
+		if (loadedRange !== range) {
+			data = null;
+			loadedRange = range;
+		}
 		error = '';
 		getTrends(from, to).then(
 			(r) => !stale && (data = r),
