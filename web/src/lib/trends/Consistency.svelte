@@ -87,7 +87,7 @@
 		aspect-ratio: 1;
 		border-radius: 0.1875rem;
 		background: var(--border);
-		animation: fade-in 360ms var(--ease) both;
+		animation: cell-in 360ms var(--ease) both;
 		animation-delay: calc(var(--i) * 18ms);
 	}
 	.grid i.in {
@@ -128,7 +128,7 @@
 	.swatch.unknown {
 		background: var(--border-strong);
 	}
-	@keyframes fade-in {
+	@keyframes cell-in {
 		from {
 			opacity: 0;
 			transform: scale(0.94);

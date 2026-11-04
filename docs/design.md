@@ -121,7 +121,7 @@ Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so th
 - The plot is `role="img"` with an `aria-label` summary of range, counts and averages. Keyboard users get the summary only. There is no keyboard day-stepping yet.
 - Each chart has its own `.empty` sentence that says what to log to fill it. The average card does the same. Gaps, such as no meals or no weigh-in, are gaps, never zeros.
 - The range control (7d, 30d, 90d, 365d) is a `.segmented` control remembered per device. Bars thin to hairlines past 120 days.
-- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 12 ms bar stagger, a fading area, popping consistency cells and growing macro/mix bars. Headline numbers count up over 700 ms with a single rAF helper. Reduced motion removes all of it.
+- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is a 16 ms bar stagger, an area fade over 600 ms after 120 ms, consistency cells that fade and settle in 18 ms steps instead of popping, and growing macro/mix bars. Headline numbers count up over 800 ms with a single rAF helper. Reduced motion removes all of it.
 - Consistency shows one cell per day, capped at 30 columns. Blue is within budget, brick is over, grey is no log.
 
 ## Activity
