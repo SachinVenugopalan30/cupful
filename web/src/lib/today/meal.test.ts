@@ -15,7 +15,6 @@ import {
 	itemReady,
 	mealFromDraft,
 	repeatDraft,
-	repeatMeal,
 	repeatTitle,
 	sumItems,
 	useProduct,
@@ -281,16 +280,6 @@ describe('repeatDraft', () => {
 		const totals = sumItems(out.items, 1);
 		expect(totals).toMatchObject({ kcal: 560, protein_g: 34, carbs_g: 86 });
 		expect(totals.fat_g).toBeCloseTo(7.8);
-	});
-});
-
-describe('repeatMeal (still used by the meal list until the repeat flow lands)', () => {
-	it('copies the full meal to a date with new ids and source repeat', () => {
-		const m = repeatMeal(saved, '2026-10-28');
-		expect(m.id).not.toBe(saved.id);
-		expect(m.items[0].id).not.toBe(saved.items[0].id);
-		expect(m).toMatchObject({ date: '2026-10-28', source: 'repeat', scale: 2 });
-		expect(m.items[0]).toMatchObject({ grams: 300, kcal: 390, food_id: 1 });
 	});
 });
 

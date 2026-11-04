@@ -1,16 +1,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  MealList — logged meals grouped by meal type, edit, delete, "Eat this again".
+  MealList — logged meals grouped by meal type, edit, delete, repeat or copy to today.
   Props (fixed contract; Today page passes these):
     date: string             YYYY-MM-DD, the selected day
     refreshKey: number       bumped after any write to the day; refetch when it changes
-    onChanged: () => void    call after an edit/delete/repeat is applied
-  Data: getMeals(date). Writes only through #lib/sync/index.ts (mealUpsert / mealDelete + sendOps).
+    onChanged: () => void    call after an edit/delete/copy is applied
+  Data: getMeals(date). Deletes go through #lib/sync/index.ts (mealDelete + sendOps); edits and
+  repeat copies go through Review, which saves with mealUpsert.
 -->
 <script lang="ts">
 	import { errorMessage, getMeals, type Macros, type Meal } from '#lib/api.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
-	import { mealDelete, mealUpsert, sendOps, type Op } from '#lib/sync/index.ts';
+	import { day, today } from '#lib/session.svelte.ts';
+	import { mealDelete, sendOps, type Op } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
 	import Review from './Review.svelte';
@@ -21,7 +23,8 @@
 		draftFromMeal,
 		itemSourceLabel,
 		mealSourceLabel,
-		repeatMeal,
+		repeatDraft,
+		repeatTitle,
 		type Draft
 	} from './meal';
 
@@ -32,7 +35,9 @@
 	let status = $state('');
 	let actionError = $state<{ id: string; message: string } | null>(null);
 	let confirming = $state<string | null>(null);
-	let editing = $state<Draft | null>(null);
+	type ReviewState = { draft: Draft; title: string; kind: 'edit' | 'repeat'; target: string };
+	let review = $state<ReviewState | null>(null);
+	let copiedToToday = $state(false);
 	let busy = $state(false);
 
 	let retry = $state(0);
@@ -44,7 +49,10 @@
 		void dataVersion.n;
 		void retry;
 		if (!d) return;
-		if (d !== shown) meals = null; // a new day shows the skeleton; a refresh keeps the list
+		if (d !== shown) {
+			meals = null; // a new day shows the skeleton; a refresh keeps the list
+			copiedToToday = false;
+		}
 		shown = d;
 		let stale = false;
 		loadError = '';
@@ -60,6 +68,21 @@
 		)
 	);
 	const total = $derived(dayTotals(meals ?? []));
+
+	function saved() {
+		if (!review) return;
+		if (review.kind === 'repeat') {
+			copiedToToday = review.target !== date;
+			status = copiedToToday ? 'Meal copied.' : 'Meal logged.';
+		} else {
+			status = 'Meal updated.';
+		}
+		onChanged();
+	}
+
+	function closed() {
+		review = null;
+	}
 
 	async function send(meal: Meal, op: Op, done: string) {
 		actionError = null;
@@ -103,6 +126,12 @@
 		{/if}
 	</header>
 	<p class="visually-hidden" role="status">{status}</p>
+	{#if copiedToToday}
+		<div class="notice notice-info row">
+			<p>Copied to today.</p>
+			<button class="btn" onclick={() => (day.date = today())}>View today</button>
+		</div>
+	{/if}
 
 	{#if loadError}
 		<div class="notice notice-error" role="alert">
@@ -174,10 +203,23 @@
 							<div class="row actions">
 								<button
 									class="btn"
-									disabled={busy}
-									onclick={() => send(m, mealUpsert(repeatMeal(m, date)), 'Logged again.')}>Eat this again</button
+									onclick={() => {
+										const target = date === today() ? date : today();
+										review = {
+											draft: repeatDraft(m, target),
+											title: repeatTitle(target, today()),
+											kind: 'repeat',
+											target
+										};
+									}}
 								>
-								<button class="btn btn-quiet" onclick={() => (editing = draftFromMeal(m))}>Edit</button>
+									{date === today() ? 'Repeat' : 'Copy to today'}
+								</button>
+								<button
+									class="btn btn-quiet"
+									onclick={() => (review = { draft: draftFromMeal(m), title: 'Edit meal', kind: 'edit', target: date })}
+									>Edit</button
+								>
 								<button class="btn btn-quiet danger" onclick={() => (confirming = m.id)}>Delete</button>
 							</div>
 						{/if}
@@ -191,12 +233,12 @@
 	{/if}
 </section>
 
-{#if editing}
+{#if review}
 	<Review
-		draft={editing}
-		title="Edit meal"
-		onClose={() => (editing = null)}
-		onSaved={() => ((status = 'Meal updated.'), onChanged())}
+		draft={review.draft}
+		title={review.title}
+		onClose={closed}
+		onSaved={saved}
 		onStale={onChanged}
 	/>
 {/if}

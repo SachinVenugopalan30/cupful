@@ -252,22 +252,6 @@ export function mealFromDraft(d: Draft): MealIn {
 	return { ...meal, items: scaleItems(items, d.scale) };
 }
 
-/** "Eat this again": the full meal on `date`, new ids, no model call. Items already include scale. */
-export function repeatMeal(m: Meal, date: string): MealIn {
-	return {
-		id: uuidv7(),
-		date,
-		meal_type: m.meal_type,
-		description: m.description,
-		scale: m.scale,
-		assumptions: m.assumptions,
-		confidence: m.confidence,
-		source: 'repeat',
-		provider_id: null,
-		items: m.items.map((i) => ({ ...i, id: uuidv7() }))
-	};
-}
-
 /** Repeat: a new meal on `date`, new ids, no model call. */
 export function repeatDraft(m: Meal, date: string): Draft {
 	const d = draftFromMeal(m);
