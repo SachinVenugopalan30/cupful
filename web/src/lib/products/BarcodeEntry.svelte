@@ -37,6 +37,7 @@
 	const title = $derived(view?.name === 'product' ? view.product.name : TITLES[view?.name ?? 'scan']);
 
 	async function show(v: View) {
+		if (dialog?.dataset.closing === 'true') return;
 		view = v;
 		announce = '';
 		if (!dialog?.open) {
@@ -56,6 +57,7 @@
 	}
 
 	function added() {
+		if (dialog?.dataset.closing === 'true') return;
 		const name = view?.name === 'product' ? view.product.name : '';
 		close();
 		announce = `Added ${name}.`;

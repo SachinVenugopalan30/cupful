@@ -589,6 +589,7 @@ dialog.sheet[open] {
 	}
 }
 dialog.sheet[data-closing] {
+	pointer-events: none;
 	opacity: 0;
 	transform: translateY(16px) scale(0.985);
 	transition-duration: var(--dur-exit);
