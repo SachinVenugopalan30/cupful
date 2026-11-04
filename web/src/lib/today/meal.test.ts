@@ -15,6 +15,7 @@ import {
 	itemReady,
 	mealFromDraft,
 	repeatDraft,
+	repeatMeal,
 	repeatTitle,
 	sumItems,
 	useProduct,
@@ -247,6 +248,50 @@ describe('repeatDraft', () => {
 		// Re-saving unchanged gives the original stored values.
 		expect(mealFromDraft(d).items[0]).toMatchObject({ grams: 300, kcal: 390 });
 	});
+
+	it('keeps every item, gives each a fresh id, and round-trips the totals', () => {
+		const second = {
+			...saved.items[0],
+			id: '0190e000-0000-7000-8000-000000000003',
+			name: 'Fish',
+			grams: 120,
+			kcal: 170,
+			protein_g: 26,
+			carbs_g: 2,
+			fat_g: 7,
+			food_id: null,
+			origin: 'ai_estimate' as const
+		};
+		const two: Meal = {
+			...saved,
+			items: [saved.items[0], second],
+			totals: { kcal: 560, protein_g: 34, carbs_g: 86, fat_g: 7.8 }
+		};
+
+		const d = repeatDraft(two, '2026-10-28');
+
+		expect(d.items).toHaveLength(2);
+		expect(d.items[0].id).not.toBe(two.items[0].id);
+		expect(d.items[1].id).not.toBe(two.items[1].id);
+		expect(d.items[0].id).not.toBe(d.items[1].id);
+
+		const out = mealFromDraft(d);
+		expect(out.items[0]).toMatchObject({ grams: 300, kcal: 390 });
+		expect(out.items[1]).toMatchObject({ grams: 120, kcal: 170 });
+		const totals = sumItems(out.items, 1);
+		expect(totals).toMatchObject({ kcal: 560, protein_g: 34, carbs_g: 86 });
+		expect(totals.fat_g).toBeCloseTo(7.8);
+	});
+});
+
+describe('repeatMeal (still used by the meal list until the repeat flow lands)', () => {
+	it('copies the full meal to a date with new ids and source repeat', () => {
+		const m = repeatMeal(saved, '2026-10-28');
+		expect(m.id).not.toBe(saved.id);
+		expect(m.items[0].id).not.toBe(saved.items[0].id);
+		expect(m).toMatchObject({ date: '2026-10-28', source: 'repeat', scale: 2 });
+		expect(m.items[0]).toMatchObject({ grams: 300, kcal: 390, food_id: 1 });
+	});
 });
 
 describe('repeatTitle', () => {
@@ -257,15 +302,32 @@ describe('repeatTitle', () => {
 });
 
 describe('filterHistory', () => {
+	const withItems = (label: string, names: string[], last_date: string) => ({
+		...saved,
+		label,
+		times: 1,
+		last_date,
+		items: names.map((name) => ({ ...saved.items[0], name }))
+	});
 	const history = [
-		{ ...saved, label: 'Oats with banana', times: 2, last_date: '2026-10-28' },
-		{ ...saved, label: 'Chicken rice', times: 1, last_date: '2026-10-27' }
+		withItems('Oats with banana', ['Oats'], '2026-10-28'),
+		withItems('Chicken rice', ['Chicken'], '2026-10-27')
 	];
 
-	it('matches the label and item names, case-insensitively', () => {
-		expect(filterHistory(history, 'OATS')).toHaveLength(1);
-		expect(filterHistory(history, 'rice')).toHaveLength(2);
-		expect(filterHistory(history, '')).toHaveLength(2);
+	it('matches the label, case-insensitively', () => {
+		expect(filterHistory(history, 'OATS')).toEqual([history[0]]);
+		expect(filterHistory(history, 'rice')).toEqual([history[1]]);
+	});
+
+	it('matches an item name when the label does not contain the query', () => {
+		expect(filterHistory(history, 'banana')).toEqual([history[0]]);
+		expect(filterHistory(history, 'chicken')).toEqual([history[1]]);
+	});
+
+	it('trims the query and returns everything for a blank one', () => {
+		expect(filterHistory(history, '  oats  ')).toEqual([history[0]]);
+		expect(filterHistory(history, '   ')).toEqual(history);
+		expect(filterHistory(history, '')).toEqual(history);
 	});
 });
 

@@ -279,15 +279,16 @@ export function repeatDraft(m: Meal, date: string): Draft {
 		provider_id: null,
 		assumptions: null,
 		confidence: null,
-		warnings: [],
 		items: d.items.map((i) => ({ ...i, id: uuidv7() }))
 	};
 }
 
+/** Sheet heading for a repeat, naming the target day. */
 export function repeatTitle(date: string, today: string): string {
 	return `Repeat meal for ${dayLabel(date, today)}`;
 }
 
+/** Recent meals whose label or any item name contains `query`; blank returns all. */
 export function filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return meals;
