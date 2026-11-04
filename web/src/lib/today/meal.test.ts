@@ -310,8 +310,8 @@ describe('filterHistory', () => {
 		items: names.map((name) => ({ ...saved.items[0], name }))
 	});
 	const history = [
-		withItems('Oats with banana', ['Oats'], '2026-10-28'),
-		withItems('Chicken rice', ['Chicken'], '2026-10-27')
+		withItems('Oats with banana', ['Chia'], '2026-10-28'),
+		withItems('Chicken rice', ['Basmati'], '2026-10-27')
 	];
 
 	it('matches the label, case-insensitively', () => {
@@ -320,8 +320,8 @@ describe('filterHistory', () => {
 	});
 
 	it('matches an item name when the label does not contain the query', () => {
-		expect(filterHistory(history, 'banana')).toEqual([history[0]]);
-		expect(filterHistory(history, 'chicken')).toEqual([history[1]]);
+		expect(filterHistory(history, 'chia')).toEqual([history[0]]);
+		expect(filterHistory(history, 'basmati')).toEqual([history[1]]);
 	});
 
 	it('trims the query and returns everything for a blank one', () => {
