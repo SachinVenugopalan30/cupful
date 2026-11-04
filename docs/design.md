@@ -105,10 +105,12 @@ One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font
 
 ## Motion
 
-- Tokens: `--dur-fast` 120 ms, `--dur-med` 180 ms, `--dur-slow` 240 ms, `--ease` `cubic-bezier(0.2, 0.7, 0.2, 1)`.
+- Tokens: `--dur-fast` 160 ms for hover, press, focus and chips; `--dur-med` 240 ms for saved text and small state changes; `--dur-slow` 360 ms for meters, week bars and progress fills; `--dur-enter` 420 ms for sheets; `--dur-exit` 200 ms for a sheet closing and its backdrop fading.
+- Two curves: `--ease` `cubic-bezier(0.22, 1, 0.36, 1)` for movement, and `--ease-state` `cubic-bezier(0.4, 0, 0.2, 1)` for feedback such as background, border and colour.
 - Feedback answers an action. A pressed button scales to 0.98. Hover changes surface tone. Focus draws a 2 px accent ring with a 2 px offset.
-- Screens do not use entrance animations, except Trends. Its bars, cells, area fill and headline figures answer opening the screen and changing the range, in one short pass. Meters may fill after a save. Sheets may open.
-- A global `prefers-reduced-motion` rule sets durations to near zero and disables smooth scrolling. The duration tokens also become 0. Skeleton pulses stop.
+- Movement is slow and settles without overshoot. Meters fill, bars grow, and sheets slide up from the bottom edge and fade out on close.
+- Screens do not use entrance animations, except Trends and sheets. Trends bars, cells, the area fill and headline figures answer opening the screen and changing the range in one short pass. A sheet enters over `--dur-enter` and leaves over `--dur-exit`.
+- A global `prefers-reduced-motion` rule sets every duration token to 0 and disables smooth scrolling. Sheets close at once and skeletons stop pulsing.
 
 ## Charts
 
@@ -121,8 +123,9 @@ Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so th
 - The plot is `role="img"` with an `aria-label` summary of range, counts and averages. Keyboard users get the summary only. There is no keyboard day-stepping yet.
 - Each chart has its own `.empty` sentence that says what to log to fill it. The average card does the same. Gaps, such as no meals or no weigh-in, are gaps, never zeros.
 - The range control (7d, 30d, 90d, 365d) is a `.segmented` control remembered per device. Bars thin to hairlines past 120 days.
-- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is a 16 ms bar stagger, an area fade over 600 ms after 120 ms, consistency cells that fade and settle in 18 ms steps instead of popping, and growing macro/mix bars. Headline numbers count up over 800 ms with a single rAF helper. Reduced motion removes all of it.
+- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 760 ms bar growth with a 16 ms stagger capped at 15 bars, an area fade over 600 ms after 120 ms, consistency cells that fade over 360 ms in 18 ms steps instead of popping, and macro/mix bars growing over 760 ms in 80 ms steps. Headline numbers count up over 800 ms with a single rAF helper. Reduced motion removes all of it.
 - Consistency shows one cell per day, capped at 30 columns. Blue is within budget, brick is over, grey is no log.
+- "Eaten most" lists the five most-logged meals in the range: label, meal type, count, last date and average kcal, with a thin `--accent` bar scaled to the top count. It hides when the server omits `top_meals` and shows an empty sentence for an empty range. Only rows present when the range mounted animate.
 
 ## Activity
 
@@ -149,7 +152,7 @@ Tokens live in `web/src/lib/styles/tokens.css`.
 | Type | `--font-sans`, `--font-numeric`; `--text-xs` 13, `--text-sm` 14, `--text-md` 16, `--text-lg` 20, `--text-xl` 28, `--text-2xl` 32, `--text-hero` 44 px; `--leading-tight`, `--leading`; `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600 |
 | Space | `--space-1` through `--space-8` (4, 8, 12, 16, 24, 32, 40, 48 px), `--gutter`, `--content-max` (40 rem), `--page-max` (72 rem), `--touch` (44 px) |
 | Shape | `--radius-sm` (10 px), `--radius-md` (12 px controls), `--radius-lg` (20 px cards), `--radius-sheet` (24 px), `--radius-pill`, `--shadow-card` (none), `--shadow-sheet` |
-| Motion | `--dur-fast` 120, `--dur-med` 180, `--dur-slow` 240 ms, `--ease`. All durations are 0 under `prefers-reduced-motion` |
+| Motion | `--dur-fast` 160, `--dur-med` 240, `--dur-slow` 360, `--dur-enter` 420, `--dur-exit` 200 ms; `--ease`, `--ease-state`. All durations are 0 under `prefers-reduced-motion` |
 
 ## Global classes
 
@@ -176,6 +179,7 @@ Global classes live in `web/src/lib/styles/global.css`. Screens use them and add
 - Errors use a `.notice-error` with `role="alert"`, next to what failed. The message says what happened and what to do next, in plain words (`errorMessage()` in `src/lib/api.ts`). Errors do not apologize. When the fix is in Settings, the message links there.
 - Empty states use `.empty` with one sentence inviting the next action, such as "Nothing logged yet. Describe your breakfast above.", and optionally one button.
 - Loading uses `.skeleton` blocks the size of what is coming, with `aria-busy="true"` on the container. No spinners for waits under a second.
-- Motion answers an action, such as a sheet opening or a meter filling after a save, and uses the duration tokens. Reduced motion turns it off. There are no entrance animations.
+- Motion answers an action, such as a sheet opening or a meter filling after a save, and uses the duration tokens. Reduced motion turns it off. There are no entrance animations beyond Trends and sheets.
+- Repeat is review-first. **Repeat a meal** in the composer opens a recent-meals sheet: the last year's distinct meals, searchable by name or ingredient, up to 50 groups. Picking one opens Review with a copy for the selected day. Cancelling Review returns to the sheet with the search intact; saving leaves the composer draft untouched. On a logged meal, **Repeat** logs another on the selected day; on a past day it reads **Copy to today**, saves to today, and offers a **View today** notice. Nothing is scheduled for the future.
 - Disclosures and pickers use a quiet `.btn` with `aria-expanded` to reveal extra inputs ("Edit numbers") or an inline panel on `--surface-2` ("Use my product": a search field and a `.list` of buttons) inside the item card. There are no nested dialogs.
 - Copy uses sentence case and plain verbs. Buttons say what happens ("Save meal", "Scan barcode"), and an action keeps its name through the flow.

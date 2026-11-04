@@ -80,6 +80,7 @@ When the browser reports itself offline, the cache is read without attempting th
 Only these reads are cacheable:
 
 - `GET /api/meals?date=...`
+- `GET /api/meals/history?limit=50` (the recent-meals picker)
 - `GET /api/days/{date}`
 - `GET /api/days?from=...&to=...`
 - `GET /api/budget/{date}`
@@ -97,7 +98,7 @@ Cache growth is bounded only by logging out. There is no size cap or eviction ye
 
 When the server answers `applied` or `duplicate`, the queue updates the cached read bodies for that user before deleting the queue row.
 
-- A meal upsert or delete patches the cached meals body for the affected date.
+- A meal upsert or delete patches the cached meals body for the affected date and invalidates cached history and trends bodies, because both group meals across days.
 - A day patch patches the cached day body for that date.
 - Cached budget and trends bodies that cover the affected date are invalidated. The next read fetches fresh server math.
 

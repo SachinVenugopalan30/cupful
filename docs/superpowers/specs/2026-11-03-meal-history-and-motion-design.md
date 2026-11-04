@@ -387,8 +387,8 @@ Add `filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[]` to `meal
 - Trends card test: missing `top_meals` hides the card; an empty array shows the empty state.
 - Offline queue-write test: meal upsert/delete invalidates cached history and trends.
 - Cache allowlist test: `/api/meals/history?limit=50` is cacheable, while auth and provider routes are not.
-- Repeat sheet test: no search results shows the no-match state, not the no-history state.
-- Composer test: a repeat save does not clear the description or photo.
+- Repeat sheet no-results state: covered by Playwright, because the repo has no component-test harness and adding one is out of scope.
+- Composer draft preservation after a repeat save: covered by Playwright for the same reason.
 - Playwright:
   - Log a meal on yesterday, select today, open Repeat a meal, pick the meal, Review shows the same macros, save, meal appears.
   - On a past day, "Copy to today" opens Review for today.
