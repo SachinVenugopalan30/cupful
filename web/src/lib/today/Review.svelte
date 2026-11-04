@@ -5,7 +5,8 @@
     draft: Draft            the meal to review (copied on open; the caller's object isn't changed)
     title: string           sheet heading
     onClose: () => void     the sheet closed (saved or not); unmount it
-    onSaved: () => void     the meal was saved
+    onSaved?: (queued: boolean) => void  the meal was saved; queued is true when it went to the
+                            offline queue instead of the server
     onStale?: () => void    a newer write already won; refetch (nothing was saved)
   Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft). A write
   that lands in the offline queue counts as saved; then the "always use this" aliases (REST) run
@@ -44,7 +45,13 @@
 		onClose,
 		onSaved,
 		onStale
-	}: { draft: Draft; title: string; onClose: () => void; onSaved: () => void; onStale?: () => void } =
+	}: {
+		draft: Draft;
+		title: string;
+		onClose: () => void;
+		onSaved?: (queued: boolean) => void;
+		onStale?: () => void;
+	} =
 		$props();
 
 	let d = $state(structuredClone(untrack(() => $state.snapshot(draft)) as Draft));
@@ -109,6 +116,7 @@
 		saving = true;
 		try {
 			const [r] = await sendOps([mealUpsert(mealFromDraft(d))]);
+			const queued = r.status === 'queued';
 			if (r.status === 'rejected') {
 				error = `The meal wasn't saved: ${r.error ?? 'the server rejected it'}.`;
 				return;
@@ -120,13 +128,13 @@
 			}
 			// Queued is saved. Aliases are online-only configuration, so close without writing them.
 			if (r.status === 'queued' || !connection.online) {
-				done();
+				done?.(queued);
 				close(true);
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
 			const failed = await rememberAliases(d.items, foods.alias);
-			done();
+			done?.(queued);
 			if (failed.length) {
 				error = aliasFailure(failed);
 				return;

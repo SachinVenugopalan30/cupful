@@ -24,6 +24,7 @@
 		itemSourceLabel,
 		mealSourceLabel,
 		repeatDraft,
+		repeatOutcome,
 		repeatTitle,
 		type Draft
 	} from './meal';
@@ -35,10 +36,11 @@
 	let status = $state('');
 	let actionError = $state<{ id: string; message: string } | null>(null);
 	let confirming = $state<string | null>(null);
-	type ReviewState = { draft: Draft; title: string; kind: 'edit' | 'repeat'; target: string };
+	type ReviewState = { draft: Draft; title: string; kind: 'edit' | 'repeat' };
 	let review = $state<ReviewState | null>(null);
 	let copiedToToday = $state(false);
 	let busy = $state(false);
+	let heading: HTMLHeadingElement;
 
 	let retry = $state(0);
 	let shown = ''; // the date `meals` belongs to
@@ -69,19 +71,33 @@
 	);
 	const total = $derived(dayTotals(meals ?? []));
 
-	function saved() {
+	function reviewSaved(queued = false) {
 		if (!review) return;
 		if (review.kind === 'repeat') {
-			copiedToToday = review.target !== date;
-			status = copiedToToday ? 'Meal copied.' : 'Meal logged.';
+			const outcome = repeatOutcome(review.draft.date, date);
+			copiedToToday = outcome.copied;
+			// The notice announces a copy; the sr-only status would repeat it. Queued still needs a word.
+			status = copiedToToday ? '' : outcome.status;
 		} else {
 			status = 'Meal updated.';
 		}
+		if (queued) status = status ? `${status} Waiting to sync.` : 'Waiting to sync.';
 		onChanged();
 	}
 
-	function closed() {
+	function reviewClosed() {
 		review = null;
+	}
+
+	/** The copy notice unmounts after the date changes, so move focus to the list heading first. */
+	function viewToday() {
+		day.date = today();
+		heading?.focus();
+	}
+
+	function dismissCopy() {
+		copiedToToday = false;
+		heading?.focus();
 	}
 
 	async function send(meal: Meal, op: Op, done: string) {
@@ -117,7 +133,7 @@
 
 <section class="card meals" aria-labelledby="meals-title" aria-busy={meals === null && !loadError}>
 	<header class="panel-head">
-		<h2 id="meals-title">Meals</h2>
+		<h2 id="meals-title" bind:this={heading} tabindex="-1">Meals</h2>
 		{#if meals?.length}
 			<p class="day-total" data-testid="day-total">
 				<span class="num total-kcal">{formatKcal(total.kcal)} kcal</span>
@@ -127,9 +143,10 @@
 	</header>
 	<p class="visually-hidden" role="status">{status}</p>
 	{#if copiedToToday}
-		<div class="notice notice-info row">
+		<div class="notice notice-info row" role="status">
 			<p>Copied to today.</p>
-			<button class="btn" onclick={() => (day.date = today())}>View today</button>
+			<button class="btn" onclick={viewToday}>View today</button>
+			<button class="btn btn-quiet" onclick={dismissCopy}>Dismiss</button>
 		</div>
 	{/if}
 
@@ -208,8 +225,7 @@
 										review = {
 											draft: repeatDraft(m, target),
 											title: repeatTitle(target, today()),
-											kind: 'repeat',
-											target
+											kind: 'repeat'
 										};
 									}}
 								>
@@ -217,7 +233,7 @@
 								</button>
 								<button
 									class="btn btn-quiet"
-									onclick={() => (review = { draft: draftFromMeal(m), title: 'Edit meal', kind: 'edit', target: date })}
+									onclick={() => (review = { draft: draftFromMeal(m), title: 'Edit meal', kind: 'edit' })}
 									>Edit</button
 								>
 								<button class="btn btn-quiet danger" onclick={() => (confirming = m.id)}>Delete</button>
@@ -237,8 +253,8 @@
 	<Review
 		draft={review.draft}
 		title={review.title}
-		onClose={closed}
-		onSaved={saved}
+		onClose={reviewClosed}
+		onSaved={reviewSaved}
 		onStale={onChanged}
 	/>
 {/if}

@@ -272,6 +272,12 @@ export function repeatTitle(date: string, today: string): string {
 	return `Repeat meal for ${dayLabel(date, today)}`;
 }
 
+/** A repeat on the shown day is another meal; on any other day it's a copy to that day. */
+export function repeatOutcome(target: string, viewDate: string): { copied: boolean; status: string } {
+	const copied = target !== viewDate;
+	return { copied, status: copied ? 'Meal copied.' : 'Meal logged.' };
+}
+
 /** Recent meals whose label or any item name contains `query`; blank returns all. */
 export function filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[] {
 	const q = query.trim().toLowerCase();
