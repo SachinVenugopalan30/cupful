@@ -3,10 +3,16 @@
 
 use std::collections::{HashMap, hash_map::Entry};
 
+use axum::Json;
+use axum::extract::State;
+use jiff::ToSpan;
+use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
 
-use crate::error::Result;
+use crate::AppState;
+use crate::auth::User;
+use crate::error::{Error, Query, Result};
 
 struct ItemRow {
     id: String,
@@ -38,6 +44,8 @@ pub(crate) struct MealRow {
 #[allow(dead_code)] // used by the history handler and top_meals in Tasks 8-9
 struct MealGroup {
     label: String,
+    /// Exact spellings seen in the group and how often, to pick a canonical display label.
+    labels: HashMap<String, usize>,
     times: usize,
     avg_kcal: f64,
     last_date: String,
@@ -84,6 +92,7 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
                 let g = e.get_mut();
                 g.times += 1;
                 g.avg_kcal += kcal;
+                *g.labels.entry(label).or_insert(0) += 1;
                 let newer = (meal.date.as_str(), meal.updated_at, meal.id.as_str())
                     > (
                         g.last_date.as_str(),
@@ -91,13 +100,13 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
                         g.latest.id.as_str(),
                     );
                 if newer {
-                    g.label = label;
                     g.last_date = meal.date.clone();
                     g.latest = meal;
                 }
             }
             Entry::Vacant(e) => {
                 e.insert(MealGroup {
+                    labels: HashMap::from([(label.clone(), 1)]),
                     label,
                     times: 1,
                     avg_kcal: kcal,
@@ -110,8 +119,53 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
     let mut out: Vec<_> = groups.into_values().collect();
     for group in &mut out {
         group.avg_kcal /= group.times as f64;
+        // Show the spelling used most often; ties go to the lexicographically first.
+        group.label = group
+            .labels
+            .iter()
+            .max_by(|a, b| a.1.cmp(b.1).then_with(|| b.0.cmp(a.0)))
+            .map(|(label, _)| label.clone())
+            .expect("a group has at least one label");
     }
     out
+}
+
+#[derive(Deserialize)]
+pub struct HistoryQuery {
+    limit: Option<i64>,
+}
+
+pub async fn meal_history(
+    State(s): State<AppState>,
+    user: User,
+    Query(q): Query<HistoryQuery>,
+) -> Result<Json<Value>> {
+    let limit = q.limit.unwrap_or(20);
+    if !(1..=50).contains(&limit) {
+        return Err(Error::bad_request("limit must be between 1 and 50"));
+    }
+    let to = crate::time::user_today(&s.db, user.id).await?;
+    let from = to - 364.days();
+    let meals = load_meals(&s.db, user.id, &from.to_string(), &to.to_string()).await?;
+    let mut groups = group_meals(meals);
+    groups.sort_by(|a, b| {
+        b.last_date
+            .cmp(&a.last_date)
+            .then_with(|| b.times.cmp(&a.times))
+            .then_with(|| a.label.cmp(&b.label))
+    });
+    groups.truncate(limit as usize);
+    let out: Vec<Value> = groups
+        .into_iter()
+        .map(|g| {
+            let mut v = meal_json(&g.latest);
+            v["label"] = json!(g.label);
+            v["times"] = json!(g.times);
+            v["last_date"] = json!(g.last_date);
+            v
+        })
+        .collect();
+    Ok(Json(json!({ "meals": out })))
 }
 
 pub(crate) async fn load_meals(
@@ -325,6 +379,19 @@ mod tests {
         assert_eq!(oats.avg_kcal, 450.0);
         assert_eq!(oats.last_date, "2026-11-02");
         assert_eq!(oats.latest.id, "m2");
+    }
+
+    #[test]
+    fn group_label_prefers_the_most_common_spelling() {
+        let meals = vec![
+            meal("m1", "2026-11-01", 1, "rice", vec![item("Rice", 100.0)]),
+            meal("m2", "2026-11-02", 2, "Rice", vec![item("Rice", 200.0)]),
+            meal("m3", "2026-11-03", 3, "rice", vec![item("Rice", 300.0)]),
+        ];
+        let groups = group_meals(meals);
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].label, "rice");
+        assert_eq!(groups[0].latest.id, "m3");
     }
 
     #[test]

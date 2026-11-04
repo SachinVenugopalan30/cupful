@@ -16,6 +16,7 @@ const COVERED: &[&str] = &[
     "GET /api/days",
     "GET /api/days/{date}",
     "GET /api/meals",
+    "GET /api/meals/history",
     "GET /api/budget/{date}",
     "POST /api/estimate",
     "POST /api/foods",
@@ -71,6 +72,8 @@ async fn user_routes_need_a_login() {
             .replace("{id}", "96385074")
             + if path == "/api/meals" {
                 "?date=2026-01-01"
+            } else if path == "/api/meals/history" {
+                "?limit=50"
             } else if path == "/api/days" || path == "/api/workouts" || path == "/api/trends" {
                 "?from=2026-01-01&to=2026-01-02"
             } else {

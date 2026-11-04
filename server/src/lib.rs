@@ -130,6 +130,12 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
         ("GET", "/api/days", User, get(reads::days)),
         ("GET", "/api/days/{date}", User, get(reads::day)),
         ("GET", "/api/meals", User, get(reads::meals)),
+        (
+            "GET",
+            "/api/meals/history",
+            User,
+            get(history::meal_history),
+        ),
         ("GET", "/api/budget/{date}", User, get(reads::budget)),
         ("GET", "/api/trends", User, get(reads::trends)),
         ("GET", "/api/export.csv", User, get(transfer::export_csv)),
