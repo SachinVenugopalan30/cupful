@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import type { Product } from '../api';
+	import { closeSheet } from '#lib/sheet.ts';
 	import LabelForm from './LabelForm.svelte';
 	import ProductView from './ProductView.svelte';
 	import SavedList from './SavedList.svelte';
@@ -26,6 +27,7 @@
 	let heading = $state<HTMLHeadingElement>();
 	let view = $state<View | null>(null);
 	let announce = $state('');
+	let returnFocus: HTMLElement | null = null;
 
 	const TITLES = {
 		scan: 'Scan barcode',
@@ -37,14 +39,25 @@
 	async function show(v: View) {
 		view = v;
 		announce = '';
-		if (!dialog?.open) dialog?.showModal();
+		if (!dialog?.open) {
+			returnFocus = document.activeElement as HTMLElement | null;
+			dialog?.showModal();
+		}
 		await tick();
 		heading?.focus();
 	}
 
+	function close() {
+		if (!dialog) return;
+		closeSheet(dialog, () => {
+			returnFocus?.focus();
+			view = null;
+		});
+	}
+
 	function added() {
 		const name = view?.name === 'product' ? view.product.name : '';
-		dialog?.close();
+		close();
 		announce = `Added ${name}.`;
 		onSaved();
 	}
@@ -61,11 +74,19 @@
 	<p class="visually-hidden" aria-live="polite">{announce}</p>
 </section>
 
-<dialog class="sheet" bind:this={dialog} aria-labelledby="product-sheet-title" onclose={() => (view = null)}>
+<dialog
+	class="sheet"
+	bind:this={dialog}
+	aria-labelledby="product-sheet-title"
+	oncancel={(event) => {
+		event.preventDefault();
+		close();
+	}}
+>
 	{#if view}
 		<header class="sheet-head">
 			<h2 id="product-sheet-title" tabindex="-1" bind:this={heading}>{title}</h2>
-			<button type="button" class="btn btn-quiet close" aria-label="Close" onclick={() => dialog?.close()}>
+			<button type="button" class="btn btn-quiet close" aria-label="Close" onclick={close}>
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
 			</button>
 		</header>

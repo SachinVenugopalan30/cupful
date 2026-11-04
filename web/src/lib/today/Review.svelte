@@ -19,6 +19,7 @@
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
+	import { closeSheet } from '#lib/sheet.ts';
 	import {
 		MEAL_TYPES,
 		MULTIPLIERS,
@@ -48,6 +49,8 @@
 
 	let d = $state(structuredClone(untrack(() => $state.snapshot(draft)) as Draft));
 	let dialog: HTMLDialogElement;
+	let heading: HTMLHeadingElement;
+	let returnFocus: HTMLElement | null = null;
 	let saving = $state(false);
 	let error = $state('');
 
@@ -55,7 +58,18 @@
 	const missing = $derived(d.items.filter((i) => !itemReady(i)).length);
 	const uid = d.id.slice(-6);
 
-	onMount(() => dialog.showModal());
+	onMount(() => {
+		returnFocus = document.activeElement as HTMLElement | null;
+		dialog.showModal();
+		heading?.focus();
+	});
+
+	function close() {
+		closeSheet(dialog, () => {
+			returnFocus?.focus();
+			onClose();
+		});
+	}
 
 	const num = (e: Event) => {
 		const v = (e.currentTarget as HTMLInputElement).valueAsNumber;
@@ -100,6 +114,7 @@
 	}
 
 	async function save() {
+		if (saving || dialog.dataset.closing === 'true') return;
 		error = '';
 		if (!d.items.length) return void (error = 'Add at least one item.');
 		if (missing) return void (error = 'Fill in the highlighted items first.');
@@ -118,7 +133,7 @@
 			// Queued is saved. Aliases are online-only configuration, so close without writing them.
 			if (r.status === 'queued' || !connection.online) {
 				onSaved();
-				dialog.close();
+				close();
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
@@ -128,20 +143,28 @@
 				error = aliasFailure(failed);
 				return;
 			}
-			dialog.close();
+			close();
 		} catch (e) {
 			error = errorMessage(e);
 		} finally {
-			saving = false;
+			if (dialog.dataset.closing !== 'true') saving = false;
 		}
 	}
 </script>
 
-<dialog class="sheet review" bind:this={dialog} onclose={onClose} aria-labelledby="review-title-{uid}">
+<dialog
+	class="sheet review"
+	bind:this={dialog}
+	oncancel={(event) => {
+		event.preventDefault();
+		close();
+	}}
+	aria-labelledby="review-title-{uid}"
+>
 	<form class="stack" method="dialog" onsubmit={(e) => (e.preventDefault(), save())} novalidate>
 		<header class="sheet-head">
-			<h2 id="review-title-{uid}">{title}</h2>
-			<button type="button" class="btn btn-quiet" onclick={() => dialog.close()}>Cancel</button>
+			<h2 id="review-title-{uid}" tabindex="-1" bind:this={heading}>{title}</h2>
+			<button type="button" class="btn btn-quiet" onclick={close}>Cancel</button>
 		</header>
 
 		<fieldset class="segmented" aria-label="Meal">

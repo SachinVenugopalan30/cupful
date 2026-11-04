@@ -572,6 +572,44 @@ dialog.sheet {
 	color: var(--text);
 	box-shadow: var(--shadow-sheet);
 }
+dialog.sheet {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity var(--dur-exit) var(--ease-state),
+		transform var(--dur-exit) var(--ease-state);
+}
+dialog.sheet[open] {
+	transition-duration: var(--dur-enter);
+}
+@starting-style {
+	dialog.sheet[open] {
+		opacity: 0;
+		transform: translateY(16px) scale(0.985);
+	}
+}
+dialog.sheet[data-closing] {
+	opacity: 0;
+	transform: translateY(16px) scale(0.985);
+	transition-duration: var(--dur-exit);
+}
+dialog.sheet::backdrop {
+	opacity: 0;
+	transition: opacity var(--dur-exit) var(--ease-state);
+}
+dialog.sheet[open]::backdrop {
+	opacity: 1;
+	transition-duration: var(--dur-enter);
+}
+@starting-style {
+	dialog.sheet[open]::backdrop {
+		opacity: 0;
+	}
+}
+dialog.sheet[data-closing]::backdrop {
+	opacity: 0;
+	transition-duration: var(--dur-exit);
+}
 dialog.sheet::backdrop {
 	background: rgb(7 24 32 / 0.55);
 }
