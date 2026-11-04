@@ -95,11 +95,20 @@ export type TrendDay = {
 export type TrendAverages = { protein_g: number; carbs_g: number; fat_g: number };
 /** GET /api/trends meal mix: mean daily kcal per meal, over days that have meals. */
 export type MealMix = { breakfast: number; lunch: number; dinner: number; snack: number };
+/** One row in the Trends "Eaten most" card. */
+export type TopMeal = {
+	label: string;
+	meal_type: MealType;
+	times: number;
+	avg_kcal: number;
+	last_date: string;
+};
 /** The whole GET /api/trends answer. Aggregates are null until a meal exists in the range. */
 export type Trends = {
 	days: TrendDay[];
 	averages: TrendAverages | null;
 	meal_mix: MealMix | null;
+	top_meals?: TopMeal[];
 };
 
 // ---- meals and estimates ----
@@ -134,6 +143,8 @@ export type Meal = {
 	items: MealItem[];
 	totals: Macros;
 };
+/** One row in the repeat-meal sheet: the latest meal in a history group. */
+export type HistoryMeal = Meal & { label: string; times: number; last_date: string };
 
 export type Candidate = Macros & { food_id: number; name: string };
 /** One estimated item. Null macros: nothing usable was found; the user fills them in. */
