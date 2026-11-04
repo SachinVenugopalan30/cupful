@@ -28,6 +28,7 @@
 	let dialog: HTMLDialogElement;
 	let returnFocus: HTMLElement | null = null;
 	let heading: HTMLHeadingElement;
+	let search: HTMLInputElement;
 	let meals = $state<HistoryMeal[] | null>(null);
 	let error = $state('');
 	// The prop seeds the search box; the user edits the local copy from here on.
@@ -61,12 +62,20 @@
 	}
 
 	function pick(meal: HistoryMeal) {
-		closeSheet(dialog, () => onPick(meal, q));
+		const query = q;
+		closeSheet(dialog, () => {
+			returnFocus?.focus();
+			onPick(meal, query);
+		});
+	}
+
+	function clearSearch() {
+		q = '';
+		search?.focus();
 	}
 
 	const macros = (m: HistoryMeal) =>
 		`P ${formatGrams(m.totals.protein_g)} · C ${formatGrams(m.totals.carbs_g)} · F ${formatGrams(m.totals.fat_g)} g`;
-	const eaten = (n: number) => (n === 1 ? 'once' : `${n} times`);
 </script>
 
 <dialog
@@ -87,8 +96,18 @@
 
 		<div class="field">
 			<label for="repeat-search">Search recent meals</label>
-			<input id="repeat-search" type="search" bind:value={q} placeholder="Name or ingredient" />
+			<input
+				id="repeat-search"
+				type="search"
+				bind:this={search}
+				bind:value={q}
+				placeholder="Name or ingredient"
+			/>
 		</div>
+
+		<p class="visually-hidden" aria-live="polite">
+			{meals === null ? 'Loading recent meals.' : `${shown.length} recent meals.`}
+		</p>
 
 		{#if error}
 			<div class="notice notice-error" role="alert">
@@ -105,7 +124,7 @@
 			<p class="empty">No meals in the last year. Log one and it will show up here.</p>
 		{:else if !shown.length}
 			<p class="empty">No recent meals match “{q.trim()}”.</p>
-			<button type="button" class="btn" onclick={() => (q = '')}>Clear search</button>
+			<button type="button" class="btn" onclick={clearSearch}>Clear search</button>
 		{:else}
 			<ul class="list">
 				{#each shown as m (m.id)}
@@ -113,7 +132,6 @@
 						<button
 							type="button"
 							class="pick"
-							aria-label="{m.label}, {formatKcal(m.totals.kcal)} kcal, last {dayLabel(m.last_date, today())}, eaten {eaten(m.times)}"
 							onclick={() => pick(m)}
 						>
 							<span class="name">{m.label}</span>
