@@ -33,6 +33,7 @@ export function isCacheable(path: string): boolean {
 	const route = queryAt === -1 ? path : path.slice(0, queryAt);
 	const hasQuery = queryAt !== -1;
 
+	if (route === '/api/meals/history') return true;
 	if (route === '/api/meals') return hasQuery;
 	if (route === '/api/days') return true; // `/api/days?from=…` range reads
 	if (route.startsWith('/api/days/')) return true;

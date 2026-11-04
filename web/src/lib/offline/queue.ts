@@ -190,6 +190,16 @@ async function writeThrough(userId: number, item: QueuedOp): Promise<void> {
 		return;
 	}
 	await updateMeals(userId, item);
+	await invalidateMealHistoryAndTrends(userId);
+}
+
+/** Drops cached meal history and trends for this user; both go stale on any meal write. */
+async function invalidateMealHistoryAndTrends(userId: number): Promise<void> {
+	for (const entry of await allCacheForUser(userId)) {
+		if (entry.path.startsWith('/api/meals/history') || entry.path.startsWith('/api/trends')) {
+			await deleteCacheEntry(userId, entry.path);
+		}
+	}
 }
 
 /** The list inside a cached body's named field. */

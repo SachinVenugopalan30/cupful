@@ -26,6 +26,7 @@ afterEach(async () => {
 describe('isCacheable', () => {
 	it('allows the read endpoints', () => {
 		expect(isCacheable('/api/meals?date=2026-10-29')).toBe(true);
+		expect(isCacheable('/api/meals/history?limit=50')).toBe(true);
 		expect(isCacheable('/api/days/2026-10-29')).toBe(true);
 		expect(isCacheable('/api/days?from=2026-10-01&to=2026-10-29')).toBe(true);
 		expect(isCacheable('/api/budget/2026-10-29')).toBe(true);

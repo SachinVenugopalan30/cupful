@@ -99,6 +99,23 @@ describe('write-through', () => {
 		expect((await getCachedBody<{ meals: Meal[] }>(userId, path))?.meals).toEqual([]);
 	});
 
+	it('invalidates cached history and trends on a meal write', async () => {
+		const userId = newUser();
+		const date = '2026-10-29';
+		const historyPath = '/api/meals/history?limit=50';
+		const trendsPath = '/api/trends?from=2026-10-01&to=2026-10-30';
+		await boot(userId);
+		await putCachedBody(userId, historyPath, { meals: [] });
+		await putCachedBody(userId, trendsPath, { days: [], top_meals: [] });
+
+		await enqueue([mealUpsert(mealIn('m1', date, [item('i1', 300)]))], userId);
+		serving(userId, applied);
+		await flush(userId);
+
+		expect(await getCachedBody(userId, historyPath)).toBeUndefined();
+		expect(await getCachedBody(userId, trendsPath)).toBeUndefined();
+	});
+
 	it('updates cached day detail and ranges, and drops budget and trends', async () => {
 		const userId = newUser();
 		const date = '2026-10-29';
