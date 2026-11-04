@@ -32,7 +32,7 @@ pub(crate) struct MealRow {
     items: Vec<ItemRow>,
 }
 
-#[allow(dead_code)] // read by the recent-meals loader
+#[allow(dead_code)] // used by the history handler and top_meals in Tasks 8-9
 struct MealGroup {
     label: String,
     times: usize,
@@ -62,7 +62,8 @@ fn meal_key(label: &str) -> String {
         .to_lowercase()
 }
 
-#[allow(dead_code)] // read by the recent-meals loader
+/// Returns one group per normalized label, in no particular order.
+#[allow(dead_code)] // used by the history handler and top_meals in Tasks 8-9
 fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
     let mut groups: HashMap<String, MealGroup> = HashMap::new();
     for meal in meals {
@@ -164,8 +165,25 @@ mod tests {
     }
 
     #[test]
+    fn labels_skip_blank_item_names() {
+        let m = meal(
+            "m1",
+            "2026-11-01",
+            1,
+            "",
+            vec![item("  ", 10.0), item("Rice", 200.0), item("\t", 5.0)],
+        );
+        assert_eq!(meal_label(&m), "Rice");
+    }
+
+    #[test]
     fn keys_collapse_case_and_whitespace() {
         assert_eq!(meal_key("  Oats   With  Banana "), "oats with banana");
+    }
+
+    #[test]
+    fn keys_collapse_tabs_and_newlines() {
+        assert_eq!(meal_key("oats\twith\n banana"), "oats with banana");
     }
 
     #[test]
@@ -211,6 +229,27 @@ mod tests {
         let meals = vec![
             meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
             meal("m2", "2026-11-02", 20, "Rice", vec![item("Rice", 200.0)]),
+        ];
+        let groups = group_meals(meals);
+        assert_eq!(groups[0].latest.id, "m2");
+    }
+
+    #[test]
+    fn latest_representative_prefers_a_later_date() {
+        let meals = vec![
+            meal("m1", "2026-11-03", 5, "Rice", vec![item("Rice", 100.0)]),
+            meal("m2", "2026-11-02", 100, "Rice", vec![item("Rice", 200.0)]),
+        ];
+        let groups = group_meals(meals);
+        assert_eq!(groups[0].latest.id, "m1");
+        assert_eq!(groups[0].last_date, "2026-11-03");
+    }
+
+    #[test]
+    fn latest_representative_breaks_ties_on_larger_id() {
+        let meals = vec![
+            meal("m2", "2026-11-02", 10, "Rice", vec![item("Rice", 200.0)]),
+            meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
         ];
         let groups = group_meals(meals);
         assert_eq!(groups[0].latest.id, "m2");
