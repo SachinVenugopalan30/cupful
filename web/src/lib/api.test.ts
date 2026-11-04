@@ -6,6 +6,7 @@ import {
 	errorMessage,
 	getBudget,
 	getDay,
+	getMealHistory,
 	getMeals,
 	getTrends,
 	importCsv,
@@ -208,6 +209,15 @@ describe('cached reads', () => {
 		expect(await getDay(date)).toBe(shown);
 		expect(mocks.cachedGetJson).toHaveBeenCalledWith(`/api/days/${date}`, 42);
 		expect(mocks.overlayDay).toHaveBeenCalledWith(serverDay, mocks.queueState.ops, date);
+	});
+
+	it('gets recent meal history through the cache and unwraps the envelope', async () => {
+		const meals = [{ id: 'm1', label: 'Oats', times: 2, last_date: date }];
+		mocks.connection.activeUserId = 42;
+		mocks.cachedGetJson.mockResolvedValue({ meals });
+
+		expect(await getMealHistory()).toEqual(meals);
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith('/api/meals/history?limit=50', 42);
 	});
 
 	it('uses the cache for budget, trends, profile and saved products', async () => {
