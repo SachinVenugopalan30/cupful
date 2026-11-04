@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Profiles, meals, days, budgets and trends.
 use axum::http::StatusCode;
+use jiff::ToSpan;
 use serde_json::json;
 
 use crate::common::*;
@@ -96,4 +97,25 @@ async fn b_cannot_read_a_trends() {
             assert!(d[k].is_null(), "{k}");
         }
     }
+}
+
+#[tokio::test]
+async fn b_history_and_top_meals_are_empty() {
+    let (mut a, mut b, _, _) = two_users().await;
+
+    let (_, history) = b.get("/api/meals/history?limit=50").await;
+    assert_eq!(history["meals"], json!([]));
+    let (_, trends) = b.get("/api/trends?from=2026-01-04&to=2026-01-06").await;
+    assert_eq!(trends["top_meals"], json!([]));
+
+    // A fresh meal keeps the assertion inside the one-year window as the clock moves.
+    let d = (today("Asia/Kolkata") - 1.days()).to_string();
+    a.sync(vec![op(
+        "meal.upsert",
+        &at(0),
+        meal(&uuid(), &d, json!([item(&uuid(), 500.0)])),
+    )])
+    .await;
+    let (_, history) = a.get("/api/meals/history?limit=50").await;
+    assert!(!history["meals"].as_array().unwrap().is_empty());
 }
