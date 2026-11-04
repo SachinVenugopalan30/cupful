@@ -113,6 +113,22 @@ Use `--ease-state` for background, border-color, color and transform. Keep `--ea
 
 Also change `.segmented label` in `global.css` and the border/background transitions in `ActivitySection.svelte` to `--ease-state`.
 
+Add the missing transitions explicitly:
+
+```css
+a {
+	transition: color var(--dur-fast) var(--ease-state);
+}
+.chip {
+	transition:
+		background var(--dur-fast) var(--ease-state),
+		border-color var(--dur-fast) var(--ease-state),
+		color var(--dur-fast) var(--ease-state);
+}
+```
+
+In `ActivitySection.svelte`, update both `.stat` (border-color) and `.figure input` (background-color) to `--ease-state`.
+
 **Step 3: Run the frontend checks**
 
 Run:
@@ -337,10 +353,12 @@ import { closeSheet } from '#lib/sheet.ts';
 
 ```ts
 let returnFocus: HTMLElement | null = null;
+let heading: HTMLHeadingElement;
 
 onMount(() => {
 	returnFocus = document.activeElement as HTMLElement | null;
 	dialog.showModal();
+	heading?.focus();
 });
 
 function close() {
@@ -349,6 +367,12 @@ function close() {
 		onClose();
 	});
 }
+```
+
+Bind the heading and make it focusable:
+
+```svelte
+<h2 id="review-title-{uid}" tabindex="-1" bind:this={heading}>{title}</h2>
 ```
 
 - Replace the Cancel button handler:
@@ -673,13 +697,19 @@ git commit -s -m "Keep Trends content during a data refresh"
 ## Task 6: Meal grouping helpers with unit tests
 
 **Files:**
-- Modify: `server/src/reads.rs`
+- Create: `server/src/history.rs`
+- Modify: `server/src/lib.rs`
 
 **Step 1: Write the failing unit tests**
 
-At the bottom of `server/src/reads.rs`, add:
+Create `server/src/history.rs` with the module header, imports, and tests:
 
 ```rust
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//! Meal history grouping and the recent-meals endpoint.
+
+use std::collections::{HashMap, hash_map::Entry};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -735,8 +765,8 @@ mod tests {
     #[test]
     fn groups_by_normalized_description_and_averages_kcal() {
         let meals = vec![
-            meal("m1", "2026-11-01", 1, "Oats with banana", vec![item("Oats", 400.0)]),
-            meal("m2", "2026-11-02", 2, "oats with banana", vec![item("Oats", 500.0)]),
+            meal("m1", "2026-11-01", 1, "oats with banana", vec![item("Oats", 400.0)]),
+            meal("m2", "2026-11-02", 2, "Oats with banana", vec![item("Oats", 500.0)]),
             meal("m3", "2026-11-02", 3, "Chicken rice", vec![item("Rice", 600.0)]),
         ];
         let mut groups = group_meals(meals);
@@ -771,18 +801,19 @@ mod tests {
 
 ```sh
 cd server
-SQLX_OFFLINE=true cargo test --lib reads::tests
+SQLX_OFFLINE=true cargo test --lib history::tests
 ```
 
 Expected: FAIL because `ItemRow`, `MealRow`, `meal_label`, `meal_key` and `group_meals` do not exist.
 
 **Step 3: Add the structs and helpers**
 
-Near the top of `server/src/reads.rs`, after the imports, add:
+In `server/src/history.rs`, after the imports, add:
+
+Also add `mod history;` next to `mod reads;` in `server/src/lib.rs`.
 
 ```rust
-use std::collections::hash_map::Entry;
-
+#[allow(dead_code)] // every field is read by meal_json in Task 7
 struct ItemRow {
     id: String,
     name: String,
@@ -796,7 +827,8 @@ struct ItemRow {
     origin: String,
 }
 
-struct MealRow {
+#[allow(dead_code)] // every field is read by meal_json in Task 7
+pub(crate) struct MealRow {
     id: String,
     date: String,
     meal_type: String,
@@ -859,6 +891,7 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
                 let newer = (meal.date.as_str(), meal.updated_at, meal.id.as_str())
                     > (g.last_date.as_str(), g.latest.updated_at, g.latest.id.as_str());
                 if newer {
+                    g.label = label;
                     g.last_date = meal.date.clone();
                     g.latest = meal;
                 }
@@ -886,7 +919,7 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
 
 ```sh
 cd server
-SQLX_OFFLINE=true cargo test --lib reads::tests
+SQLX_OFFLINE=true cargo test --lib history::tests
 ```
 
 Expected: PASS.
@@ -894,7 +927,7 @@ Expected: PASS.
 **Step 5: Commit**
 
 ```sh
-git add server/src/reads.rs
+git add server/src/history.rs server/src/lib.rs
 git commit -s -m "Group meal history by normalized description"
 ```
 
@@ -903,14 +936,26 @@ git commit -s -m "Group meal history by normalized description"
 ## Task 7: Load meals once and reuse the serializer
 
 **Files:**
+- Modify: `server/src/history.rs`
 - Modify: `server/src/reads.rs`
 
 **Step 1: Add `load_meals` and `meal_json`**
 
-Add below `group_meals`:
+In `server/src/history.rs`, add below `group_meals`:
+
+Remove the two `#[allow(dead_code)]` attributes from `ItemRow` and `MealRow` now that `meal_json` reads every field.
+
+Add these imports to `server/src/history.rs`:
 
 ```rust
-async fn load_meals(
+use serde_json::{Value, json};
+use sqlx::SqlitePool;
+
+use crate::error::Result;
+```
+
+```rust
+pub(crate) async fn load_meals(
     db: &SqlitePool,
     user_id: i64,
     from: &str,
@@ -976,7 +1021,7 @@ async fn load_meals(
         .collect())
 }
 
-fn meal_json(m: &MealRow) -> Value {
+pub(crate) fn meal_json(m: &MealRow) -> Value {
     let sum = |f: fn(&ItemRow) -> f64| m.items.iter().map(f).sum::<f64>();
     json!({
         "id": m.id,
@@ -1012,6 +1057,12 @@ fn meal_json(m: &MealRow) -> Value {
 ```
 
 **Step 2: Refactor `reads::meals`**
+
+Add this import to `server/src/reads.rs`:
+
+```rust
+use crate::history::{load_meals, meal_json};
+```
 
 Replace the body of `pub async fn meals` with:
 
@@ -1056,7 +1107,7 @@ Expected: all pass. The existing meal shape is unchanged.
 **Step 4: Commit**
 
 ```sh
-git add server/src/reads.rs
+git add server/src/history.rs server/src/reads.rs .sqlx
 git commit -s -m "Load meals through one shared serializer"
 ```
 
@@ -1065,8 +1116,9 @@ git commit -s -m "Load meals through one shared serializer"
 ## Task 8: Add the history endpoint
 
 **Files:**
-- Modify: `server/src/reads.rs`
+- Modify: `server/src/history.rs`
 - Modify: `server/src/lib.rs`
+- Modify: `server/tests/isolation/routes.rs`
 - Create: `server/tests/history.rs`
 
 **Step 1: Write the failing integration tests**
@@ -1198,7 +1250,20 @@ Expected: FAIL with 404 for `/api/meals/history`.
 
 **Step 3: Add the handler**
 
-In `server/src/reads.rs`, add:
+In `server/src/history.rs`, add:
+
+Add these imports to `server/src/history.rs`:
+
+```rust
+use axum::Json;
+use axum::extract::State;
+use jiff::ToSpan;
+use serde::Deserialize;
+
+use crate::AppState;
+use crate::auth::User;
+use crate::error::{Error, Query};
+```
 
 ```rust
 #[derive(Deserialize)]
@@ -1245,8 +1310,10 @@ pub async fn meal_history(
 In `server/src/lib.rs`, in `routes()`, add next to the meals route:
 
 ```rust
-("GET", "/api/meals/history", User, get(reads::meal_history)),
+("GET", "/api/meals/history", User, get(history::meal_history)),
 ```
+
+At the same time, add `"GET /api/meals/history"` to `COVERED` in `server/tests/isolation/routes.rs` and add `?limit=50` to its anonymous URI builder. This keeps `cargo test` green between this task and Task 10.
 
 **Step 5: Run the tests to verify they pass**
 
@@ -1260,7 +1327,7 @@ Expected: PASS.
 **Step 6: Commit**
 
 ```sh
-git add server/src/reads.rs server/src/lib.rs server/tests/history.rs
+git add server/src/history.rs server/src/lib.rs server/tests/history.rs server/tests/isolation/routes.rs
 git commit -s -m "Add the recent meal history endpoint"
 ```
 
@@ -1269,6 +1336,7 @@ git commit -s -m "Add the recent meal history endpoint"
 ## Task 9: Add top meals to Trends
 
 **Files:**
+- Modify: `server/src/history.rs`
 - Modify: `server/src/reads.rs`
 - Modify: `server/tests/trends.rs`
 
@@ -1341,10 +1409,10 @@ Expected: FAIL because `top_meals` is missing.
 
 **Step 3: Add the helper**
 
-In `server/src/reads.rs`, add:
+In `server/src/history.rs`, add:
 
 ```rust
-fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
+pub(crate) fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
     let mut groups = group_meals(meals);
     groups.sort_by(|a, b| {
         b.times
@@ -1373,8 +1441,8 @@ fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
 In `pub async fn trends`, after the `meal_mix` block and before the `days` vector, add:
 
 ```rust
-let history = load_meals(&s.db, user.id, &f, &t).await?;
-let top = top_meals(history, 5);
+let history = crate::history::load_meals(&s.db, user.id, &f, &t).await?;
+let top = crate::history::top_meals(history, 5);
 ```
 
 Then add `"top_meals": top` to the final `json!`:
@@ -1397,7 +1465,7 @@ Expected: PASS.
 **Step 6: Commit**
 
 ```bash
-git add server/src/reads.rs server/tests/trends.rs
+git add server/src/history.rs server/src/reads.rs server/tests/trends.rs
 git commit -s -m "Add the most-eaten meals to Trends"
 ```
 
@@ -1406,27 +1474,10 @@ git commit -s -m "Add the most-eaten meals to Trends"
 ## Task 10: Isolation tests and SQLx metadata
 
 **Files:**
-- Modify: `server/tests/isolation/routes.rs`
 - Modify: `server/tests/isolation/users.rs`
 - Refresh: `.sqlx/`
 
-**Step 1: Add the route to the coverage list**
-
-In `server/tests/isolation/routes.rs`, add:
-
-```rust
-"GET /api/meals/history",
-```
-
-In the anonymous URI builder, extend the query switch:
-
-```rust
-} else if path == "/api/meals/history" {
-    "?limit=50"
-} else if path == "/api/days" || path == "/api/workouts" || path == "/api/trends" {
-```
-
-**Step 2: Add the behavioral test**
+**Step 1: Add the behavioral test**
 
 In `server/tests/isolation/users.rs`, add:
 
@@ -1455,7 +1506,7 @@ async fn b_history_and_top_meals_are_empty() {
 }
 ```
 
-**Step 3: Run the isolation tests**
+**Step 2: Run the isolation tests**
 
 ```sh
 cd server
@@ -1464,7 +1515,7 @@ SQLX_OFFLINE=true cargo test --test isolation
 
 Expected: PASS.
 
-**Step 4: Refresh the SQLx metadata**
+**Step 3: Refresh the SQLx metadata**
 
 ```sh
 cd server
@@ -1477,7 +1528,7 @@ cargo sqlx prepare -- --all-targets
 
 Expected: `.sqlx/` updates.
 
-**Step 5: Run the full backend suite**
+**Step 4: Run the full backend suite**
 
 ```sh
 cd server
@@ -1488,10 +1539,10 @@ cargo fmt --check
 
 Expected: all pass.
 
-**Step 6: Commit**
+**Step 5: Commit**
 
 ```sh
-git add server/tests/isolation/routes.rs server/tests/isolation/users.rs .sqlx
+git add server/tests/isolation/users.rs .sqlx
 git commit -s -m "Cover meal history isolation and refresh SQLx metadata"
 ```
 
@@ -1788,6 +1839,7 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
   Props: meals: TopMeal[]; days: number.
 -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { TopMeal } from '../api';
 	import { formatNumber, shortDate } from './logic.ts';
 
@@ -1795,7 +1847,9 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 	const top = $derived(Math.max(1, ...meals.map((m) => m.times)));
 	// Only the rows present when the range mounted animate. A data refresh may add a row;
 	// that row should not replay the entrance.
-	const initial = new Set(meals.map((m) => m.label));
+	const initial = new Set(untrack(() => meals.map((m) => m.label)));
+	const type = (t: string) => t[0].toUpperCase() + t.slice(1);
+	const times = (n: number) => (n === 1 ? '1 time' : `${n} times`);
 </script>
 
 <section class="card frequent" aria-labelledby="frequent-h">
@@ -1809,11 +1863,11 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 		<ul class="list">
 			{#each meals as m, i (m.label)}
 				<li
-					aria-label="{m.label}, {m.times} times, {formatNumber(m.avg_kcal)} kcal average, last {shortDate(m.last_date)}"
+					aria-label="{m.label}, {times(m.times)}, {formatNumber(m.avg_kcal)} kcal average, last {shortDate(m.last_date)}"
 				>
 					<span class="label">{m.label}</span>
 					<span class="meta small muted">
-						{m.meal_type} · {m.times} times · last {shortDate(m.last_date)}
+						{type(m.meal_type)} · {times(m.times)} · last {shortDate(m.last_date)}
 					</span>
 					<span class="num">{formatNumber(m.avg_kcal)} kcal avg</span>
 					<i
@@ -2071,7 +2125,7 @@ export function filterHistory(meals: HistoryMeal[], query: string): HistoryMeal[
 
 Add `HistoryMeal` to the type import from `#lib/api.ts`.
 
-Remove the old `repeatMeal` function.
+Keep the old `repeatMeal` function in this task. `MealList.svelte` still imports it until Task 17, and the pre-commit hook runs `svelte-check`. Task 17 removes it with its last caller.
 
 **Step 4: Run the tests to verify they pass**
 
@@ -2130,6 +2184,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 
 	let dialog: HTMLDialogElement;
 	let returnFocus: HTMLElement | null = null;
+	let heading: HTMLHeadingElement;
 	let meals = $state<HistoryMeal[] | null>(null);
 	let error = $state('');
 	let q = $state(query);
@@ -2140,6 +2195,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 	onMount(() => {
 		returnFocus = document.activeElement as HTMLElement | null;
 		dialog.showModal();
+		heading?.focus();
 		void load();
 	});
 
@@ -2160,10 +2216,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 	}
 
 	function pick(meal: HistoryMeal) {
-		closeSheet(dialog, () => {
-			returnFocus?.focus();
-			onPick(meal, q);
-		});
+		closeSheet(dialog, () => onPick(meal, q));
 	}
 
 	const macros = (m: HistoryMeal) =>
@@ -2182,7 +2235,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 >
 	<div class="stack">
 		<header class="sheet-head">
-			<h2 id="repeat-title">Repeat onto {target}</h2>
+			<h2 id="repeat-title" tabindex="-1" bind:this={heading}>Repeat onto {target}</h2>
 			<button type="button" class="btn btn-quiet" onclick={close}>Cancel</button>
 		</header>
 		<p class="small muted">Recent meals, last year. Pick one, then adjust it before saving.</p>
@@ -2250,6 +2303,9 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+		transition:
+			background var(--dur-fast) var(--ease-state),
+			border-color var(--dur-fast) var(--ease-state);
 	}
 	.pick:hover {
 		background: var(--surface-2);
@@ -2317,6 +2373,7 @@ let repeatOpen = $state(false);
 let repeatQuery = $state('');
 let reviewFromRepeat = $state(false);
 let repeatSaved = $state(false);
+let repeatBtn: HTMLButtonElement;
 ```
 
 **Step 2: Add the open and close handlers**
@@ -2344,6 +2401,7 @@ function repeatClosed() {
 
 function reviewClosed() {
 	review = null;
+	if (reviewFromRepeat && repeatSaved) repeatBtn?.focus();
 	if (reviewFromRepeat && !repeatSaved) repeatOpen = true;
 	reviewFromRepeat = false;
 	repeatSaved = false;
@@ -2362,7 +2420,7 @@ Import `today` from `#lib/session.svelte.ts`.
 In the composer header, add:
 
 ```svelte
-<button type="button" class="btn btn-quiet" onclick={openRepeat}>Repeat a meal</button>
+<button type="button" class="btn btn-quiet" bind:this={repeatBtn} onclick={openRepeat}>Repeat a meal</button>
 ```
 
 **Step 4: Wire the sheet and Review**
@@ -2466,6 +2524,7 @@ Replace the "Eat this again" button with:
 
 Remove the old `repeatMeal` import and the `send(m, mealUpsert(repeatMeal(...)))` path.
 Also remove `mealUpsert` from the `#lib/sync/index.ts` import, which is now unused.
+Remove the now-unused `repeatMeal` function from `meal.ts`.
 
 **Step 3: Add the saved and close handlers**
 
@@ -2698,6 +2757,7 @@ git commit -s -m "Cover repeat and copy-to-today flows"
 - Replace "popping consistency cells" and the 12 ms stagger note.
 - Add the "Eaten most" card.
 - Add the repeat sheet and the per-meal Repeat/Copy to today actions.
+- In the spec's Web testing section, say the repeat-sheet no-results state and composer draft preservation are covered by Playwright. The repo has no component-test harness, and adding one is out of scope.
 
 **Step 2: Update `docs/decisions.md`**
 
@@ -2720,6 +2780,7 @@ Add `/api/meals/history?limit=50` to the cacheable reads and note that meal upse
 Add to the layout:
 
 ```text
+  src/history.rs                     meal history grouping, recent-meals endpoint, top meals
   src/lib/today/RepeatSheet.svelte   recent meals picker, opens Review
   src/lib/trends/FrequentMeals.svelte  "Eaten most" card
 ```
