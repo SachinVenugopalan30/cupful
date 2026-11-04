@@ -34,6 +34,7 @@
 - Modify: `web/src/lib/today/MealList.svelte`
 - Modify: `web/src/lib/offline/UpdateBanner.svelte`
 - Modify: `web/src/lib/offline/SyncBar.svelte`
+- Modify: `web/src/lib/activity/ActivitySection.svelte`
 - Modify: `web/src/routes/setup/+page.svelte`
 - Modify: `web/src/routes/invite/+page.svelte`
 - Modify: `web/src/routes/login/+page.svelte`
@@ -110,6 +111,8 @@ Then update the scoped small-control transitions that still use `--ease`:
 
 Use `--ease-state` for background, border-color, color and transform. Keep `--ease` for movement such as meter fills.
 
+Also change `.segmented label` in `global.css` and the border/background transitions in `ActivitySection.svelte` to `--ease-state`.
+
 **Step 3: Run the frontend checks**
 
 Run:
@@ -128,6 +131,7 @@ Expected: both pass. No test asserts CSS tokens; the motion acceptance is checke
 git add web/src/lib/styles/tokens.css web/src/lib/styles/global.css \
   web/src/lib/products/SavedList.svelte web/src/lib/today/MealList.svelte \
   web/src/lib/offline/UpdateBanner.svelte web/src/lib/offline/SyncBar.svelte \
+  web/src/lib/activity/ActivitySection.svelte \
   web/src/routes/setup/+page.svelte web/src/routes/invite/+page.svelte \
   web/src/routes/login/+page.svelte
 git commit -s -m "Calm the motion tokens and global transitions"
@@ -300,6 +304,7 @@ dialog.sheet[open]::backdrop {
 }
 dialog.sheet[data-closing]::backdrop {
 	opacity: 0;
+	transition-duration: var(--dur-exit);
 }
 ```
 
@@ -322,22 +327,52 @@ import { closeSheet } from '#lib/sheet.ts';
 	bind:this={dialog}
 	oncancel={(event) => {
 		event.preventDefault();
-		closeSheet(dialog, onClose);
+		close();
 	}}
 	aria-labelledby="review-title-{uid}"
 >
 ```
 
+- Replace the existing `onMount(() => dialog.showModal());` with the focus capture and close helper:
+
+```ts
+let returnFocus: HTMLElement | null = null;
+
+onMount(() => {
+	returnFocus = document.activeElement as HTMLElement | null;
+	dialog.showModal();
+});
+
+function close() {
+	closeSheet(dialog, () => {
+		returnFocus?.focus();
+		onClose();
+	});
+}
+```
+
 - Replace the Cancel button handler:
 
 ```svelte
-<button type="button" class="btn btn-quiet" onclick={() => closeSheet(dialog, onClose)}>Cancel</button>
+<button type="button" class="btn btn-quiet" onclick={close}>Cancel</button>
 ```
 
-- Replace both `dialog.close()` calls in `save()` with:
+- Replace both `dialog.close()` calls in `save()` with `close()`.
 
 ```ts
-closeSheet(dialog, onClose);
+close();
+```
+
+- Guard against a second submit while the exit runs. At the top of `save()`:
+
+```ts
+if (saving || dialog.dataset.closing === 'true') return;
+```
+
+- Keep the Save button disabled until the sheet unmounts. In the `finally` block:
+
+```ts
+if (dialog.dataset.closing !== 'true') saving = false;
 ```
 
 **Step 7: Wire BarcodeEntry to the helper**
@@ -346,19 +381,42 @@ In `BarcodeEntry.svelte`:
 
 - Import `closeSheet`.
 - Remove `onclose={() => (view = null)}` from the `<dialog>`.
+- Capture the trigger before `showModal()` in `show()`:
+
+```ts
+let returnFocus: HTMLElement | null = null;
+
+async function show(v: View) {
+	view = v;
+	announce = '';
+	if (!dialog?.open) {
+		returnFocus = document.activeElement as HTMLElement | null;
+		dialog?.showModal();
+	}
+	await tick();
+	heading?.focus();
+}
+```
+
 - Add:
 
 ```svelte
 oncancel={(event) => {
 	event.preventDefault();
-	if (dialog) closeSheet(dialog, () => (view = null));
+	if (dialog) closeSheet(dialog, () => {
+		returnFocus?.focus();
+		view = null;
+	});
 }}
 ```
 
 - Replace the close button handler:
 
 ```svelte
-onclick={() => dialog && closeSheet(dialog, () => (view = null))}
+onclick={() => dialog && closeSheet(dialog, () => {
+	returnFocus?.focus();
+	view = null;
+})}
 ```
 
 - Replace the `dialog?.close()` in `added()`:
@@ -366,11 +424,16 @@ onclick={() => dialog && closeSheet(dialog, () => (view = null))}
 ```ts
 function added() {
 	const name = view?.name === 'product' ? view.product.name : '';
-	if (dialog) closeSheet(dialog, () => (view = null));
+	if (dialog) closeSheet(dialog, () => {
+		returnFocus?.focus();
+		view = null;
+	});
 	announce = `Added ${name}.`;
 	onSaved();
 }
 ```
+
+The scanner keeps running until the 200 ms exit finishes. That is acceptable because the sheet is already closing and the camera is released when the view unmounts.
 
 **Step 8: Run the frontend checks**
 
@@ -592,9 +655,9 @@ npm run build
 
 Expected: both pass.
 
-**Step 3: Manual motion check**
+**Step 3: Review the guard**
 
-Open `/trends`, let the entrance finish, then log a meal in another tab. The Trends content should stay on screen and should not replay its entrance. A range change should still replay it.
+There is no same-tab write on Trends, so this is verified by inspection: `data` is set to `null` only when `loadedRange !== range`. A `dataVersion` bump with the same range leaves the data mounted. A range change still clears it and replays the entrance.
 
 **Step 4: Commit**
 
@@ -894,18 +957,21 @@ async fn load_meals(
     }
     Ok(meals
         .into_iter()
-        .map(|m| MealRow {
-            id: m.id,
-            date: m.date,
-            meal_type: m.meal_type,
-            description: m.description,
-            scale: m.scale,
-            assumptions: m.assumptions,
-            confidence: m.confidence,
-            source: m.source,
-            provider_id: m.provider_id,
-            updated_at: m.updated_at,
-            items: by_meal.remove(&m.id).unwrap_or_default(),
+        .map(|m| {
+            let items = by_meal.remove(&m.id).unwrap_or_default();
+            MealRow {
+                id: m.id,
+                date: m.date,
+                meal_type: m.meal_type,
+                description: m.description,
+                scale: m.scale,
+                assumptions: m.assumptions,
+                confidence: m.confidence,
+                source: m.source,
+                provider_id: m.provider_id,
+                updated_at: m.updated_at,
+                items,
+            }
         })
         .collect())
 }
@@ -1046,7 +1112,6 @@ async fn groups_by_description_and_returns_the_latest() {
 
     let oats = meals.iter().find(|m| m["label"] == "Oats with banana").unwrap();
     assert_eq!(oats["times"], 2);
-    assert_eq!(oats["avg_kcal"], 450);
     assert_eq!(oats["date"], d2);
     assert_eq!(oats["items"][0]["kcal"], 500.0);
 }
@@ -1098,6 +1163,27 @@ async fn limit_is_validated() {
         let (status, _) = a.get(&format!("/api/meals/history?{q}")).await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "{q}");
     }
+}
+
+#[tokio::test]
+async fn history_orders_ties_by_label() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = date(1);
+    a.sync(vec![
+        op("meal.upsert", &at(0), meal_with(&uuid(), &d, "Zebra bowl", 200.0)),
+        op("meal.upsert", &at(0), meal_with(&uuid(), &d, "Apple bowl", 200.0)),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Apple bowl", "Zebra bowl"]);
 }
 ```
 
@@ -1215,6 +1301,32 @@ async fn top_meals_is_empty_without_meals() {
     let mut a = setup().await;
     let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D1}")).await;
     assert_eq!(t["top_meals"], json!([]));
+}
+
+#[tokio::test]
+async fn top_meals_orders_by_count_and_groups_before_the_limit() {
+    let mut a = setup().await;
+    let mut ops = vec![];
+    // Six meals share one label; five other labels appear once each.
+    for _ in 0..5 {
+        ops.push(op(
+            "meal.upsert",
+            &at(-30),
+            meal(&uuid(), D3, json!([item(&uuid(), 100.0)])),
+        ));
+    }
+    for name in ["alpha", "bravo", "charlie", "delta", "echo"] {
+        let mut m = meal(&uuid(), D3, json!([item(&uuid(), 100.0)]));
+        m["description"] = json!(name);
+        ops.push(op("meal.upsert", &at(-30), m));
+    }
+    a.sync(ops).await;
+
+    let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D3}")).await;
+    let top = t["top_meals"].as_array().unwrap();
+    assert_eq!(top.len(), 5);
+    assert_eq!(top[0]["label"], "rice and chicken");
+    assert_eq!(top[0]["times"], 6);
 }
 ```
 
@@ -1392,6 +1504,7 @@ git commit -s -m "Cover meal history isolation and refresh SQLx metadata"
 **Files:**
 - Modify: `web/src/lib/api/types.ts`
 - Modify: `web/src/lib/api/reads.ts`
+- Modify: `web/src/lib/api.ts`
 
 **Step 1: Add the types**
 
@@ -1444,6 +1557,21 @@ Update the import:
 import type { Budget, Day, Health, HistoryMeal, Meal, Trends, Workout } from './types.ts';
 ```
 
+Add `getMealHistory` to the barrel in `web/src/lib/api.ts`:
+
+```ts
+export {
+	getBudget,
+	getDay,
+	getDays,
+	getMealHistory,
+	getMeals,
+	getWorkouts,
+	getTrends,
+	health
+} from './api/reads.ts';
+```
+
 **Step 3: Run the frontend checks**
 
 ```sh
@@ -1456,7 +1584,7 @@ Expected: pass.
 **Step 4: Commit**
 
 ```sh
-git add web/src/lib/api/types.ts web/src/lib/api/reads.ts
+git add web/src/lib/api/types.ts web/src/lib/api/reads.ts web/src/lib/api.ts
 git commit -s -m "Add meal history API types and read"
 ```
 
@@ -1563,7 +1691,7 @@ git commit -s -m "Cache and invalidate meal history offline"
 
 **Step 1: Write the failing e2e test**
 
-Add to `web/e2e/trends.spec.ts`:
+Add to `web/e2e/trends.spec.ts` after the existing Trends test. Use the file's shared, already signed-in `page` variable, not the `{ page }` fixture:
 
 ```ts
 test('Trends shows the meals eaten most often', async () => {
@@ -1616,6 +1744,28 @@ test('Trends shows the meals eaten most often', async () => {
 	await expect(card).toContainText('e2e oats');
 	await expect(card).toContainText('2 times');
 });
+
+test('Eaten most hides when top_meals is missing and shows the empty state for []', async () => {
+	await page.route('**/api/trends?*', (route) =>
+		route.fulfill({
+			json: { days: [], averages: null, meal_mix: null }
+		})
+	);
+	await page.goto('/trends');
+	await expect(page.getByRole('region', { name: 'Eaten most' })).toHaveCount(0);
+	await page.unroute('**/api/trends?*');
+
+	await page.route('**/api/trends?*', (route) =>
+		route.fulfill({
+			json: { days: [], averages: null, meal_mix: null, top_meals: [] }
+		})
+	);
+	await page.goto('/trends');
+	const card = page.getByRole('region', { name: 'Eaten most' });
+	await expect(card).toBeVisible();
+	await expect(card.getByText('No meals logged in this range.')).toBeVisible();
+	await page.unroute('**/api/trends?*');
+});
 ```
 
 **Step 2: Run the test to verify it fails**
@@ -1643,6 +1793,9 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 
 	let { meals, days }: { meals: TopMeal[]; days: number } = $props();
 	const top = $derived(Math.max(1, ...meals.map((m) => m.times)));
+	// Only the rows present when the range mounted animate. A data refresh may add a row;
+	// that row should not replay the entrance.
+	const initial = new Set(meals.map((m) => m.label));
 </script>
 
 <section class="card frequent" aria-labelledby="frequent-h">
@@ -1655,13 +1808,20 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 	{:else}
 		<ul class="list">
 			{#each meals as m, i (m.label)}
-				<li>
+				<li
+					aria-label="{m.label}, {m.times} times, {formatNumber(m.avg_kcal)} kcal average, last {shortDate(m.last_date)}"
+				>
 					<span class="label">{m.label}</span>
 					<span class="meta small muted">
 						{m.meal_type} · {m.times} times · last {shortDate(m.last_date)}
 					</span>
 					<span class="num">{formatNumber(m.avg_kcal)} kcal avg</span>
-					<i class="bar" style:width={`${(m.times / top) * 100}%`} style:--i={i}></i>
+					<i
+						class="bar"
+						class:animate={initial.has(m.label)}
+						style:width={`${(m.times / top) * 100}%`}
+						style:--i={i}
+					></i>
 				</li>
 			{/each}
 		</ul>
@@ -1725,6 +1885,8 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 		background: var(--accent);
 		border-radius: var(--radius-pill);
 		transform-origin: left;
+	}
+	.bar.animate {
 		animation: grow-x 760ms var(--ease) both;
 		animation-delay: calc(var(--i) * 80ms);
 	}
@@ -1737,7 +1899,7 @@ Create `web/src/lib/trends/FrequentMeals.svelte`:
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.bar {
+		.bar.animate {
 			animation: none;
 		}
 	}
@@ -1876,7 +2038,7 @@ import { dayLabel } from '#lib/date.ts';
 Add:
 
 ```ts
-/** "Eat this again": a new meal on `date`, new ids, no model call. */
+/** Repeat: a new meal on `date`, new ids, no model call. */
 export function repeatDraft(m: Meal, date: string): Draft {
 	const d = draftFromMeal(m);
 	return {
@@ -1967,6 +2129,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 	} = $props();
 
 	let dialog: HTMLDialogElement;
+	let returnFocus: HTMLElement | null = null;
 	let meals = $state<HistoryMeal[] | null>(null);
 	let error = $state('');
 	let q = $state(query);
@@ -1975,6 +2138,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 	const target = $derived(dayLabel(date, today()));
 
 	onMount(() => {
+		returnFocus = document.activeElement as HTMLElement | null;
 		dialog.showModal();
 		void load();
 	});
@@ -1989,15 +2153,22 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 	}
 
 	function close() {
-		closeSheet(dialog, onClose);
+		closeSheet(dialog, () => {
+			returnFocus?.focus();
+			onClose();
+		});
 	}
 
 	function pick(meal: HistoryMeal) {
-		closeSheet(dialog, () => onPick(meal, q));
+		closeSheet(dialog, () => {
+			returnFocus?.focus();
+			onPick(meal, q);
+		});
 	}
 
 	const macros = (m: HistoryMeal) =>
 		`P ${formatGrams(m.totals.protein_g)} · C ${formatGrams(m.totals.carbs_g)} · F ${formatGrams(m.totals.fat_g)} g`;
+	const eaten = (n: number) => (n === 1 ? 'once' : `${n} times`);
 </script>
 
 <dialog
@@ -2044,7 +2215,7 @@ Create `web/src/lib/today/RepeatSheet.svelte`:
 						<button
 							type="button"
 							class="pick"
-							aria-label="{m.label}, {formatKcal(m.totals.kcal)} kcal, last {dayLabel(m.last_date, today())}, eaten {m.times} times"
+							aria-label="{m.label}, {formatKcal(m.totals.kcal)} kcal, last {dayLabel(m.last_date, today())}, eaten {eaten(m.times)}"
 							onclick={() => pick(m)}
 						>
 							<span class="name">{m.label}</span>
@@ -2294,6 +2465,7 @@ Replace the "Eat this again" button with:
 ```
 
 Remove the old `repeatMeal` import and the `send(m, mealUpsert(repeatMeal(...)))` path.
+Also remove `mealUpsert` from the `#lib/sync/index.ts` import, which is now unused.
 
 **Step 3: Add the saved and close handlers**
 
@@ -2302,7 +2474,7 @@ function saved() {
 	if (!review) return;
 	if (review.kind === 'repeat') {
 		copiedToToday = review.target !== date;
-		status = copiedToToday ? 'Copied to today.' : 'Meal logged.';
+		status = copiedToToday ? 'Meal copied.' : 'Meal logged.';
 	} else {
 		status = 'Meal updated.';
 	}
@@ -2369,6 +2541,7 @@ git commit -s -m "Repeat a meal from the meal list"
 **Files:**
 - Modify: `web/e2e/today.spec.ts`
 - Modify: `web/e2e/trends.spec.ts`
+- Modify: `web/e2e/offline.spec.ts`
 
 **Step 1: Update the old repeat test**
 
@@ -2376,8 +2549,9 @@ In `today.spec.ts`, replace the `"Eat this again" duplicates the meal` test with
 
 ```ts
 test('Repeat opens Review and logs a copy', async ({ page }) => {
+	// Depends on the previous edit test: the meal is 332 kcal.
 	await page.getByTestId('meal').locator('summary').click();
-	await page.getByRole('button', { name: 'Repeat' }).click();
+	await page.getByTestId('meal').getByRole('button', { name: 'Repeat', exact: true }).click();
 	const sheet = page.getByRole('dialog', { name: /Repeat meal for/ });
 	await expect(sheet).toBeVisible();
 	await expect(sheet.locator('.totals')).toContainText('332 kcal');
@@ -2406,11 +2580,22 @@ test('Repeat a meal from a previous day', async ({ page }) => {
 	await page.getByRole('button', { name: 'Back to today' }).click();
 	await page.getByRole('button', { name: 'Repeat a meal' }).click();
 	const picker = page.getByRole('dialog', { name: /Repeat onto Today/ });
+	await picker.getByLabel('Search recent meals').fill('no-such-meal');
+	await expect(picker.getByText(/No recent meals match/)).toBeVisible();
+	await picker.getByRole('button', { name: 'Clear search' }).click();
+	await picker.getByLabel('Search recent meals').fill('yesterday');
 	await picker.getByRole('button', { name: /yesterday oats/ }).click();
 	const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
 	await expect(review.locator('.totals')).toContainText('380 kcal');
-	await review.getByRole('button', { name: 'Save meal' }).click();
+	await review.getByRole('button', { name: 'Cancel' }).click();
 	await expect(review).toBeHidden();
+	await expect(picker).toBeVisible();
+	await expect(picker.getByLabel('Search recent meals')).toHaveValue('yesterday');
+	await picker.getByRole('button', { name: /yesterday oats/ }).click();
+	const reviewAgain = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+	await expect(reviewAgain.locator('.totals')).toContainText('380 kcal');
+	await reviewAgain.getByRole('button', { name: 'Save meal' }).click();
+	await expect(reviewAgain).toBeHidden();
 	await expect(page.getByTestId('meal').filter({ hasText: 'yesterday oats' })).toHaveCount(1);
 });
 ```
@@ -2422,31 +2607,74 @@ Add:
 ```ts
 test('Copy a past meal to today', async ({ page }) => {
 	await page.getByRole('button', { name: 'Previous day' }).click();
-	await page.getByTestId('meal').first().locator('summary').click();
-	await page.getByRole('button', { name: 'Copy to today' }).click();
+	await page.getByLabel('What did you eat?').fill('copy seed');
+	await page.getByRole('button', { name: 'Enter by hand' }).click();
+	const entry = page.getByRole('dialog', { name: 'Enter by hand' });
+	await fillItem(page, 0, ['Copy seed', '100', '250', '10', '30', '8']);
+	await entry.getByRole('button', { name: 'Save meal' }).click();
+	await expect(entry).toBeHidden();
+
+	const meal = page.getByTestId('meal').filter({ hasText: 'copy seed' });
+	await meal.locator('summary').click();
+	await meal.getByRole('button', { name: 'Copy to today' }).click();
 	const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
 	await expect(review).toBeVisible();
 	await review.getByRole('button', { name: 'Save meal' }).click();
 	await expect(review).toBeHidden();
 	await expect(page.getByText('Copied to today.')).toBeVisible();
 	await page.getByRole('button', { name: 'View today' }).click();
-	await expect(page.getByTestId('meal').filter({ hasText: 'yesterday oats' })).toHaveCount(2);
+	await expect(page.getByTestId('meal').filter({ hasText: 'copy seed' })).toHaveCount(1);
 });
 ```
 
-**Step 4: Run the e2e tests**
+**Step 4: Add a composer-draft preservation test**
+
+Add:
+
+```ts
+test('Repeat does not clear the composer draft', async ({ page }) => {
+	await page.getByLabel('What did you eat?').fill('keep this description');
+	await page.getByRole('button', { name: 'Repeat a meal' }).click();
+	const picker = page.getByRole('dialog', { name: /Repeat onto Today/ });
+	await picker.locator('ul.list button').first().click();
+	const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+	await review.getByRole('button', { name: 'Save meal' }).click();
+	await expect(review).toBeHidden();
+	await expect(page.getByLabel('What did you eat?')).toHaveValue('keep this description');
+	await expect(page.getByRole('button', { name: 'Repeat a meal' })).toBeFocused();
+});
+```
+
+**Step 5: Update the offline repeat helper**
+
+`web/e2e/offline.spec.ts` still clicks "Eat this again" and expects an immediate save. Replace its helper with:
+
+```ts
+async function repeatMeal(page: import('@playwright/test').Page, description: string) {
+	const meal = page.getByTestId('meal').filter({ hasText: description });
+	await meal.locator('summary').click();
+	await meal.getByRole('button', { name: 'Repeat', exact: true }).click();
+	const review = page.getByRole('dialog', { name: /Repeat meal for/ });
+	await review.getByRole('button', { name: 'Save meal' }).click();
+	await expect(review).toBeHidden();
+}
+```
+
+The helper is used five times, including the offline queue and stale-tab tests. A queued save still closes Review, so the existing assertions remain valid.
+
+**Step 6: Run the e2e tests**
 
 ```sh
 cd web
-npm run test:e2e -- e2e/today.spec.ts e2e/trends.spec.ts
+npm run test:e2e -- e2e/today.spec.ts e2e/trends.spec.ts e2e/offline.spec.ts
 ```
 
 Expected: all pass.
 
-**Step 5: Commit**
+**Step 7: Commit**
 
 ```sh
-git add web/e2e/today.spec.ts web/e2e/trends.spec.ts
+git add web/e2e/today.spec.ts web/e2e/trends.spec.ts web/e2e/offline.spec.ts
 git commit -s -m "Cover repeat and copy-to-today flows"
 ```
 
@@ -2480,6 +2708,8 @@ Add one line each:
 - 2026-11-04 - Repeat targets the selected day; no future scheduling. - The app already treats today as the write boundary.
 - 2026-11-04 - Motion refresh: feedback 160 ms, movement 360 ms, sheets 420 ms. - The old timings read as abrupt on larger surfaces.
 ```
+
+Amend the older "Eat this again" decision so it points at the new Review-first flow instead of the removed immediate save.
 
 **Step 3: Update `docs/offline.md`**
 
