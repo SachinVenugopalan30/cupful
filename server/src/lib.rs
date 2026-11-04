@@ -10,6 +10,7 @@ pub mod db;
 pub mod demo;
 pub mod error;
 pub mod google;
+mod history;
 pub mod ingest;
 pub mod nutrition;
 pub mod products;
