@@ -178,7 +178,7 @@
 						y={100 - (d.eaten_kcal / intakeMax) * 100}
 						width={0.7}
 						height={(d.eaten_kcal / intakeMax) * 100}
-						style:--i={Math.min(i, 40)}
+						style:--i={Math.min(i, 14)}
 						onpointerenter={() => (intakeSel = d)}
 						onpointerdown={() => (intakeSel = d)}
 						onclick={() => (intakeSel = d)}
@@ -298,7 +298,7 @@
 						y={100 - (d.steps / stepMax) * 100}
 						width={0.7}
 						height={(d.steps / stepMax) * 100}
-						style:--i={Math.min(i, 40)}
+						style:--i={Math.min(i, 14)}
 						onpointerenter={() => (stepSel = d)}
 						onpointerdown={() => (stepSel = d)}
 						onclick={() => (stepSel = d)}
@@ -370,12 +370,12 @@
 		background: var(--chart-budget);
 	}
 
-	/* Bars grow from the baseline with a 12 ms stagger. The delay is capped so 365 days stay fast. */
+	/* Bars grow from the baseline with a 16 ms stagger. The delay is capped so 365 days stay fast. */
 	.bars-svg .bar {
 		transform-box: fill-box;
 		transform-origin: bottom;
-		animation: grow-y 520ms var(--ease) both;
-		animation-delay: calc(var(--i) * 12ms);
+		animation: grow-y 760ms var(--ease) both;
+		animation-delay: calc(var(--i) * 16ms);
 		fill: var(--chart-intake);
 	}
 	.bars-svg .bar.over {
@@ -410,7 +410,7 @@
 	}
 	.weight-svg .area {
 		fill: color-mix(in srgb, var(--chart-weight) 14%, transparent);
-		animation: fade-in 450ms var(--ease) 300ms both;
+		animation: fade-in 600ms var(--ease) 120ms both;
 	}
 	@keyframes grow-y {
 		from {

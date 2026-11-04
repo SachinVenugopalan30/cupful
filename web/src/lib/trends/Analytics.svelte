@@ -164,8 +164,8 @@
 		height: 100%;
 		border-radius: var(--radius-pill);
 		transform-origin: left;
-		animation: grow-x 620ms var(--ease) both;
-		animation-delay: calc(var(--i) * 60ms);
+		animation: grow-x 760ms var(--ease) both;
+		animation-delay: calc(var(--i) * 80ms);
 	}
 	.balance-track i.protein {
 		background: var(--protein);
@@ -187,8 +187,8 @@
 		display: block;
 		height: 100%;
 		transform-origin: left;
-		animation: grow-x 620ms var(--ease) both;
-		animation-delay: calc(var(--i) * 60ms);
+		animation: grow-x 760ms var(--ease) both;
+		animation-delay: calc(var(--i) * 80ms);
 	}
 	.mix-bar i.breakfast,
 	.swatch.breakfast {

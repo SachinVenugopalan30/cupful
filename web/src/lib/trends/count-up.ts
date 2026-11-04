@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// The small easing behind the Trends headline count-up. 700 ms, ease-out cubic.
+// The small easing behind the Trends headline count-up. 800 ms, ease-out cubic.
 
 /** 0 → 1 with a fast start and a soft landing. */
 export function easeOutCubic(t: number): number {

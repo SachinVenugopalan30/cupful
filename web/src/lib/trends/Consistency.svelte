@@ -40,7 +40,7 @@
 		{#each c.cells as cell, i (cell.date)}
 			<i
 				class={cell.kind}
-				style:--i={Math.min(i, 40)}
+				style:--i={Math.min(i, 13)}
 				title="{shortDate(cell.date)}: {word(cell.kind)}"
 				aria-hidden="true"
 			></i>
@@ -87,8 +87,8 @@
 		aspect-ratio: 1;
 		border-radius: 0.1875rem;
 		background: var(--border);
-		animation: pop 280ms var(--ease) both;
-		animation-delay: calc(var(--i) * 14ms);
+		animation: fade-in 360ms var(--ease) both;
+		animation-delay: calc(var(--i) * 18ms);
 	}
 	.grid i.in {
 		background: var(--accent);
@@ -128,10 +128,10 @@
 	.swatch.unknown {
 		background: var(--border-strong);
 	}
-	@keyframes pop {
+	@keyframes fade-in {
 		from {
 			opacity: 0;
-			transform: scale(0.55);
+			transform: scale(0.94);
 		}
 		to {
 			opacity: 1;

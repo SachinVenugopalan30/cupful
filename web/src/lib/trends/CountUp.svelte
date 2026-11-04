@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  CountUp — a headline number that counts from zero to its value over 700 ms on mount.
+  CountUp — a headline number that counts from zero to its value over 800 ms on mount.
   Trends remounts its content when the range changes, so the count runs again there.
   Reduced motion jumps straight to the value. The width is reserved for the final text so
   the count never shifts the layout.
@@ -33,7 +33,7 @@
 		let frame = 0;
 		const start = performance.now();
 		const tick = (now: number) => {
-			const progress = Math.min(1, (now - start) / 700);
+			const progress = Math.min(1, (now - start) / 800);
 			shown = countValue(0, value, progress);
 			if (progress < 1) frame = requestAnimationFrame(tick);
 		};
