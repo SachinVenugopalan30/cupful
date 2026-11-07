@@ -180,8 +180,17 @@
 					<input id="p-pace" type="number" inputmode="decimal" min="0" max={f.weight_unit === 'kg' ? 1 : 2.2}
 						step={f.weight_unit === 'kg' ? 0.05 : 0.1} bind:value={f.pace}
 						aria-invalid={invalid('pace')} aria-describedby={describe('pace', 'p-pace-hint')} />
-					<p id="p-pace-hint" class="hint">How fast to lose weight; 0 to maintain. Up to {f.weight_unit === 'kg' ? '1 kg' : '2.2 lb'} a week.</p>
+					<p id="p-pace-hint" class="hint">How fast to lose weight; 0 to maintain. Ignored while a daily goal is set.</p>
 					{#if errors.pace}<p id="pace-err" class="err">{errors.pace}</p>{/if}
+				</div>
+
+				<div class="field">
+					<label for="p-calorie-goal">Daily calorie goal (kcal, optional)</label>
+					<input id="p-calorie-goal" type="number" inputmode="numeric" min="500" max="10000" step="1"
+						bind:value={f.calorie_goal}
+						aria-invalid={invalid('calorie_goal')} aria-describedby={describe('calorie_goal', 'p-calorie-goal-hint')} />
+					<p id="p-calorie-goal-hint" class="hint">Leave blank to calculate from your profile and activity. A number is used every day.</p>
+					{#if errors.calorie_goal}<p id="calorie_goal-err" class="err">{errors.calorie_goal}</p>{/if}
 				</div>
 
 				<div class="field">
