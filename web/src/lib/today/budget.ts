@@ -5,20 +5,26 @@
 import type { Budget, BudgetFlag, Macros } from '../api';
 import { formatWeight, type WeightUnit } from '../format';
 
-const FLAGS: Record<BudgetFlag, string> = {
-	provisional: 'No steps logged yet — using your typical steps. The budget updates when you add them.',
-	deficit_capped: "Your weekly pace would cut more than 25 % of maintenance, so today's deficit is capped at 25 %.",
-	floor_applied: 'The budget is raised to the daily minimum (the floor), so the deficit is smaller today.',
-	floor_above_maintenance:
+type FlagMessage = (b: Budget) => string;
+
+const FLAGS: Record<BudgetFlag, FlagMessage> = {
+	provisional: () =>
+		'No steps logged yet — using your typical steps. The budget updates when you add them.',
+	deficit_capped: () =>
+		"Your weekly pace would cut more than 25 % of maintenance, so today's deficit is capped at 25 %.",
+	floor_applied: () =>
+		'The budget is raised to the daily minimum (the floor), so the deficit is smaller today.',
+	floor_above_maintenance: () =>
 		"The minimum floor is above what you burn today, so no deficit is planned today.",
-	macros_overcommitted:
+	macros_overcommitted: () =>
 		"Protein takes up most of today's budget, so there's no room set aside for carbs. Fat gets what's left.",
-	below_floor: 'Your calorie goal is below the daily minimum (the floor).',
-	maintenance_provisional:
-		'No steps logged yet — using your typical steps, so the gap to your calorie goal is provisional.'
+	below_floor: (b) =>
+		`Your goal is below ${num(b.floor)} kcal, the minimum the automatic budget uses.`,
+	maintenance_provisional: () =>
+		'No steps logged yet, so maintenance and the gap are estimated from your typical steps. Your goal is unaffected.'
 };
 
-export const flagMessages = (flags: BudgetFlag[]) => flags.map((f) => FLAGS[f]);
+export const flagMessages = (b: Budget) => b.flags.map((f) => FLAGS[f](b));
 
 /** Whole kcal left (or over) of `budget`. Rounded first, so 0.2 over reads "0 left". */
 export function leftOver(eatenKcal: number, budget: number) {
@@ -55,6 +61,33 @@ const num = (x: number) => x.toLocaleString('en-US');
 
 /** Every term of the server's calculation, in order, with a one-line explanation. */
 export function breakdown(b: Budget, unit: WeightUnit = 'kg') {
+	if (b.manual) {
+		const gap = b.gap ?? 0;
+		const amount = num(Math.abs(gap));
+		const value =
+			gap > 0 ? `${amount} kcal under maintenance` : gap < 0 ? `${amount} kcal over maintenance` : 'at maintenance';
+		const estimated = b.flags.includes('maintenance_provisional');
+		return [
+			{ label: 'Weight used', value: formatWeight(b.weight_kg, unit), note: 'Your latest weigh-in on or before this day, else your start weight.' },
+			{ label: 'Age', value: String(b.age), note: 'This year minus your birth year (can be a year off).' },
+			{ label: 'BMR', value: `${num(b.bmr)} kcal`, note: 'Energy at rest, from the Mifflin–St Jeor formula.' },
+			{ label: 'Base', value: `${num(b.base)} kcal`, note: 'BMR × 1.2, for everyday light movement.' },
+			{ label: 'Steps used', value: num(b.steps), note: "This day's steps, or your typical steps if none are logged." },
+			{ label: 'Steps kcal', value: `${num(b.steps_kcal)} kcal`, note: 'Extra burn from steps beyond the first 2,500.' },
+			{ label: 'MET', value: String(b.met), note: 'Workout intensity: 5 for weight training, 7 for cardio only.' },
+			{ label: 'Gym kcal', value: `${num(b.gym_kcal)} kcal`, note: 'Extra burn from gym minutes at that intensity.' },
+			{ label: 'Maintenance', value: `${num(b.maintenance)} kcal`, note: 'Base + steps + gym: what keeps your weight steady.' },
+			{ label: 'Your goal', value: `${num(b.budget)} kcal`, note: 'The daily goal you set. Activity does not change it.' },
+			{ label: 'Floor', value: `${num(b.floor)} kcal`, note: 'The minimum the automatic budget uses. Your goal can go below it.' },
+			{
+				label: 'Gap to maintenance',
+				value: estimated && gap !== 0 ? `~${value}` : value,
+				note: estimated
+					? 'Estimated from your typical steps. Positive is under maintenance, negative is over.'
+					: 'Maintenance minus your goal. Positive is under maintenance, negative is over.'
+			}
+		];
+	}
 	return [
 		{ label: 'Weight used', value: formatWeight(b.weight_kg, unit), note: 'Your latest weigh-in on or before this day, else your start weight.' },
 		{ label: 'Age', value: String(b.age), note: 'This year minus your birth year (can be a year off).' },

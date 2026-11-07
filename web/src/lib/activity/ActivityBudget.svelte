@@ -12,14 +12,25 @@
 </script>
 
 {#if budget}
-	<p class="added card" data-testid="activity-budget">
-		<span class="lead">Added to this day's budget</span>
-		<span class="terms">
-			<span>Steps <span class="num">+{formatKcal(budget.steps_kcal)}</span> kcal</span>
-			<span>Gym <span class="num">+{formatKcal(budget.gym_kcal)}</span> kcal</span>
-			<span>= <span class="num strong">{formatKcal(budget.budget)}</span> kcal budget</span>
-		</span>
-	</p>
+	{#if budget.manual}
+		<p class="added card" data-testid="activity-budget">
+			<span class="lead">Burned beyond base</span>
+			<span class="terms">
+				<span>Steps <span class="num">+{formatKcal(budget.steps_kcal)}</span> kcal</span>
+				<span>Gym <span class="num">+{formatKcal(budget.gym_kcal)}</span> kcal</span>
+				<span>Goal <span class="num strong">{formatKcal(budget.budget)}</span> kcal</span>
+			</span>
+		</p>
+	{:else}
+		<p class="added card" data-testid="activity-budget">
+			<span class="lead">Added to this day's budget</span>
+			<span class="terms">
+				<span>Steps <span class="num">+{formatKcal(budget.steps_kcal)}</span> kcal</span>
+				<span>Gym <span class="num">+{formatKcal(budget.gym_kcal)}</span> kcal</span>
+				<span>= <span class="num strong">{formatKcal(budget.budget)}</span> kcal budget</span>
+			</span>
+		</p>
+	{/if}
 {/if}
 
 <style>
