@@ -195,9 +195,11 @@ a manual goal like any other budget.
 Add cases to `fixtures/budget_cases.json`, which the existing harness checks key by key:
 
 - Manual 1,800 with steps and gym: budget 1,800, manual true, deficit 0, gap 962, no auto flags.
-- Manual 1,800 on a rest day (0 steps, 0 gym): budget 1,800, gap larger, no auto flags.
+- Manual 1,800 on the same profile and weight as the first case, with 0 steps and 0 gym: budget
+  1,800, gap 300, no auto flags.
 - Manual 1,000 for a female profile: below_floor, gap positive.
-- Manual 500 for a male profile: below_floor, macros_overcommitted, fat 0, carbs 0.
+- Manual 500 for a male profile with `goal_kg: 80`: below_floor, macros_overcommitted, fat 0,
+  carbs 0. Protein is 128 g (512 kcal), so fat has no room. With `goal_kg: 75`, fat would be 2.2 g.
 - Manual above maintenance: negative gap, no below_floor.
 - Manual with no steps: maintenance_provisional, no provisional, goal unchanged.
 
@@ -243,8 +245,8 @@ weigh-in." Reuse the existing session.
 - With no goal, every budget value and flag is identical to today's output.
 - With 1,800 kcal set, Today shows 1,800 on a rest day, a 10,000-step day and a gym day.
 - Past days keep the goal that was effective on them.
-- 500 kcal for a male profile is accepted, shows the below-floor warning, and produces 0 g fat and
-  carbs with `macros_overcommitted`.
+- 500 kcal for a male profile with `goal_kg: 80` is accepted, shows the below-floor warning, and
+  produces 0 g fat and carbs with `macros_overcommitted`.
 - 499 and 10,001 are rejected with a 400, and a fractional value with a 422. All carry
   `{"error": ...}`.
 - The Activity line and weigh-in caption are correct in manual mode.
