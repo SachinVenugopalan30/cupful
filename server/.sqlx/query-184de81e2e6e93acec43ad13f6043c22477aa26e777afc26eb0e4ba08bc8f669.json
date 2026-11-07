@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,\n                pace_kg_per_week, typical_steps\n         FROM profile_versions WHERE user_id = ? ORDER BY effective_from",
+  "query": "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,\n                pace_kg_per_week, typical_steps, calorie_goal\n         FROM profile_versions WHERE user_id = ? ORDER BY effective_from",
   "describe": {
     "columns": [
       {
@@ -90,6 +90,17 @@
             "name": "typical_steps"
           }
         }
+      },
+      {
+        "name": "calorie_goal",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "profile_versions",
+            "name": "calorie_goal"
+          }
+        }
       }
     ],
     "parameters": {
@@ -103,8 +114,9 @@
       false,
       true,
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "45b3617232ebc572d5611ba227adb60731046cafdda1c710f440c39e16214d63"
+  "hash": "184de81e2e6e93acec43ad13f6043c22477aa26e777afc26eb0e4ba08bc8f669"
 }

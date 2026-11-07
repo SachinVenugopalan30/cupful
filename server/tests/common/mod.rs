@@ -196,7 +196,8 @@ pub fn profile_body() -> serde_json::Value {
     serde_json::json!({
         "timezone": "Asia/Kolkata", "weight_unit": "kg", "height_unit": "cm",
         "sex": "male", "birth_year": 1990, "height_cm": 180.0, "start_weight_kg": 85.0,
-        "goal_kg": 75.0, "pace_kg_per_week": 0.5, "typical_steps": 8000
+        "goal_kg": 75.0, "pace_kg_per_week": 0.5, "typical_steps": 8000,
+        "calorie_goal": null
     })
 }
 
