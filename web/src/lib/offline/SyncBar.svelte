@@ -21,7 +21,8 @@
 
 	/** `auth` needs a new sign-in; `identity` means the queue belongs to another account. */
 	const paused = $derived(connection.paused === 'auth' || connection.paused === 'identity');
-	const offline = $derived(!connection.online || connection.paused === 'offline');
+	// A failed request is not proof: a boot-time blip can recover in a second. The probe confirms.
+	const offline = $derived(connection.confirmedOffline);
 	const attention = $derived(connection.failed > 0);
 	const show = $derived(offline || paused || attention || connection.pending > 0);
 	const waiting = $derived(

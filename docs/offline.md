@@ -75,9 +75,9 @@ This is stronger than keying rows by user id. User-keyed rows keep one account's
 
 The app does not trust `navigator.onLine`. On Android it can stay false for a while after a VPN such as Tailscale comes up, and stay true while DNS is not ready. A request that reaches the server is the only proof of a connection.
 
-Reads and writes mark the app online when the server answers. They mark it offline only when a request cannot reach the server at all, not on an HTTP error. A failed request starts a probe of `GET /api/health` after 1, 2, 4 and then 5 seconds. The probe also runs at once when the app returns to the foreground, on `pageshow`, and on the browser's `online` event. Its timer stops while the app is hidden.
+Reads and writes mark the app online when the server answers. They mark it offline only when a request cannot reach the server at all, not on an HTTP error. A failed request starts a probe of `GET /api/health` after 1, 2, 4 and then 5 seconds. The probe also runs at once when the app returns to the foreground, on `pageshow`, and on the browser's `online` and `offline` events. Those events are only hints; they probe, and a failed probe is what marks the app offline. Its timer stops while the app is hidden.
 
-A successful probe flushes the queue, confirms the session, and bumps the data version so the mounted screens refetch. If the session expired, the queue pauses with the sign-in prompt instead of a background read redirecting to login. The read cache still serves instantly once a request has failed; the first read after a cold start tries the network for up to 4 seconds.
+A successful probe flushes the queue, confirms the session, and bumps the data version so the mounted screens refetch. If the session expired, the queue pauses with the sign-in prompt instead of a background read redirecting to login. The status bar only says offline after a probe has failed, so a single boot-time blip does not flash above the content. The read cache still serves instantly once a request has failed; the first read after a cold start tries the network for up to 4 seconds.
 
 ## The read cache
 

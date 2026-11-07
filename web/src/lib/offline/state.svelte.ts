@@ -8,6 +8,7 @@ import type { Pause, QueuedOp } from './types.ts';
 export const connection = $state({
 	// Optimistic until a request fails. `navigator.onLine` can lag behind a VPN coming up.
 	online: true,
+	confirmedOffline: false,
 	paused: null as Pause,
 	pending: 0,
 	failed: 0,

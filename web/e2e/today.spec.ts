@@ -217,6 +217,12 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByRole('heading', { name: 'Log a meal' })).toBeVisible();
 		await expect(page.getByTestId('sync-bar')).toHaveCount(0);
 	});
+
+	test('does not flash offline when the browser reports a blip', async ({ page }) => {
+		await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+		await page.waitForTimeout(2_000);
+		await expect(page.getByTestId('sync-bar')).toHaveCount(0);
+	});
 });
 
 test.describe('with a mock AI provider', () => {

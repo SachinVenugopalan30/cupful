@@ -32,6 +32,7 @@ function resetBackoff(): void {
 export function markOnline(): void {
 	const was = connection.online;
 	connection.online = true;
+	connection.confirmedOffline = false;
 	if (connection.paused === 'offline') connection.paused = null;
 	resetBackoff();
 	if (was) return;
@@ -42,9 +43,14 @@ export function markOnline(): void {
 
 /** Only call this when a request could not reach the server at all. */
 export function markOffline(): void {
-	connection.online = false;
-	if (connection.paused === null) connection.paused = 'offline';
+	setOffline(false);
 	scheduleProbe();
+}
+
+function setOffline(confirmed: boolean): void {
+	connection.online = false;
+	if (confirmed) connection.confirmedOffline = true;
+	if (connection.paused === null) connection.paused = 'offline';
 }
 
 /** Runs `fn` after the offline -> online transition. Returns an unsubscribe. */
@@ -91,6 +97,7 @@ export async function probeNow(): Promise<boolean> {
 			markOnline();
 			return true;
 		}
+		setOffline(true);
 		scheduleProbe();
 		return false;
 	} finally {
@@ -116,7 +123,11 @@ export function initConnectivity(): void {
 		resetBackoff();
 		void probeNow();
 	});
-	window.addEventListener('offline', markOffline);
+	window.addEventListener('offline', () => {
+		// The browser hint can be wrong. A failed probe is the proof.
+		resetBackoff();
+		void probeNow();
+	});
 	window.addEventListener('pageshow', onWake);
 	document.addEventListener('visibilitychange', onWake);
 	if (!connection.online) scheduleProbe();

@@ -7,12 +7,14 @@ const ok = () => new Response('{}', { status: 200 });
 
 beforeEach(() => {
 	connection.online = true;
+	connection.confirmedOffline = false;
 	connection.paused = null;
 });
 
 afterEach(() => {
 	vi.unstubAllGlobals();
 	connection.online = true;
+	connection.confirmedOffline = false;
 	connection.paused = null;
 });
 
@@ -25,6 +27,7 @@ describe('markOnline', () => {
 		markOnline();
 
 		expect(connection.online).toBe(true);
+		expect(connection.confirmedOffline).toBe(false);
 		expect(woken).toHaveBeenCalledOnce();
 
 		markOnline();
@@ -59,6 +62,7 @@ describe('markOffline', () => {
 		markOffline();
 
 		expect(connection.online).toBe(false);
+		expect(connection.confirmedOffline).toBe(false);
 		expect(connection.paused).toBe('offline');
 	});
 });
@@ -88,5 +92,6 @@ describe('probeNow', () => {
 
 		expect(await probeNow()).toBe(false);
 		expect(connection.online).toBe(false);
+		expect(connection.confirmedOffline).toBe(true);
 	});
 });
