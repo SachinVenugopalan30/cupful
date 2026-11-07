@@ -138,15 +138,18 @@ Add a field after Pace:
   - "Your goal": the goal.
   - "Gap to maintenance": `420 kcal under maintenance`, `120 kcal over maintenance` or
     `at maintenance`.
+- In manual mode the Floor row's note reads "The minimum the automatic budget uses. Your goal can
+  go below it." The automatic note stays "A conventional minimum the budget never goes below."
 - When `maintenance_provisional` is set, the gap value is prefixed with `~` and its note says it is
   estimated from typical steps.
 - New flag messages:
-  - `below_floor`: "Your goal is below 1,200 kcal, the minimum the automatic budget uses." The
-    number is read from `b.floor`, so `flagMessages` takes the budget rather than the flag list.
+  - `below_floor`: "Your goal is below ${floor} kcal, the minimum the automatic budget uses."
+    The number is read from `b.floor`.
   - `maintenance_provisional`: "No steps logged yet, so maintenance and the gap are estimated from
     your typical steps. Your goal is unaffected."
-- `FLAGS` stays a `Record<BudgetFlag, string>`, so the new union members force both messages to
-  exist. `flagMessages` replaces the below-floor string with the floor number.
+- `FLAGS` becomes `Record<BudgetFlag, (b: Budget) => string>`, so every flag still has a message and
+  `below_floor` can read the floor directly. `flagMessages(b: Budget)` maps the flag list.
+  `BudgetCard.svelte` changes its call from `flagMessages(b.flags)` to `flagMessages(b)`.
 
 ### Activity
 
@@ -192,8 +195,9 @@ a manual goal like any other budget.
 Add cases to `fixtures/budget_cases.json`, which the existing harness checks key by key:
 
 - Manual 1,800 with steps and gym: budget 1,800, manual true, deficit 0, gap 962, no auto flags.
+- Manual 1,800 on a rest day (0 steps, 0 gym): budget 1,800, gap larger, no auto flags.
 - Manual 1,000 for a female profile: below_floor, gap positive.
-- Manual 500: macros_overcommitted, fat 0, carbs 0.
+- Manual 500 for a male profile: below_floor, macros_overcommitted, fat 0, carbs 0.
 - Manual above maintenance: negative gap, no below_floor.
 - Manual with no steps: maintenance_provisional, no provisional, goal unchanged.
 
@@ -207,21 +211,25 @@ default keeps automatic mode unchanged.
   and 1,800.5 answers 422. All three carry `{"error": ...}`.
 - Insert a version for yesterday with one goal using SQL, as `tests/profile.rs:48` does, save today
   with another goal, and confirm `GET /api/budget/{yesterday}` still uses the yesterday goal.
-- Backup: new field round-trips; a document without the field restores as `None`.
+- Backup: new field round-trips; a document without the field restores as `None`; a document with
+  `calorie_goal: 499` is rejected.
 - No isolation test is needed because no route is added.
 
 ### Frontend
 
 - `profile.test.ts`: form shows and saves the goal; blank is `null`; 1,800.5, 499 and 10,001 are
   rejected with the field error.
-- `budget.test.ts`: both new flag messages exist; manual breakdown shows goal, floor and the signed
-  gap; the gap gets `~` when maintenance is provisional; the automatic breakdown is unchanged.
+- `budget.test.ts`: `flagMessages(budget)` includes both new messages; manual breakdown shows goal,
+  floor and the signed gap; the gap gets `~` when maintenance is provisional; the automatic
+  breakdown is unchanged.
 - `ActivityBudget` behavior is covered by the E2E test.
 
 ### E2E
 
 One Settings → Profile test: set a goal, see the goal in the Today header and the gap in "How it's
-worked out", then clear it and see the automatic plan return. Reuse the existing session.
+worked out", open Activity and see "Burned beyond base" with the goal, then clear it and see the
+automatic plan return. Also assert the weigh-in caption "Used from this day until your next
+weigh-in." Reuse the existing session.
 
 ## Docs
 
@@ -235,8 +243,8 @@ worked out", then clear it and see the automatic plan return. Reuse the existing
 - With no goal, every budget value and flag is identical to today's output.
 - With 1,800 kcal set, Today shows 1,800 on a rest day, a 10,000-step day and a gym day.
 - Past days keep the goal that was effective on them.
-- 500 kcal is accepted, shows the below-floor warning, and produces 0 g fat and carbs with
-  `macros_overcommitted`.
+- 500 kcal for a male profile is accepted, shows the below-floor warning, and produces 0 g fat and
+  carbs with `macros_overcommitted`.
 - 499 and 10,001 are rejected with a 400, and a fractional value with a 422. All carry
   `{"error": ...}`.
 - The Activity line and weigh-in caption are correct in manual mode.
