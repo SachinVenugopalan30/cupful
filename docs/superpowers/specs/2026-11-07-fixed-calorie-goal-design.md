@@ -1,6 +1,6 @@
 # Fixed daily calorie goal
 
-Status: design approved, ready for a plan.
+Status: revised after spec review.
 
 ## Problem
 
@@ -37,6 +37,8 @@ budget as the fallback when no goal is set.
 - `deficit` keeps its current meaning: the automatic planned cut. In manual mode it is `0`.
   A separate `gap` field carries `maintenance - goal` in manual mode, and is `null` in automatic
   mode.
+- `manual` is explicit rather than inferred from `gap !== null`, so the client does not depend on
+  the gap being present.
 - The gap and maintenance are estimates when no steps are logged. The goal is not.
 - An older cached client that saves the profile without `calorie_goal` clears it. This is
   acceptable on a self-hosted single-user instance and is noted in `docs/decisions.md`.
@@ -51,10 +53,10 @@ ALTER TABLE profile_versions ADD COLUMN calorie_goal INTEGER;
 
 - `ProfileVersion.calorie_goal: Option<i64>` with `#[serde(default)]`. Existing fixtures and older
   rows read as `None`.
-- `ProfileIn.calorie_goal: Option<f64>`. The server checks that it is whole, then checks
-  `500..=10_000`, and answers 400 through the existing error type when it is outside the range.
-  The input is `f64` only so a fractional value gets a clear 400. Axum maps an `i64` type mismatch
-  to 422. The checked value is cast to `i64` for storage. This is noted in `docs/decisions.md`.
+- `ProfileIn.calorie_goal: Option<i64>`. The server checks `500..=10_000` and answers 400 through
+  the existing error type when it is outside the range. A fractional value is a serde type
+  mismatch and gets Axum's 422, like `birth_year` and `typical_steps`. The body is still
+  `{"error": ...}`.
 - All profile version queries include the field:
   - `server/src/profile.rs`: select and insert.
   - `server/src/transfer/backup/export.rs`: select.
@@ -107,9 +109,10 @@ serializer is unchanged. In automatic mode `manual` is `false` and `gap` is `nul
 `PUT /api/profile` accepts `calorie_goal` as an integer or `null`. Validation happens with the
 other profile checks and reuses the existing 400 error shape.
 
-`GET /api/budget/{date}` and `/api/trends` carry the new `manual` and `gap` fields through the
-existing serializers. `budget_kcal` in Trends is already whatever `compute` returns, so a manual
-goal flows into averages, consistency and the charts without further changes.
+`GET /api/budget/{date}` carries the new `manual` and `gap` fields through the existing serializer.
+`/api/trends` builds its days by hand and only exposes `budget_kcal`, which is already whatever
+`compute` returns. A manual goal therefore flows into averages, consistency and the charts without
+further changes.
 
 ## Frontend
 
@@ -138,10 +141,12 @@ Add a field after Pace:
 - When `maintenance_provisional` is set, the gap value is prefixed with `~` and its note says it is
   estimated from typical steps.
 - New flag messages:
-  - `below_floor`: "Your goal is below the daily floor used by the automatic budget."
+  - `below_floor`: "Your goal is below 1,200 kcal, the minimum the automatic budget uses." The
+    number is read from `b.floor`, so `flagMessages` takes the budget rather than the flag list.
   - `maintenance_provisional`: "No steps logged yet, so maintenance and the gap are estimated from
     your typical steps. Your goal is unaffected."
-- `FLAGS` is `Record<BudgetFlag, string>`, so the new union members force both messages to exist.
+- `FLAGS` stays a `Record<BudgetFlag, string>`, so the new union members force both messages to
+  exist. `flagMessages` replaces the below-floor string with the floor number.
 
 ### Activity
 
@@ -151,10 +156,20 @@ Add a field after Pace:
 - Manual: lead "Burned beyond base", then `Steps +X kcal`, `Gym +Y kcal` and `Goal Z kcal`. It does
   not say the steps and gym add to the budget.
 
-The weigh-in caption changes to "Used from this day until your next weigh-in." in both modes. It is
-accurate whether the weigh-in changes the budget or only maintenance and protein.
+The weigh-in caption in `ActivitySection.svelte:406` changes to "Used from this day until your next
+weigh-in." in both modes. It is accurate whether the weigh-in changes the budget or only maintenance
+and protein.
 
 `docs/design.md` updates the compact-card sentence to describe both modes.
+
+### Types
+
+`web/src/lib/api/types.ts` adds:
+
+- `ProfileVersion.calorie_goal: number | null`. `ProfileIn` inherits it through the existing
+  `Omit`.
+- `Budget.manual: boolean` and `Budget.gap: number | null`.
+- `BudgetFlag` members `below_floor` and `maintenance_provisional`.
 
 ### Trends and reads
 
@@ -182,15 +197,16 @@ Add cases to `fixtures/budget_cases.json`, which the existing harness checks key
 - Manual above maintenance: negative gap, no below_floor.
 - Manual with no steps: maintenance_provisional, no provisional, goal unchanged.
 
-The existing 17 cases have no `calorie_goal` key and prove the serde default keeps automatic mode
-unchanged.
+Add `"manual": false, "gap": null` to at least one existing automatic case, because the harness
+only checks the keys a case lists. The other 16 cases have no `calorie_goal` key and prove the serde
+default keeps automatic mode unchanged.
 
 ### Backend
 
-- Profile route: save 1,800, read it back; save `null`, read it back; 499, 10,001 and 1,800.5
-  answer 400 with the JSON error shape.
-- Save a version yesterday with one goal, save today with another, and confirm the yesterday
-  version keeps its goal through the backup export.
+- Profile route: save 1,800, read it back; save `null`, read it back; 499 and 10,001 answer 400,
+  and 1,800.5 answers 422. All three carry `{"error": ...}`.
+- Insert a version for yesterday with one goal using SQL, as `tests/profile.rs:48` does, save today
+  with another goal, and confirm `GET /api/budget/{yesterday}` still uses the yesterday goal.
 - Backup: new field round-trips; a document without the field restores as `None`.
 - No isolation test is needed because no route is added.
 
@@ -221,7 +237,8 @@ worked out", then clear it and see the automatic plan return. Reuse the existing
 - Past days keep the goal that was effective on them.
 - 500 kcal is accepted, shows the below-floor warning, and produces 0 g fat and carbs with
   `macros_overcommitted`.
-- 499, 10,001 and a fractional value are rejected with a 400 and `{"error": ...}`.
+- 499 and 10,001 are rejected with a 400, and a fractional value with a 422. All carry
+  `{"error": ...}`.
 - The Activity line and weigh-in caption are correct in manual mode.
 - Backup and restore preserve the goal, including old backups without the field.
 - Backend, Vitest, svelte-check, build and Playwright are green.
