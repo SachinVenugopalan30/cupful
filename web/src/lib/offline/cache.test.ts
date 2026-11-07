@@ -8,6 +8,7 @@ import {
 	isCacheable,
 	putCachedBody
 } from './cache.ts';
+import { connection } from './state.svelte.ts';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -19,6 +20,8 @@ function json(body: unknown, status = 200): Response {
 afterEach(async () => {
 	vi.useRealTimers();
 	vi.unstubAllGlobals();
+	connection.online = true;
+	connection.paused = null;
 	await clearUserCache(9101);
 	await clearUserCache(9102);
 });
@@ -76,11 +79,11 @@ describe('cachedGetJson', () => {
 		expect(await cachedGetJson('/api/days/2026-10-29', 9101)).toEqual({ steps: 777 });
 	});
 
-	it('serves the cache without fetching when the browser is offline', async () => {
+	it('serves the cache without fetching when a request already failed', async () => {
 		await putCachedBody(9101, '/api/days/2026-10-29', { steps: 321 });
 		const fetchMock = vi.fn();
 		vi.stubGlobal('fetch', fetchMock);
-		vi.stubGlobal('navigator', { onLine: false });
+		connection.online = false;
 
 		expect(await cachedGetJson('/api/days/2026-10-29', 9101)).toEqual({ steps: 321 });
 		expect(fetchMock).not.toHaveBeenCalled();
@@ -88,7 +91,7 @@ describe('cachedGetJson', () => {
 
 	it('says the page is not saved yet when offline with no cache', async () => {
 		vi.stubGlobal('fetch', vi.fn());
-		vi.stubGlobal('navigator', { onLine: false });
+		connection.online = false;
 
 		await expect(cachedGetJson('/api/days/2026-10-29', 9101)).rejects.toThrow(/offline/i);
 	});

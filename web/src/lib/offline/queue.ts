@@ -19,6 +19,7 @@ import {
 	putQueueItems
 } from './db.ts';
 import { putCachedBody } from './cache.ts';
+import { markOffline, markOnline, onReachable } from './connectivity.ts';
 import { overlayDay, overlayMeals } from './overlay.ts';
 import { connection, dataVersion, queueState } from './state.svelte.ts';
 import type { QueuedOp } from './types.ts';
@@ -27,14 +28,15 @@ const CHUNK = 100;
 const BACKOFF_START = 1_000;
 const BACKOFF_MAX = 60_000;
 
-let onlineHandler: (() => void) | null = null;
+let unsubscribeReachable: (() => void) | null = null;
+let recovered = false;
 // ponytail: backoff lives in memory; a reload starts at 1s again, which is fine for a retry timer.
 let backoffTimer: ReturnType<typeof setTimeout> | null = null;
 let backoffMs = 0;
 let serial: Promise<unknown> = Promise.resolve();
 
 function isOnline(): boolean {
-	return typeof navigator === 'undefined' || navigator.onLine !== false;
+	return connection.online;
 }
 
 function cancelBackoff(): void {
@@ -75,26 +77,23 @@ export async function start(userId: number): Promise<void> {
 	cancelBackoff();
 	await refresh(userId);
 
-	if (!onlineHandler && typeof window !== 'undefined') {
-		onlineHandler = () => {
-			connection.online = true;
+	if (unsubscribeReachable === null) {
+		unsubscribeReachable = onReachable(() => {
+			recovered = true;
 			cancelBackoff();
 			if (connection.activeUserId !== null) void flush(connection.activeUserId);
-		};
-		window.addEventListener('online', onlineHandler);
+		});
 	}
 
 	if (isOnline()) void flush(userId).catch(() => {});
-	else connection.paused = 'offline';
+	else markOffline();
 }
 
 /** Stops timers and detaches this session's queue. */
 export function stop(): void {
 	cancelBackoff();
-	if (onlineHandler && typeof window !== 'undefined') {
-		window.removeEventListener('online', onlineHandler);
-	}
-	onlineHandler = null;
+	unsubscribeReachable?.();
+	unsubscribeReachable = null;
 	connection.activeUserId = null;
 	connection.paused = null;
 	queueState.ops = [];
@@ -265,6 +264,7 @@ async function postChunk(ops: Op[]): Promise<SendOutcome> {
 	} catch {
 		return { kind: 'network' };
 	}
+	markOnline();
 
 	if (res.status === 401) return { kind: 'auth' };
 	if (res.status === 429 || res.status >= 500) return { kind: 'network' };
@@ -318,6 +318,8 @@ async function applyResult(
 
 async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 	const results = new Map<string, OpResult>();
+	const recovering = recovered;
+	recovered = false;
 	if (!isOnline()) {
 		connection.paused = 'offline';
 		await refresh(userId);
@@ -330,6 +332,23 @@ async function doFlush(userId: number): Promise<Map<string, OpResult>> {
 		(o) => o.status === 'pending' || o.status === 'failed'
 	);
 	if (!ops.length) {
+		// Coming back from offline: confirm the session before waking the screens. An expired
+		// session should show the queue's sign-in prompt, not a read that redirects to login.
+		if (recovering) {
+			const identity = await identityMatches(userId);
+			if (identity === 'auth' || identity === 'identity') {
+				connection.paused = identity;
+				await refresh(userId);
+				return results;
+			}
+			if (identity === 'network') {
+				connection.paused = 'offline';
+				scheduleBackoff();
+				await refresh(userId);
+				return results;
+			}
+			dataVersion.n++;
+		}
 		if (connection.paused === 'offline') connection.paused = null;
 		await refresh(userId);
 		return results;

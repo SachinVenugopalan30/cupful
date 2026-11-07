@@ -162,3 +162,4 @@ One line per deviation from the design or notable choice: date - what - why.
 - 2026-11-04 - Meal history is the repeat library; there is no saved-meal table. - Grouping by normalized description is enough for the first version and avoids a new entity.
 - 2026-11-04 - Repeat targets the selected day only; no future scheduling. - The app already treats today as the write boundary.
 - 2026-11-04 - Motion refresh: feedback 160 ms, movement 360 ms, sheets 420 ms in, 200 ms out. - The old timings read as abrupt on larger surfaces.
+- 2026-11-07 - Reachability comes from real requests and a `/api/health` probe, not `navigator.onLine`. - Android reports offline while a Tailscale VPN is still coming up, which left the installed PWA stuck on the offline banner until a late browser event or a reload.

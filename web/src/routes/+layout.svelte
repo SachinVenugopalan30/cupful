@@ -8,7 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { loadSession, redirectFor, session } from '#lib/session.svelte.ts';
-	import { initConnection } from '#lib/offline/state.svelte.ts';
+	import { initConnectivity } from '#lib/offline/connectivity.ts';
 	import { initUpdatePrompt } from '#lib/offline/update.svelte.ts';
 	import SyncBar from '#lib/offline/SyncBar.svelte';
 	import UpdateBanner from '#lib/offline/UpdateBanner.svelte';
@@ -17,7 +17,7 @@
 	let { children }: { children: Snippet } = $props();
 
 	onMount(() => {
-		initConnection();
+		initConnectivity();
 		initUpdatePrompt();
 	});
 

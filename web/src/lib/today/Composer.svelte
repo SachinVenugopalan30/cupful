@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
 	import { ApiError, errorMessage, estimate, type HistoryMeal } from '#lib/api.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { defaultMealType } from '#lib/products/logic.ts';
 	import { today } from '#lib/session.svelte.ts';
 	import Review from './Review.svelte';
@@ -69,7 +70,7 @@
 		failure = null;
 		const text = description.trim();
 		if (!text) return void (failure = { code: 'empty', message: 'Describe the meal first, even with a photo.' });
-		if (!navigator.onLine) {
+		if (!connection.online) {
 			failure = { code: 'offline', message: errorMessage(new TypeError('offline'), 'estimate') };
 			return;
 		}

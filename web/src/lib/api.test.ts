@@ -18,8 +18,13 @@ import {
 import { CacheHttpError } from './offline/cache.ts';
 
 const mocks = vi.hoisted(() => ({
-	connection: { activeUserId: null as number | null },
+	connection: {
+		activeUserId: null as number | null,
+		online: true,
+		paused: null as string | null
+	},
 	queueState: { ops: [] as unknown[] },
+	dataVersion: { n: 0 },
 	cachedGetJson: vi.fn(),
 	overlayMeals: vi.fn(),
 	overlayDay: vi.fn()
@@ -27,7 +32,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./offline/state.svelte.ts', () => ({
 	connection: mocks.connection,
-	queueState: mocks.queueState
+	queueState: mocks.queueState,
+	dataVersion: mocks.dataVersion
 }));
 vi.mock('./offline/cache.ts', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('./offline/cache.ts')>();

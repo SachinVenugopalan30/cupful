@@ -6,7 +6,8 @@ import type { Pause, QueuedOp } from './types.ts';
 
 /** Connection, queue health and account identity, as the UI needs them. */
 export const connection = $state({
-	online: typeof navigator === 'undefined' ? true : navigator.onLine,
+	// Optimistic until a request fails. `navigator.onLine` can lag behind a VPN coming up.
+	online: true,
 	paused: null as Pause,
 	pending: 0,
 	failed: 0,
@@ -18,18 +19,3 @@ export const queueState = $state({ ops: [] as QueuedOp[] });
 
 /** Bumped after the queue changes or a sync completes, so reads re-fetch and overlays refresh. */
 export const dataVersion = $state({ n: 0 });
-
-let listening = false;
-
-/** Subscribes to browser online/offline events once. The layout calls this on mount. */
-export function initConnection(): void {
-	if (listening || typeof window === 'undefined') return;
-	listening = true;
-	connection.online = navigator.onLine;
-	window.addEventListener('online', () => {
-		connection.online = true;
-	});
-	window.addEventListener('offline', () => {
-		connection.online = false;
-	});
-}

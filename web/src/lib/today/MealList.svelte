@@ -60,7 +60,11 @@
 		loadError = '';
 		getMeals(d)
 			.then((m) => !stale && (meals = m))
-			.catch((e) => !stale && (loadError = errorMessage(e)));
+			.catch((e) => {
+				// A failed background refresh keeps the meals already on screen; the error only
+				// replaces the list when there is nothing to show.
+				if (!stale && meals === null) loadError = errorMessage(e);
+			});
 		return () => (stale = true);
 	});
 

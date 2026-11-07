@@ -3,6 +3,7 @@
 
 import { ApiError, parseError } from './errors.ts';
 import { CacheHttpError, cachedGetJson } from '../offline/cache.ts';
+import { markOffline, markOnline } from '../offline/connectivity.ts';
 import { connection } from '../offline/state.svelte.ts';
 
 /**
@@ -28,12 +29,19 @@ export async function send(
 		body === undefined || body instanceof FormData || typeof body === 'string'
 			? (body as BodyInit | undefined)
 			: JSON.stringify(body);
-	const res = await fetch(path, {
-		method,
-		headers,
-		credentials: 'same-origin',
-		body: payload
-	});
+	let res: Response;
+	try {
+		res = await fetch(path, {
+			method,
+			headers,
+			credentials: 'same-origin',
+			body: payload
+		});
+	} catch (err) {
+		markOffline();
+		throw err;
+	}
+	markOnline();
 	if (!res.ok) {
 		leaveIfSessionExpired(res.status, path);
 		throw await parseError(res);

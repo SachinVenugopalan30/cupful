@@ -206,6 +206,17 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByLabel('What did you eat?')).toHaveValue('keep this description');
 		await expect(page.getByRole('button', { name: 'Repeat a meal' })).toBeFocused();
 	});
+
+	test('loads when navigator.onLine is false but the server answers', async ({ page }) => {
+		// Android can keep navigator.onLine false for a while after Tailscale connects. The app
+		// trusts an actual request, not the browser hint.
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true });
+		});
+		await page.goto('/');
+		await expect(page.getByRole('heading', { name: 'Log a meal' })).toBeVisible();
+		await expect(page.getByTestId('sync-bar')).toHaveCount(0);
+	});
 });
 
 test.describe('with a mock AI provider', () => {

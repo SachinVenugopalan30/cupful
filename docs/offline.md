@@ -71,6 +71,14 @@ This is stronger than keying rows by user id. User-keyed rows keep one account's
 - If IndexedDB is unavailable, the quota is exceeded or an enqueue fails, Cupful falls back to a direct `POST /api/sync` when online. Offline there is nowhere to persist the write, so the screen reports that the change was not saved.
 - Token refresh, provider errors and other online-only actions fail normally with their own messages.
 
+## Reachability
+
+The app does not trust `navigator.onLine`. On Android it can stay false for a while after a VPN such as Tailscale comes up, and stay true while DNS is not ready. A request that reaches the server is the only proof of a connection.
+
+Reads and writes mark the app online when the server answers. They mark it offline only when a request cannot reach the server at all, not on an HTTP error. A failed request starts a probe of `GET /api/health` after 1, 2, 4 and then 5 seconds. The probe also runs at once when the app returns to the foreground, on `pageshow`, and on the browser's `online` event. Its timer stops while the app is hidden.
+
+A successful probe flushes the queue, confirms the session, and bumps the data version so the mounted screens refetch. If the session expired, the queue pauses with the sign-in prompt instead of a background read redirecting to login. The read cache still serves instantly once a request has failed; the first read after a cold start tries the network for up to 4 seconds.
+
 ## The read cache
 
 Reads are network-first. A 2xx JSON answer is stored for the current user and returned. On a network error or a 5xx, the cached body for the same user and path is used when it exists. A 401, 403 or 404 is never served from the cache; those are real answers about the current session or resource.

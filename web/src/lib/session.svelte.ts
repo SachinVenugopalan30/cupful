@@ -12,6 +12,7 @@ import {
 } from './api';
 import { todayIn } from './date';
 import { clearUserCache } from './offline/cache.ts';
+import { markOffline, markOnline } from './offline/connectivity.ts';
 import { start } from './offline/queue.ts';
 import {
 	clearSessionCache,
@@ -41,8 +42,6 @@ export function today(): string {
  * Offline, it boots from the last user's cached session instead, so their data stays readable.
  */
 export async function loadSession(): Promise<void> {
-	if (typeof navigator !== 'undefined') connection.online = navigator.onLine;
-
 	let s: AuthState;
 	try {
 		s = await auth.state();
@@ -53,7 +52,7 @@ export async function loadSession(): Promise<void> {
 		// No cached session: the layout shows its "Can't reach Cupful" screen.
 		if (!cached) throw err;
 		connection.activeUserId = cached.userId;
-		connection.online = false;
+		markOffline();
 		// Set the day before session.user: the layout renders DayNav as soon as user is non-null,
 		// and an empty date would format as an invalid Date.
 		session.profile = cached.profile;
@@ -64,6 +63,7 @@ export async function loadSession(): Promise<void> {
 		session.user = cached.auth.user;
 		return;
 	}
+	markOnline();
 
 	if (s.user) {
 		// A different account signed in (a new login, or another tab). Drop the previous user's

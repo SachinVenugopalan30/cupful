@@ -8,6 +8,7 @@ import type { Day, Meal, MealItem } from '../api.ts';
 import type { MealIn, Op, OpResult } from '../sync/index.ts';
 import { clearUserData } from './db.ts';
 import { start, stop } from './queue.ts';
+import { connection } from './state.svelte.ts';
 
 let userSeq = 20_000;
 let opSeq = 0;
@@ -132,13 +133,16 @@ export const calls = (fn: ReturnType<typeof vi.fn>, url: string) =>
  */
 export async function boot(userId: number): Promise<void> {
 	await start(userId);
-	(navigator as { onLine: boolean }).onLine = true;
+	connection.online = true;
+	connection.paused = null;
 }
 
 /** Fresh navigator state before each test; tears down the queue and test users afterwards. */
 export function installQueueTestHooks(): void {
 	beforeEach(() => {
 		vi.stubGlobal('navigator', { onLine: false });
+		connection.online = false;
+		connection.paused = null;
 	});
 
 	afterEach(async () => {

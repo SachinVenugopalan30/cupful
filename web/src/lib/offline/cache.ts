@@ -8,6 +8,9 @@ import {
 	putCacheEntry,
 	type CacheEntry
 } from './db.ts';
+import { markOffline, markOnline } from './connectivity.ts';
+import { connection } from './state.svelte.ts';
+import { untrack } from 'svelte';
 
 /** A non-retryable HTTP answer. The cache never substitutes for 401/403/404. */
 export class CacheHttpError extends Error {
@@ -51,9 +54,11 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 	const cacheable = isCacheable(path);
 	let networkError: unknown;
 
-	// Known-offline: don't wait for a fetch that cannot succeed. This is what makes Activity and
-	// Trends open instantly from a cold start in airplane mode.
-	if (cacheable && typeof navigator !== 'undefined' && navigator.onLine === false) {
+	// Known-offline after a failed request or probe: don't wait for a fetch that cannot succeed.
+	// This is what makes Activity and Trends open instantly from a cold start in airplane mode.
+	// Untracked: a read effect must not refetch just because reachability changed. Recovery bumps
+	// dataVersion instead, which reruns the screen deliberately.
+	if (cacheable && !untrack(() => connection.online)) {
 		const cached = await getCachedBody<T>(userId, path);
 		if (cached !== undefined) return cached;
 		throw new Error('You’re offline and this page isn’t saved on this device yet.');
@@ -61,6 +66,7 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT);
+	let reached = false;
 	try {
 		const res = await fetch(path, {
 			method: 'GET',
@@ -69,6 +75,8 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 			headers: { Accept: 'application/json' },
 			signal: controller.signal
 		});
+		reached = true;
+		markOnline();
 		if (res.ok) {
 			const body = await res.json();
 			if (cacheable) await putCachedBody(userId, path, body);
@@ -80,6 +88,7 @@ export async function cachedGetJson<T>(path: string, userId: number): Promise<T>
 		networkError = new CacheHttpError(res.status, `The server answered with an error (${res.status}).`);
 	} catch (err) {
 		if (err instanceof CacheHttpError) throw err;
+		if (!reached) markOffline();
 		networkError = err;
 	} finally {
 		clearTimeout(timer);
