@@ -34,6 +34,8 @@
    "gym_kcal": 320,
    "maintenance": 2762,
    "deficit": 550,
+   "manual": false,
+   "gap": null,
    "floor": 1500,
    "budget": 2212,
    "protein_g": 120.0,
@@ -671,5 +673,203 @@
    "steps": 8000
   },
   "expect": null
+ },
+ {
+  "name": "manual goal with steps and gym",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000,
+    "calorie_goal": 1800
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 10000,
+   "gym_minutes": 60,
+   "trained": [
+    "Chest",
+    "Arms"
+   ]
+  },
+  "expect": {
+   "manual": true,
+   "deficit": 0,
+   "gap": 962,
+   "floor": 1500,
+   "budget": 1800,
+   "protein_g": 120.0,
+   "fat_g": 50.0,
+   "carbs_g": 217.5,
+   "flags": []
+  }
+ },
+ {
+  "name": "manual goal on a rest day",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000,
+    "calorie_goal": 1800
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 0
+  },
+  "expect": {
+   "manual": true,
+   "gap": 300,
+   "budget": 1800,
+   "deficit": 0,
+   "flags": []
+  }
+ },
+ {
+  "name": "manual goal below the female floor",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "female",
+    "birth_year": 1985,
+    "height_cm": 165,
+    "start_weight_kg": 68,
+    "goal_kg": 60,
+    "pace_kg_per_week": 0.25,
+    "typical_steps": 7000,
+    "calorie_goal": 1000
+   }
+  ],
+  "weight_kg": 65,
+  "day": {
+   "steps": 6000
+  },
+  "expect": {
+   "manual": true,
+   "gap": 708,
+   "floor": 1200,
+   "budget": 1000,
+   "deficit": 0,
+   "fat_g": 27.8,
+   "carbs_g": 91.5,
+   "flags": [
+    "below_floor"
+   ]
+  }
+ },
+ {
+  "name": "manual goal of 500 over-commits the macros",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 80,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000,
+    "calorie_goal": 500
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 10000,
+   "gym_minutes": 60,
+   "trained": [
+    "Chest",
+    "Arms"
+   ]
+  },
+  "expect": {
+   "manual": true,
+   "gap": 2262,
+   "budget": 500,
+   "deficit": 0,
+   "protein_g": 128.0,
+   "fat_g": 0.0,
+   "carbs_g": 0.0,
+   "flags": [
+    "below_floor",
+    "macros_overcommitted"
+   ]
+  }
+ },
+ {
+  "name": "manual goal above maintenance",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000,
+    "calorie_goal": 3000
+   }
+  ],
+  "weight_kg": 80,
+  "day": {
+   "steps": 10000,
+   "gym_minutes": 60,
+   "trained": [
+    "Chest",
+    "Arms"
+   ]
+  },
+  "expect": {
+   "manual": true,
+   "gap": -238,
+   "budget": 3000,
+   "deficit": 0,
+   "flags": []
+  }
+ },
+ {
+  "name": "manual goal with no steps keeps the goal and estimates maintenance",
+  "date": "2026-03-10",
+  "versions": [
+   {
+    "effective_from": "2025-01-01",
+    "sex": "male",
+    "birth_year": 1990,
+    "height_cm": 180,
+    "start_weight_kg": 85,
+    "goal_kg": 75,
+    "pace_kg_per_week": 0.5,
+    "typical_steps": 8000,
+    "calorie_goal": 1800
+   }
+  ],
+  "weight_kg": 80,
+  "day": {},
+  "expect": {
+   "manual": true,
+   "gap": 551,
+   "budget": 1800,
+   "deficit": 0,
+   "flags": [
+    "maintenance_provisional"
+   ]
+  }
  }
 ]

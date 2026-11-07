@@ -39,6 +39,7 @@ pub async fn versions(db: &SqlitePool, user_id: i64) -> Result<Vec<ProfileVersio
                 goal_kg: r.goal_kg,
                 pace_kg_per_week: r.pace_kg_per_week,
                 typical_steps: r.typical_steps,
+                calorie_goal: None,
             })
         })
         .collect()
