@@ -147,6 +147,12 @@ pub(super) fn check_doc(doc: &Doc, user_id: i64) -> Result<()> {
             (0..=150_000).contains(&v.typical_steps),
             "typical_steps must be 0-150000",
         )?;
+        if let Some(g) = v.calorie_goal {
+            check(
+                (500..=10_000).contains(&g),
+                "calorie_goal must be 500-10000",
+            )?;
+        }
     }
 
     // ---- days ----

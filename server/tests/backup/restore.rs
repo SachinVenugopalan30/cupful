@@ -255,6 +255,7 @@ async fn restore_replaces_prior_logs_and_profile_versions() {
     assert_eq!(status, StatusCode::OK, "{body}");
     let got = export(&mut a).await;
     assert_eq!(got["profile_versions"].as_array().unwrap().len(), 2);
+    assert_eq!(got["profile_versions"][0]["calorie_goal"], 1600);
     assert_eq!(got["meals"].as_array().unwrap().len(), 1);
     assert_eq!(got["meals"][0]["id"], doc["meals"][0]["id"]);
     assert_eq!(got["days"].as_array().unwrap().len(), 1);
@@ -265,6 +266,24 @@ async fn restore_replaces_prior_logs_and_profile_versions() {
         .map(|a| a["alias"].as_str().unwrap().to_string())
         .collect();
     assert_eq!(aliases, ["my basmati"]);
+}
+
+#[tokio::test]
+async fn an_older_document_without_the_goal_restores_it_as_null() {
+    let (app, state) = app().await;
+    let mut a = admin(&app).await;
+    rich_data(&state, &mut a).await;
+    let mut doc = export(&mut a).await;
+    for version in doc["profile_versions"].as_array_mut().unwrap() {
+        version.as_object_mut().unwrap().remove("calorie_goal");
+    }
+
+    let (status, body) = restore(&mut a, &doc).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let got = export(&mut a).await;
+    for version in got["profile_versions"].as_array().unwrap() {
+        assert!(version["calorie_goal"].is_null());
+    }
 }
 
 #[tokio::test]

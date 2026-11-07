@@ -39,7 +39,7 @@ pub async fn export(State(s): State<AppState>, user: User) -> Result<Response> {
     let profile_versions = sqlx::query_as!(
         Version,
         "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,
-                pace_kg_per_week, typical_steps
+                pace_kg_per_week, typical_steps, calorie_goal
          FROM profile_versions WHERE user_id = ? ORDER BY effective_from, id",
         id
     )
