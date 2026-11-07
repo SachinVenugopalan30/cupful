@@ -16,6 +16,8 @@ const budget: Budget = {
 	gym_kcal: 0,
 	maintenance: 2357,
 	deficit: 550,
+	manual: false,
+	gap: null,
 	floor: 1500,
 	budget: 1807,
 	protein_g: 128,

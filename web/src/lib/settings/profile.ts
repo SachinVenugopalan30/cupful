@@ -109,7 +109,9 @@ export function fromForm(f: ProfileForm, thisYear: number): { value?: ProfileIn;
 			start_weight_kg: toKg(f.start_weight, u)!,
 			goal_kg: toKg(f.goal_weight, u),
 			pace_kg_per_week: Math.min(1, toKg(f.pace, u)!),
-			typical_steps: f.typical_steps!
+			typical_steps: f.typical_steps!,
+			// ponytail: the form has no goal field yet, so a save clears it; Task 6 wires it.
+			calorie_goal: null
 		}
 	};
 }

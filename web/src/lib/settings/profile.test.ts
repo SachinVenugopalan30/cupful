@@ -15,7 +15,8 @@ const saved: Profile = {
 		start_weight_kg: 70,
 		goal_kg: 62,
 		pace_kg_per_week: 0.5,
-		typical_steps: 7000
+		typical_steps: 7000,
+		calorie_goal: null
 	}
 };
 

@@ -12,7 +12,10 @@ const FLAGS: Record<BudgetFlag, string> = {
 	floor_above_maintenance:
 		"The minimum floor is above what you burn today, so no deficit is planned today.",
 	macros_overcommitted:
-		"Protein takes up most of today's budget, so there's no room set aside for carbs. Fat gets what's left."
+		"Protein takes up most of today's budget, so there's no room set aside for carbs. Fat gets what's left.",
+	below_floor: 'Your calorie goal is below the daily minimum (the floor).',
+	maintenance_provisional:
+		'No steps logged yet — using your typical steps, so the gap to your calorie goal is provisional.'
 };
 
 export const flagMessages = (flags: BudgetFlag[]) => flags.map((f) => FLAGS[f]);
