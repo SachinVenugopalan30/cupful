@@ -88,7 +88,7 @@ npm run build
 - Budget math lives only on the server (`budget.rs`). Use f64 and round on serialize.
 - Dates are the user's local date, `YYYY-MM-DD`. Times are integer unix milliseconds in SQLite and RFC 3339 on the wire.
 - New routes go in `routes()` in `lib.rs` with their `Access`. Use `error::JsonBody` and `error::Query` so errors are `{"error": ...}`.
-- Outbound HTTP goes only to configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`), and Google when configured and connected. No telemetry.
+- Outbound HTTP goes only to configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`), Google when configured and connected, and the public GitHub API for the nav star count (cached hourly, no user data). No telemetry.
 - No new dependency for a few lines of code. Mark a deliberate shortcut with `// ponytail: <ceiling>, <upgrade path>`.
 - Record a deviation or notable choice in `docs/decisions.md`: date, what, why.
 - Frontend logic gets a Vitest test next to it. Screens use tokens and `global.css` classes. No CSS framework. Writes go through `sync.sendOps`. Keep `.ts` in `#lib` imports.

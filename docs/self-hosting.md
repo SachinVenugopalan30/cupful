@@ -328,7 +328,7 @@ Set `RUST_LOG=cupful=debug` to see raw model replies and HTTP details. Leave it 
 - **Container image.** The release image is `ghcr.io/sachinvenugopalan30/cupful`. Tags are the version (`0.3.0`) and, for stable releases, `latest`. Both `linux/amd64` and `linux/arm64` are published.
 - **Package visibility.** The first published package may be private. If a pull fails with `denied`, either sign in with `docker login ghcr.io` or make the package public in its GitHub package settings.
 - **First-run race.** Anyone who reaches an unconfigured instance can create the admin account. Set it up before you open the address to others.
-- **No telemetry.** Cupful contacts configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`) and Google when connected. It sends nothing else.
+- **No telemetry.** Cupful contacts configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`), Google when connected, and the public GitHub API for the cached nav star count. It sends no user data and nothing else.
 - **Network filesystems.** Do not place the data volume on NFS, CIFS or SMB. The startup warning is Linux-only and best effort.
 - **Reverse proxy body limit.** Import and restore accept up to 10 MB. Raise your proxy's limit if it is lower.
 - **Single admin claim.** There is no password recovery by email. Use `reset-password` if the admin password is lost.
