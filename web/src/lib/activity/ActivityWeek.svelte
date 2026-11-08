@@ -10,7 +10,7 @@
 <script lang="ts">
 	import { dayLabel } from '#lib/date.ts';
 	import { day, session, today } from '#lib/session.svelte.ts';
-	import { groupByDate, gymDates, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
+	import { groupByDate, gymDates, weekDayLines, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
 
 	let { date, end, win }: { date: string; end: string; win: ActivityWindow | null } = $props();
 
@@ -19,24 +19,26 @@
 		if (!win || !windowCovers(win, end, 30)) return null;
 		const gym = gymDates(win.days, win.workouts);
 		const byDay = groupByDate(win.workouts);
-		const rows = weekWindow(end).map((d) => ({
-			date: d,
-			steps: win.days.find((x) => x.date === d)?.steps ?? null,
-			gym: gym.has(d),
-			workouts: byDay.get(d)?.length ?? 0
-		}));
+		const rows = weekWindow(end).map((d) => {
+			const row = win.days.find((x) => x.date === d);
+			return {
+				date: d,
+				steps: row?.steps ?? null,
+				gym: gym.has(d),
+				gym_minutes: row?.gym_minutes ?? null,
+				trained: row?.trained ?? [],
+				workouts: (byDay.get(d) ?? []).map((w) => w.name || w.type_label)
+			};
+		});
 		const max = Math.max(typical ?? 0, ...rows.map((r) => r.steps ?? 0), 1);
-		return { rows, max, sessions: rows.filter((r) => r.gym).length, workouts: rows.reduce((n, r) => n + r.workouts, 0) };
+		return { rows, max, sessions: rows.filter((r) => r.gym).length, workouts: rows.reduce((n, r) => n + r.workouts.length, 0) };
 	});
 
 	const weekday = (d: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short' }).format(new Date(`${d}T00:00:00Z`));
 	const dom = (d: string) => Number(d.slice(8));
 
-	function label(r: { date: string; steps: number | null; gym: boolean; workouts: number }) {
-		const parts = [r.steps === null ? 'no steps logged' : `${r.steps.toLocaleString()} steps`];
-		if (r.gym) parts.push('gym');
-		if (r.workouts) parts.push(`${r.workouts} ${r.workouts === 1 ? 'workout' : 'workouts'}`);
-		return `${dayLabel(r.date, today())}: ${parts.join(', ')}`;
+	function label(r: { date: string; steps: number | null; gym_minutes: number | null; trained: string[]; workouts: string[] }) {
+		return `${dayLabel(r.date, today())}: ${weekDayLines(r).join(', ')}`;
 	}
 </script>
 
@@ -73,9 +75,13 @@
 							{/if}
 						</span>
 						<span class="mark" aria-hidden="true">{#if r.gym}<i class="dot"></i>{/if}</span>
-						<span class="count num" class:zero={!r.workouts} aria-hidden="true">{r.workouts || ''}</span>
+						<span class="count num" class:zero={!r.workouts.length} aria-hidden="true">{r.workouts.length || ''}</span>
 						<span class="dow" aria-hidden="true">{weekday(r.date)}</span>
 						<span class="dom num" aria-hidden="true">{dom(r.date)}</span>
+						<span class="tip" aria-hidden="true">
+							<span class="tip-date">{dayLabel(r.date, today())}</span>
+							{#each weekDayLines(r) as line}<span>{line}</span>{/each}
+						</span>
 					</button>
 				</li>
 			{/each}
@@ -120,6 +126,7 @@
 	}
 	.col {
 		display: flex;
+		position: relative;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.125rem;
@@ -145,6 +152,48 @@
 	.col[aria-current='date'] {
 		background: var(--surface-2);
 		color: var(--text);
+		font-weight: var(--weight-bold);
+	}
+	.tip {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		width: max-content;
+		max-width: 11rem;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface);
+		color: var(--text);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-normal);
+		text-align: left;
+		box-shadow: 0 8px 24px -16px rgb(7 24 32 / 0.4);
+		transform: translateX(-50%);
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition: opacity var(--dur-fast) var(--ease-state);
+	}
+	.days li:first-child .tip {
+		left: 0;
+		transform: none;
+	}
+	.days li:last-child .tip {
+		left: auto;
+		right: 0;
+		transform: none;
+	}
+	.col:hover .tip,
+	.col:focus .tip {
+		opacity: 1;
+		visibility: visible;
+	}
+	.tip-date {
 		font-weight: var(--weight-bold);
 	}
 	.plot {

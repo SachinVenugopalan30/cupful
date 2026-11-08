@@ -88,7 +88,15 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	// Seven day buttons; gym shows on yesterday.
 	const cols = page.getByRole('region', { name: 'This week' }).getByRole('button');
 	await expect(cols).toHaveCount(7);
-	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, gym, 1 workout/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, 40 min gym, Workout: Strength training/ })).toBeVisible();
+	const yesterday = page.getByRole('button', { name: /^Yesterday:/ });
+	await yesterday.hover();
+	await expect(yesterday.locator('.tip')).toBeVisible();
+	await expect(yesterday.locator('.tip')).toContainText('40 min gym');
+	await expect(yesterday.locator('.tip')).toContainText('Workout: Strength training');
+	const today = page.getByRole('button', { name: /^Today:/ });
+	await today.hover();
+	await expect(today.locator('.tip')).toContainText('Workouts: Morning run, Evening walk');
 	await noSideScroll();
 
 	const weekBefore = await weekDates();
