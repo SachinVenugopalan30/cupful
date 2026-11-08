@@ -18,7 +18,7 @@ use crate::time::{parse_date, today_in, user_today};
 pub async fn versions(db: &SqlitePool, user_id: i64) -> Result<Vec<ProfileVersion>> {
     let rows = sqlx::query!(
         "SELECT effective_from, sex, birth_year, height_cm, start_weight_kg, goal_kg,
-                pace_kg_per_week, typical_steps
+                pace_kg_per_week, typical_steps, calorie_goal
          FROM profile_versions WHERE user_id = ? ORDER BY effective_from",
         user_id
     )
@@ -39,6 +39,7 @@ pub async fn versions(db: &SqlitePool, user_id: i64) -> Result<Vec<ProfileVersio
                 goal_kg: r.goal_kg,
                 pace_kg_per_week: r.pace_kg_per_week,
                 typical_steps: r.typical_steps,
+                calorie_goal: r.calorie_goal,
             })
         })
         .collect()
@@ -73,6 +74,7 @@ pub struct ProfileIn {
     goal_kg: Option<f64>,
     pace_kg_per_week: f64,
     typical_steps: i64,
+    calorie_goal: Option<i64>,
 }
 
 fn check(ok: bool, msg: &str) -> Result<()> {
@@ -119,6 +121,10 @@ pub async fn put(
         (0..=150_000).contains(&p.typical_steps),
         "typical_steps must be 0-150000",
     )?;
+    check(
+        p.calorie_goal.is_none_or(|g| (500..=10_000).contains(&g)),
+        "calorie_goal must be 500-10000",
+    )?;
 
     let today_s = today.to_string();
     let sex = match p.sex {
@@ -138,12 +144,13 @@ pub async fn put(
     .await?;
     sqlx::query!(
         "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,
-             start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             start_weight_kg, goal_kg, pace_kg_per_week, typical_steps, calorie_goal)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (user_id, effective_from) DO UPDATE SET sex = excluded.sex,
              birth_year = excluded.birth_year, height_cm = excluded.height_cm,
              start_weight_kg = excluded.start_weight_kg, goal_kg = excluded.goal_kg,
-             pace_kg_per_week = excluded.pace_kg_per_week, typical_steps = excluded.typical_steps",
+             pace_kg_per_week = excluded.pace_kg_per_week, typical_steps = excluded.typical_steps,
+             calorie_goal = excluded.calorie_goal",
         user.id,
         today_s,
         sex,
@@ -152,7 +159,8 @@ pub async fn put(
         p.start_weight_kg,
         p.goal_kg,
         p.pace_kg_per_week,
-        p.typical_steps
+        p.typical_steps,
+        p.calorie_goal
     )
     .execute(&mut *tx)
     .await?;

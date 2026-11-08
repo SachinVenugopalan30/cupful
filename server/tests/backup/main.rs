@@ -84,8 +84,8 @@ pub(crate) async fn rich_data(state: &AppState, c: &mut Client) -> Fixture {
     let old = today(TZ).checked_sub(jiff::ToSpan::days(200)).unwrap();
     sqlx::query(
         "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,
-             start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)
-         VALUES (?, ?, 'female', 1992, 165.0, 72.0, 65.0, 0.25, 6000)",
+             start_weight_kg, goal_kg, pace_kg_per_week, typical_steps, calorie_goal)
+         VALUES (?, ?, 'female', 1992, 165.0, 72.0, 65.0, 0.25, 6000, 1600)",
     )
     .bind(uid)
     .bind(old.to_string())

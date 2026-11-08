@@ -102,6 +102,8 @@ pub(super) struct Version {
     pub goal_kg: Option<f64>,
     pub pace_kg_per_week: f64,
     pub typical_steps: i64,
+    #[serde(default)]
+    pub calorie_goal: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize)]

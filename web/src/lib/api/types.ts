@@ -31,6 +31,7 @@ export type ProfileVersion = {
 	goal_kg: number | null;
 	pace_kg_per_week: number;
 	typical_steps: number;
+	calorie_goal: number | null;
 };
 export type Profile = {
 	timezone: string;
@@ -49,7 +50,9 @@ export type BudgetFlag =
 	| 'deficit_capped'
 	| 'floor_applied'
 	| 'floor_above_maintenance'
-	| 'macros_overcommitted';
+	| 'macros_overcommitted'
+	| 'below_floor'
+	| 'maintenance_provisional';
 /** GET /api/budget/{date}. kcal fields are integers, grams one decimal. 409 until a profile exists. */
 export type Budget = {
 	date: string;
@@ -63,6 +66,8 @@ export type Budget = {
 	gym_kcal: number;
 	maintenance: number;
 	deficit: number;
+	manual: boolean;
+	gap: number | null;
 	floor: number;
 	budget: number;
 	protein_g: number;

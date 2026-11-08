@@ -403,7 +403,7 @@
 					</svg>
 				{/if}
 				<p class="caption">
-					{#if carried}Carried from {dayLabel(carried.date, today())}.{' '}{/if}Changes the budget from this day until your next weigh-in.
+					{#if carried}Carried from {dayLabel(carried.date, today())}.{' '}{/if}Used from this day until your next weigh-in.
 				</p>
 			</div>
 		</div>

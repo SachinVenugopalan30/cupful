@@ -17,5 +17,9 @@ tailscale-state.tgz
 .claude/
 skills-lock.json
 
+# local-only plans and specs
+docs/plans/
+docs/superpowers/
+
 # taste-skill previews and design renders
 .taste-skill/

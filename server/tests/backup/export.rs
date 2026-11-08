@@ -31,6 +31,8 @@ async fn export_shape_headers_and_ordering() {
         assert!(doc[key].is_array(), "{key} must be an array");
     }
     assert_eq!(doc["profile_versions"].as_array().unwrap().len(), 2);
+    assert_eq!(doc["profile_versions"][0]["calorie_goal"], 1600);
+    assert!(doc["profile_versions"][1]["calorie_goal"].is_null());
     assert_eq!(doc["meals"].as_array().unwrap().len(), 1);
     assert_eq!(doc["meals"][0]["id"], f.meal_id.as_str());
     assert_eq!(doc["meals"][0]["items"].as_array().unwrap().len(), 5);

@@ -21,6 +21,8 @@ pub struct ProfileVersion {
     pub goal_kg: Option<f64>,
     pub pace_kg_per_week: f64,
     pub typical_steps: i64,
+    #[serde(default)]
+    pub calorie_goal: Option<i64>,
 }
 
 /// What was logged for the day. Missing steps make the budget provisional.
@@ -52,6 +54,9 @@ pub struct Budget {
     pub maintenance: f64,
     #[serde(serialize_with = "kcal")]
     pub deficit: f64,
+    pub manual: bool,
+    #[serde(serialize_with = "opt_kcal")]
+    pub gap: Option<f64>,
     #[serde(serialize_with = "kcal")]
     pub floor: f64,
     #[serde(serialize_with = "kcal")]
@@ -68,6 +73,13 @@ pub struct Budget {
 /// `f64::round` rounds half away from zero, as §7 asks.
 fn kcal<S: Serializer>(v: &f64, s: S) -> Result<S::Ok, S::Error> {
     s.serialize_i64(v.round() as i64)
+}
+
+fn opt_kcal<S: Serializer>(v: &Option<f64>, s: S) -> Result<S::Ok, S::Error> {
+    match v {
+        Some(v) => s.serialize_i64(v.round() as i64),
+        None => s.serialize_none(),
+    }
 }
 
 fn grams<S: Serializer>(v: &f64, s: S) -> Result<S::Ok, S::Error> {
@@ -93,8 +105,13 @@ pub fn compute(
     let kg = logged_weight.unwrap_or(v.start_weight_kg);
     // Approximate by up to a year (about 5 kcal of BMR); birthdays aren't stored.
     let age = date.year() - v.birth_year;
+    let manual = v.calorie_goal.is_some();
     let steps = day.steps.unwrap_or_else(|| {
-        flags.push("provisional");
+        flags.push(if manual {
+            "maintenance_provisional"
+        } else {
+            "provisional"
+        });
         v.typical_steps
     });
     let male = v.sex == Sex::Male;
@@ -107,21 +124,31 @@ pub fn compute(
     let gym_kcal = f64::from(met - 1) * kg * day.gym_minutes.unwrap_or(0) as f64 / 60.0;
     let maintenance = base + steps_kcal + gym_kcal;
 
-    let mut deficit = v.pace_kg_per_week * 7700.0 / 7.0;
-    if deficit > 0.25 * maintenance {
-        deficit = 0.25 * maintenance;
-        flags.push("deficit_capped");
-    }
     // A convention, not a derivation.
     let floor = if male { 1500.0 } else { 1200.0 };
-    if floor > maintenance - deficit {
-        flags.push("floor_applied");
-    }
-    if floor > maintenance {
-        flags.push("floor_above_maintenance");
-    }
-    // The outer min only matters when the floor is above maintenance.
-    let budget = maintenance.min(floor.max(maintenance - deficit));
+    let (deficit, budget, gap) = if let Some(goal) = v.calorie_goal.map(|g| g as f64) {
+        if goal < floor {
+            flags.push("below_floor");
+        }
+        (0.0, goal, Some(maintenance - goal))
+    } else {
+        let mut deficit = v.pace_kg_per_week * 7700.0 / 7.0;
+        if deficit > 0.25 * maintenance {
+            deficit = 0.25 * maintenance;
+            flags.push("deficit_capped");
+        }
+        if floor > maintenance - deficit {
+            flags.push("floor_applied");
+        }
+        if floor > maintenance {
+            flags.push("floor_above_maintenance");
+        }
+        (
+            deficit,
+            maintenance.min(floor.max(maintenance - deficit)),
+            None,
+        )
+    };
 
     let protein_g = 1.6 * v.goal_kg.unwrap_or(kg);
     let protein_kcal = 4.0 * protein_g;
@@ -143,6 +170,8 @@ pub fn compute(
         gym_kcal,
         maintenance,
         deficit,
+        manual,
+        gap,
         floor,
         budget,
         protein_g,

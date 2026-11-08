@@ -16,6 +16,8 @@ const budget: Budget = {
 	gym_kcal: 0,
 	maintenance: 2357,
 	deficit: 550,
+	manual: false,
+	gap: null,
 	floor: 1500,
 	budget: 1807,
 	protein_g: 128,
@@ -28,23 +30,25 @@ const meal = (kcal: number, protein_g: number, carbs_g: number, fat_g: number) =
 	({ totals: { kcal, protein_g, carbs_g, fat_g } }) as Meal;
 
 describe('flagMessages', () => {
-	it('has plain words for every flag', () => {
+	it('has plain words for every flag, including the floor number', () => {
 		const all: BudgetFlag[] = [
 			'provisional',
+			'below_floor',
+			'maintenance_provisional',
 			'deficit_capped',
 			'floor_applied',
 			'floor_above_maintenance',
 			'macros_overcommitted'
 		];
-		const msgs = flagMessages(all);
-		expect(msgs).toHaveLength(5);
+		const msgs = flagMessages({ ...budget, flags: all });
+		expect(msgs).toHaveLength(7);
 		expect(msgs[0]).toMatch(/no steps logged yet/i);
-		expect(msgs[3]).toMatch(/no deficit/i);
-		expect(msgs[4]).toMatch(/protein takes up most/i);
+		expect(msgs[1]).toMatch(/1,500 kcal/);
+		expect(msgs[2]).toMatch(/maintenance and the gap are estimated/i);
 		for (const m of msgs) expect(m.length).toBeGreaterThan(20);
 	});
 	it('says nothing for no flags', () => {
-		expect(flagMessages([])).toEqual([]);
+		expect(flagMessages({ ...budget, flags: [] })).toEqual([]);
 	});
 });
 
@@ -93,5 +97,37 @@ describe('breakdown', () => {
 			expect(labels).toContain(word);
 		for (const t of terms) expect(t.note.length).toBeGreaterThan(10);
 		expect(terms.find((t) => t.label === 'Steps used')!.value).toBe('8,000');
+	});
+});
+
+describe('manual breakdown', () => {
+	it('shows the goal and a signed gap instead of a deficit', () => {
+		const manual = { ...budget, manual: true, budget: 1800, gap: 420, flags: [] };
+		const terms = breakdown(manual);
+		const labels = terms.map((t) => t.label);
+		expect(labels).toContain('Your goal');
+		expect(labels).toContain('Gap to maintenance');
+		expect(labels).not.toContain('Deficit');
+		expect(terms.find((t) => t.label === 'Gap to maintenance')!.value).toBe(
+			'420 kcal under maintenance'
+		);
+	});
+
+	it('marks the gap as estimated when maintenance is provisional', () => {
+		const manual = {
+			...budget,
+			manual: true,
+			budget: 1800,
+			gap: 420,
+			flags: ['maintenance_provisional'] as BudgetFlag[]
+		};
+		const gap = breakdown(manual).find((t) => t.label === 'Gap to maintenance')!;
+		expect(gap.value).toBe('~420 kcal under maintenance');
+	});
+
+	it('says over maintenance when the goal is above it', () => {
+		const manual = { ...budget, manual: true, budget: 3000, gap: -238, flags: [] };
+		const gap = breakdown(manual).find((t) => t.label === 'Gap to maintenance')!;
+		expect(gap.value).toBe('238 kcal over maintenance');
 	});
 });

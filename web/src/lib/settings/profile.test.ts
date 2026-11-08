@@ -15,21 +15,22 @@ const saved: Profile = {
 		start_weight_kg: 70,
 		goal_kg: 62,
 		pace_kg_per_week: 0.5,
-		typical_steps: 7000
+		typical_steps: 7000,
+		calorie_goal: 1800
 	}
 };
 
 describe('profile form', () => {
 	it('shows saved metric values in the chosen units and saves them back as metric', () => {
 		const f = toForm(saved, 'UTC');
-		expect(f).toMatchObject({ start_weight: 154.3, goal_weight: 136.7, pace: 1.1, height_ft: 5, height_in: 5 });
+		expect(f).toMatchObject({ start_weight: 154.3, goal_weight: 136.7, pace: 1.1, height_ft: 5, height_in: 5, calorie_goal: 1800 });
 		const { value, errors } = fromForm(f, 2026);
 		expect(errors).toEqual({});
 		expect(value!.start_weight_kg).toBeCloseTo(70, 1);
 		expect(value!.goal_kg).toBeCloseTo(62, 1);
 		expect(value!.pace_kg_per_week).toBeCloseTo(0.5, 1);
 		expect(value!.height_cm).toBeCloseTo(165, 0);
-		expect(value).toMatchObject({ timezone: 'Asia/Kolkata', sex: 'female', weight_unit: 'lb', height_unit: 'ftin', typical_steps: 7000 });
+		expect(value).toMatchObject({ timezone: 'Asia/Kolkata', sex: 'female', weight_unit: 'lb', height_unit: 'ftin', typical_steps: 7000, calorie_goal: 1800 });
 	});
 
 	it('starts a new profile in the browser timezone with empty fields', () => {
@@ -59,5 +60,21 @@ describe('profile form', () => {
 		expect(bad.start_weight).toMatch(/lb/);
 		expect(bad.pace).toMatch(/2\.2 lb/);
 		expect(fromForm({ ...f, pace: 2.2 }, 2026).errors).toEqual({});
+	});
+
+	it('keeps the calorie goal optional, whole and in range', () => {
+		const f = toForm(saved, 'UTC');
+		expect(f.calorie_goal).toBe(1800);
+		expect(fromForm(f, 2026).value!.calorie_goal).toBe(1800);
+
+		const blank = fromForm({ ...f, calorie_goal: null }, 2026);
+		expect(blank.errors).toEqual({});
+		expect(blank.value!.calorie_goal).toBeNull();
+
+		for (const bad of [1800.5, 499, 10001]) {
+			expect(fromForm({ ...f, calorie_goal: bad }, 2026).errors.calorie_goal).toMatch(
+				/whole number from 500 to 10,000/
+			);
+		}
 	});
 });

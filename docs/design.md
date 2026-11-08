@@ -134,7 +134,7 @@ Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so th
 - Selecting a day keeps the current cards, budget, week strip and workouts on screen while the new day loads. Inputs are disabled until it arrives, so a date tap does not collapse the page into skeletons.
 - "Workouts" lists what Google Health synced for the selected day: icon, name, time, duration, km, kcal, average heart rate, and a "Counts as gym" chip (`--accent-soft`), in two-line rows (name and time, then type and figures). Beyond six a day shows "Show N more". Distances are km because there is no distance unit setting. Empty: "No workouts synced for this day.", plus a Settings pointer only when Google is configured but not connected.
 - The Budget card's "How it's worked out" is a small popover above its link (`.menu-panel.up`): one label/value line per server term in small tabular type, a Close button, Esc and outside click dismiss. It never pushes the page.
-- A compact card reports what steps and gym added to the budget, from the server's terms.
+- A compact card reports what steps and gym added to the budget, from the server's terms. With a fixed goal it says "Burned beyond base" and shows the goal itself.
 
 ## Tokens
 

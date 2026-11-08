@@ -19,6 +19,7 @@ export type ProfileForm = {
 	goal_weight: number | null;
 	pace: number | null;
 	typical_steps: number | null;
+	calorie_goal: number | null;
 };
 export type ProfileErrors = Partial<Record<keyof ProfileForm | 'height', string>>;
 
@@ -54,7 +55,8 @@ export function toForm(p: Profile, browserTimezone: string): ProfileForm {
 			start_weight: fromKg(v?.start_weight_kg, u),
 			goal_weight: fromKg(v?.goal_kg, u),
 			pace: fromKg(v?.pace_kg_per_week ?? 0.5, u, paceDigits(u)),
-			typical_steps: v?.typical_steps ?? 7000
+			typical_steps: v?.typical_steps ?? 7000,
+			calorie_goal: v?.calorie_goal ?? null
 		},
 		v?.height_cm ?? null
 	);
@@ -95,6 +97,11 @@ export function fromForm(f: ProfileForm, thisYear: number): { value?: ProfileIn;
 		errors.pace = `Enter a pace from 0 to ${u === 'kg' ? '1 kg' : '2.2 lb'} a week.`;
 	if (f.typical_steps == null || !Number.isInteger(f.typical_steps) || f.typical_steps < 0 || f.typical_steps > 150_000)
 		errors.typical_steps = 'Enter whole steps from 0 to 150,000.';
+	if (
+		f.calorie_goal != null &&
+		(!Number.isInteger(f.calorie_goal) || f.calorie_goal < 500 || f.calorie_goal > 10_000)
+	)
+		errors.calorie_goal = 'Enter a whole number from 500 to 10,000 kcal, or leave it blank.';
 	if (Object.keys(errors).length) return { errors };
 
 	return {
@@ -109,7 +116,8 @@ export function fromForm(f: ProfileForm, thisYear: number): { value?: ProfileIn;
 			start_weight_kg: toKg(f.start_weight, u)!,
 			goal_kg: toKg(f.goal_weight, u),
 			pace_kg_per_week: Math.min(1, toKg(f.pace, u)!),
-			typical_steps: f.typical_steps!
+			typical_steps: f.typical_steps!,
+			calorie_goal: f.calorie_goal
 		}
 	};
 }

@@ -12,7 +12,7 @@ Neither replaces the other. A JSON backup restores data into a working Cupful. A
 
 `GET /api/backup` returns one JSON document for the signed-in user:
 
-- the profile (timezone and unit preferences) and every profile version;
+- the profile (timezone and unit preferences) and every profile version, including the optional daily calorie goal;
 - every day: steps and gym minutes with their sources, body parts trained, weight, and per-field timestamps;
 - every live meal and its items: dates, meal types, descriptions, scale, assumptions, confidence, source, provider link, item names, portions, grams, nutrients and food links;
 - the foods those meals and the user's aliases, portions and saved products refer to, with their `food_portions` rows;

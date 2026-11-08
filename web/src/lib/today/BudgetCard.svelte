@@ -64,7 +64,9 @@
 	<header class="panel-head">
 		<h2 id="budget-h">Budget</h2>
 		{#if s.kind === 'ready'}
-			<p class="plan small muted num">{formatKcal(s.budget.budget)} kcal plan</p>
+			<p class="plan small muted num">
+				{formatKcal(s.budget.budget)} kcal {s.budget.manual ? 'goal' : 'plan'}
+			</p>
 		{/if}
 	</header>
 	{#if s.kind === 'loading'}
@@ -107,7 +109,7 @@
 
 		{#if b.flags.length}
 			<ul class="flags">
-				{#each flagMessages(b.flags) as msg (msg)}
+				{#each flagMessages(b) as msg (msg)}
 					<li class="notice notice-warning">{msg}</li>
 				{/each}
 			</ul>

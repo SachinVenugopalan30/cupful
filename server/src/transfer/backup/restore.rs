@@ -198,8 +198,8 @@ pub async fn restore(State(s): State<AppState>, user: User, req: Request) -> Res
     for v in &doc.profile_versions {
         sqlx::query!(
             "INSERT INTO profile_versions (user_id, effective_from, sex, birth_year, height_cm,
-                 start_weight_kg, goal_kg, pace_kg_per_week, typical_steps)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 start_weight_kg, goal_kg, pace_kg_per_week, typical_steps, calorie_goal)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             user.id,
             &v.effective_from,
             &v.sex,
@@ -208,7 +208,8 @@ pub async fn restore(State(s): State<AppState>, user: User, req: Request) -> Res
             v.start_weight_kg,
             v.goal_kg,
             v.pace_kg_per_week,
-            v.typical_steps
+            v.typical_steps,
+            v.calorie_goal
         )
         .execute(&mut *tx)
         .await?;

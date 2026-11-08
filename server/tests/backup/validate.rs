@@ -73,6 +73,10 @@ async fn invalid_documents_are_400_and_change_nothing() {
             "wrong version",
             Box::new(|d: &mut Value| d["version"] = json!(2)),
         ),
+        (
+            "calorie goal",
+            Box::new(|d: &mut Value| d["profile_versions"][0]["calorie_goal"] = json!(499)),
+        ),
     ];
 
     for (name, mutate) in cases {
