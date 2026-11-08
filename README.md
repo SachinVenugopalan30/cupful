@@ -12,13 +12,14 @@ Cupful is a self-hosted tracker for food, exercise and steps. You describe a mea
 
 It runs on your own server. It installs on a phone as a web app. It works offline for the screens you use most. It sends no telemetry.
 
-Version 0.3.0.
+Version 0.3.1.
 
 ## Features
 
 - Describe meals in words, with optional photos. Review and edit before saving.
 - Barcode scan, label entry and saved products.
 - Daily calorie and macro budget from your profile, or a fixed daily calorie goal.
+- Week-strip tooltips for steps and activity, and a live GitHub star link.
 - Trends for intake, weight and steps.
 - Activity log for steps, gym minutes, body parts and weigh-ins.
 - Offline reads and a write queue that syncs when the connection returns.
@@ -59,7 +60,7 @@ docker run -d --name cupful \
   -p 127.0.0.1:8080:8080 \
   -v cupful-data:/data \
   --env-file .env \
-  ghcr.io/sachinvenugopalan30/cupful:0.3.0
+  ghcr.io/sachinvenugopalan30/cupful:0.3.1
 ```
 
 Read [docs/self-hosting.md](docs/self-hosting.md) before you expose it. Secure cookies, the trusted proxy setting and the public URL all matter behind a proxy.

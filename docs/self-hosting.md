@@ -84,7 +84,7 @@ docker run -d --name cupful \
   -v cupful-data:/data \
   --env-file .env \
   --restart unless-stopped \
-  ghcr.io/sachinvenugopalan30/cupful:0.3.0
+  ghcr.io/sachinvenugopalan30/cupful:0.3.1
 ```
 
 The container listens on `0.0.0.0:8080` and keeps its database in the `cupful-data` volume at `/data`.
@@ -188,7 +188,7 @@ The command sets `tailscale_login` for the existing user `alice`. The login is s
 For the plain image, use the same command through `docker run`:
 
 ```sh
-docker run --rm -v cupful-data:/data ghcr.io/sachinvenugopalan30/cupful:0.3.0 \
+docker run --rm -v cupful-data:/data ghcr.io/sachinvenugopalan30/cupful:0.3.1 \
   bind-tailscale alice alice@example.com
 ```
 
@@ -248,7 +248,7 @@ Backup and restore steps, including the nightly SQLite copy and file ownership: 
 
 Back up first. Every release runs its database migrations at startup.
 
-Pin the image to an exact release, such as `0.3.0`. Do not use `latest` on a server you care about. A `latest` pull can jump several releases, run migrations you cannot undo, and leave you unable to start the previous image against the migrated database. `0.3` is a middle ground that follows patch releases, but still back up first.
+Pin the image to an exact release, such as `0.3.1`. Do not use `latest` on a server you care about. A `latest` pull can jump several releases, run migrations you cannot undo, and leave you unable to start the previous image against the migrated database. `0.3` is a middle ground that follows patch releases, but still back up first.
 
 ### Upgrade checklist
 
@@ -299,7 +299,7 @@ Plain Docker:
 
 ```sh
 docker run --rm -it -v cupful-data:/data \
-  ghcr.io/sachinvenugopalan30/cupful:0.3.0 reset-password alice
+  ghcr.io/sachinvenugopalan30/cupful:0.3.1 reset-password alice
 ```
 
 Type the new password and press Enter. The command ends every session for that user.
@@ -325,7 +325,7 @@ Set `RUST_LOG=cupful=debug` to see raw model replies and HTTP details. Leave it 
 
 ## Install caveats
 
-- **Container image.** The release image is `ghcr.io/sachinvenugopalan30/cupful`. Tags are the version (`0.3.0`) and, for stable releases, `latest`. Both `linux/amd64` and `linux/arm64` are published.
+- **Container image.** The release image is `ghcr.io/sachinvenugopalan30/cupful`. Tags are the version (`0.3.1`) and, for stable releases, `latest`. Both `linux/amd64` and `linux/arm64` are published.
 - **Package visibility.** The first published package may be private. If a pull fails with `denied`, either sign in with `docker login ghcr.io` or make the package public in its GitHub package settings.
 - **First-run race.** Anyone who reaches an unconfigured instance can create the admin account. Set it up before you open the address to others.
 - **No telemetry.** Cupful contacts configured AI providers, Open Food Facts (unless `CUPFUL_PRODUCT_LOOKUP=off`), Google when connected, and the public GitHub API for the cached nav star count. It sends no user data and nothing else.
