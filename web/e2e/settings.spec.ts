@@ -70,6 +70,31 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(budget.getByText("How it's worked out")).toBeFocused();
 	await noSideScroll(page);
 
+	await page.goto('/profile');
+	const profilePage = page.getByRole('region', { name: 'Profile and targets' });
+	await profilePage.getByLabel('Daily calorie goal (kcal, optional)').fill('1800');
+	await profilePage.getByRole('button', { name: 'Save profile' }).click();
+	await expect(profilePage.getByRole('status')).toHaveText('Profile saved. Your budget uses it from today.');
+
+	await page.getByRole('link', { name: 'Today' }).click();
+	await expect(budget.getByText('1800 kcal goal')).toBeVisible();
+	await budget.getByText("How it's worked out").click();
+	await expect(budget.getByText('Your goal', { exact: true })).toBeVisible();
+	await expect(budget.getByText('Gap to maintenance')).toBeVisible();
+	await expect(budget.getByText(/kcal under maintenance/)).toBeVisible();
+	await page.keyboard.press('Escape');
+
+	await page.getByRole('link', { name: 'Activity' }).click();
+	await expect(page.getByTestId('activity-budget')).toContainText('Burned beyond base');
+	await expect(page.getByTestId('activity-budget')).toContainText('Goal 1800 kcal');
+	await expect(page.getByText('Used from this day until your next weigh-in.')).toBeVisible();
+
+	await page.goto('/profile');
+	await profilePage.getByLabel('Daily calorie goal (kcal, optional)').fill('');
+	await profilePage.getByRole('button', { name: 'Save profile' }).click();
+	await page.getByRole('link', { name: 'Today' }).click();
+	await expect(budget.getByText(/kcal plan/)).toBeVisible();
+
 	// Providers: add one that can't be reached, test it, edit without touching the key, delete it.
 	await page.getByRole('link', { name: 'Settings' }).click();
 	const providers = page.getByRole('region', { name: 'AI providers' });
