@@ -11,7 +11,8 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - M0 to M8 are done. M7 shipped v0.1.0: one-time invites, Tailscale identity mode, rewritten self-hosting docs, and the multi-arch image on GHCR. M8 refreshed the UI: the Mineral palette on the Pantry layout, self-hosted Manrope, new Today, Activity, Trends and Settings screens, server-side trend averages and meal mix, and new docs screenshots.
 - After M8: v0.2.0 shipped meal history as a repeat library (`GET /api/meals/history`, Trends "Eaten most", the recent-meals sheet, review-first repeat and copy-to-today) and the calmer motion scale with the shared sheet exit lifecycle.
 - v0.2.1 fixed PWA reachability on Android and Tailscale: real requests and a `/api/health` probe drive the online state, not `navigator.onLine`. v0.2.2 stopped the offline bar flashing during a boot-time blip.
-- Next: v0.3. Start with the known gaps below.
+- v0.3.0 shipped the optional fixed daily calorie goal: the goal is stored on each profile version, manual mode keeps the goal every day and shows the gap to maintenance, and backups carry it.
+- Next: v0.4. Start with the known gaps below.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 

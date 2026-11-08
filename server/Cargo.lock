@@ -453,7 +453,7 @@ dependencies = [
 
 [[package]]
 name = "cupful"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "argon2",
  "async-trait",
