@@ -19,6 +19,12 @@ pub struct Stars {
     client: reqwest::Client,
 }
 
+impl Default for Stars {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Stars {
     pub fn new() -> Self {
         Self {
@@ -32,10 +38,10 @@ impl Stars {
     }
 
     async fn count(&self, api: &str) -> Option<i64> {
-        if let Some((at, stars)) = self.cache.lock().ok().and_then(|c| *c) {
-            if at.elapsed() < CACHE_SECONDS {
-                return stars;
-            }
+        if let Some((at, stars)) = self.cache.lock().ok().and_then(|c| *c)
+            && at.elapsed() < CACHE_SECONDS
+        {
+            return stars;
         }
         let stars = self.fetch(api).await;
         if let Ok(mut cache) = self.cache.lock() {
