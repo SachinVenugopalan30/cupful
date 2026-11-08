@@ -163,3 +163,7 @@ One line per deviation from the design or notable choice: date - what - why.
 - 2026-11-04 - Repeat targets the selected day only; no future scheduling. - The app already treats today as the write boundary.
 - 2026-11-04 - Motion refresh: feedback 160 ms, movement 360 ms, sheets 420 ms in, 200 ms out. - The old timings read as abrupt on larger surfaces.
 - 2026-11-07 - Reachability comes from real requests and a `/api/health` probe, not `navigator.onLine`. - Android reports offline while a Tailscale VPN is still coming up, which left the installed PWA stuck on the offline banner until a late browser event or a reload.
+- 2026-11-07 - A daily calorie goal is a nullable `calorie_goal` on each profile version; empty means the automatic budget. - The version keeps past days honest when the goal changes.
+- 2026-11-07 - A manual goal is accepted from 500 to 10,000 whole kcal, warned below the floor, and never clamped. - It is the user's number; the warning covers the health side.
+- 2026-11-07 - Manual mode keeps `deficit` at 0 and puts the signed maintenance gap in a separate `gap` field. - The old field keeps one meaning instead of silently becoming a signed gap.
+- 2026-11-07 - An older cached client that saves the profile without `calorie_goal` clears it. - Acceptable on a self-hosted single-user instance; the update prompt prevents it in practice.
