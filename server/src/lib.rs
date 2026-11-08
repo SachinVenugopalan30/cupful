@@ -9,6 +9,7 @@ pub mod crypto;
 pub mod db;
 pub mod demo;
 pub mod error;
+pub mod github;
 pub mod google;
 mod history;
 pub mod ingest;
@@ -40,6 +41,8 @@ pub struct AppState {
     /// 60 requests an hour per ingest token.
     pub ingest_limiter: Arc<auth::RateLimiter>,
     pub products: Arc<products::Lookup>,
+    /// Public GitHub repo metadata for the nav star count; cached for an hour.
+    pub github: Arc<github::Stars>,
     /// Encrypts provider secrets. `new` uses a throwaway key; `main` sets the real one.
     pub secrets: Arc<crypto::Cipher>,
     pub ai_http: reqwest::Client,
@@ -69,6 +72,7 @@ impl AppState {
         Self {
             db,
             products: Arc::new(products::Lookup::new(&config)),
+            github: Arc::new(github::Stars::new()),
             config: Arc::new(config),
             login_limiter: Arc::new(auth::RateLimiter::new(5, Duration::from_secs(60))),
             invite_limiter: Arc::new(auth::RateLimiter::new(10, Duration::from_secs(3600))),
@@ -101,6 +105,7 @@ fn routes() -> Vec<(&'static str, &'static str, Access, MethodRouter<AppState>)>
     use Access::*;
     vec![
         ("GET", "/api/health", Public, get(health)),
+        ("GET", "/api/github", Public, get(github::info)),
         ("GET", "/api/auth/state", Public, get(auth::auth_state)),
         ("POST", "/api/auth/setup", Public, post(auth::setup)),
         ("POST", "/api/auth/login", Public, post(auth::login)),
