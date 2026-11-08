@@ -16,6 +16,8 @@ pub struct Config {
     pub trust_tailscale: bool,
     /// AGPL §13: where users of this instance can get its source.
     pub source_url: String,
+    /// GitHub API base for the nav star count; tests point it at wiremock.
+    pub github_api_url: String,
     /// Barcode lookups at Open Food Facts. Off: stored products and label entry only.
     pub product_lookup: bool,
     pub off_base_url: String,
@@ -47,6 +49,7 @@ impl Default for Config {
             trusted_proxy: None,
             trust_tailscale: false,
             source_url: "https://github.com/SachinVenugopalan30/cupful".into(),
+            github_api_url: "https://api.github.com".into(),
             product_lookup: true,
             off_base_url: "https://world.openfoodfacts.org".into(),
             off_timeout: Duration::from_secs(10),

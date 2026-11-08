@@ -167,3 +167,5 @@ One line per deviation from the design or notable choice: date - what - why.
 - 2026-11-07 - A manual goal is accepted from 500 to 10,000 whole kcal, warned below the floor, and never clamped. - It is the user's number; the warning covers the health side.
 - 2026-11-07 - Manual mode keeps `deficit` at 0 and puts the signed maintenance gap in a separate `gap` field. - The old field keeps one meaning instead of silently becoming a signed gap.
 - 2026-11-07 - An older cached client that saves the profile without `calorie_goal` clears it. - Acceptable on a self-hosted single-user instance; the update prompt prevents it in practice.
+- 2026-11-08 - GitHub stars come from the public GitHub API through `GET /api/github`, cached for an hour including failures. - A browser call per visitor would leak each user's IP and hit the unauthenticated rate limit; the server makes one shared request.
+- 2026-11-08 - The Activity week strip explains a day on hover or focus with steps, gym minutes, trained parts and workout names. - The compact marks need readable detail without opening another screen.

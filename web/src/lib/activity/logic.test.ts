@@ -17,6 +17,7 @@ import {
 	toggle,
 	weekWindow,
 	weekEndFor,
+	weekDayLines,
 	windowCovers,
 	weightDelta,
 	lastWeight,
@@ -150,6 +151,37 @@ describe('week and insights', () => {
 		const m = groupByDate([wo('2026-10-29', { id: 1 }), wo('2026-10-30', { id: 2 }), wo('2026-10-29', { id: 3 })]);
 		expect(m.get('2026-10-29')!.map((w) => w.id)).toEqual([1, 3]);
 		expect(m.get('2026-10-28')).toBeUndefined();
+	});
+});
+
+describe('weekDayLines', () => {
+	it('shows steps first and says when nothing else is logged', () => {
+		expect(weekDayLines({ steps: 9100, gym_minutes: null, trained: [], workouts: [] })).toEqual([
+			'9,100 steps',
+			'No gym or workouts logged'
+		]);
+		expect(weekDayLines({ steps: null, gym_minutes: null, trained: [], workouts: [] })).toEqual([
+			'No steps logged',
+			'No gym or workouts logged'
+		]);
+	});
+
+	it('adds gym minutes, trained parts and workout names', () => {
+		expect(
+			weekDayLines({
+				steps: 9100,
+				gym_minutes: 40,
+				trained: ['Chest', 'Arms'],
+				workouts: ['Strength training']
+			})
+		).toEqual(['9,100 steps', '40 min gym', 'Trained: Chest, Arms', 'Workout: Strength training']);
+	});
+
+	it('summarises more than two workouts', () => {
+		expect(weekDayLines({ steps: 5000, gym_minutes: null, trained: [], workouts: ['Run', 'Walk', 'Yoga', 'Bike'] })).toEqual([
+			'5,000 steps',
+			'Workouts: Run, Walk +2'
+		]);
 	});
 });
 

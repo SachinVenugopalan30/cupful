@@ -37,6 +37,9 @@ test.beforeAll(async ({ browser }) => {
 	server = await startCupful();
 	const ctx = await browser.newContext({ baseURL: server.base, viewport: { width: 360, height: 740 }, hasTouch: true });
 	page = await ctx.newPage();
+	await page.route('**/api/github', (route) =>
+		route.fulfill({ json: { url: 'https://github.com/SachinVenugopalan30/cupful', stars: 7 } })
+	);
 	await login(page);
 	await saveProfile(page);
 	await seedDay(page, TODAY, { steps: 6640 });
@@ -70,6 +73,9 @@ const weekDates = () =>
 test('cards, week strip and workouts panel; tapping a day selects it (workouts mocked)', async () => {
 	await page.goto('/activity');
 	await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
+	const github = page.getByRole('link', { name: 'Cupful on GitHub, 7 stars' });
+	await expect(github).toBeVisible();
+	await expect(github).toHaveAttribute('href', 'https://github.com/SachinVenugopalan30/cupful');
 	// Steps card: 6,640 of a typical 8,000 is 83%.
 	await expect(page.locator('.fact', { hasText: 'of your typical day' })).toContainText('83%');
 	// Today's workouts, one with the name and one with a fallback.
@@ -82,7 +88,15 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	// Seven day buttons; gym shows on yesterday.
 	const cols = page.getByRole('region', { name: 'This week' }).getByRole('button');
 	await expect(cols).toHaveCount(7);
-	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, gym, 1 workout/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, 40 min gym, Workout: Strength training/ })).toBeVisible();
+	const yesterday = page.getByRole('button', { name: /^Yesterday:/ });
+	await yesterday.hover();
+	await expect(yesterday.locator('.tip')).toBeVisible();
+	await expect(yesterday.locator('.tip')).toContainText('40 min gym');
+	await expect(yesterday.locator('.tip')).toContainText('Workout: Strength training');
+	const today = page.getByRole('button', { name: /^Today:/ });
+	await today.hover();
+	await expect(today.locator('.tip')).toContainText('Workouts: Morning run, Evening walk');
 	await noSideScroll();
 
 	const weekBefore = await weekDates();

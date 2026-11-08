@@ -92,6 +92,27 @@ export function lastTrained(gym: Set<string>, date: string): string | null {
 	return [...gym].filter((d) => d <= date).sort().at(-1) ?? null;
 }
 
+/** What a week-strip day tooltip says: steps, then any gym, trained parts, and workouts. */
+export type WeekDayDetail = {
+	steps: number | null;
+	gym_minutes: number | null;
+	trained: string[];
+	workouts: string[];
+};
+
+export function weekDayLines(r: WeekDayDetail): string[] {
+	const lines = [r.steps === null ? 'No steps logged' : `${r.steps.toLocaleString()} steps`];
+	if ((r.gym_minutes ?? 0) > 0) lines.push(`${r.gym_minutes} min gym`);
+	if (r.trained.length) lines.push(`Trained: ${r.trained.join(', ')}`);
+	if (r.workouts.length) {
+		const names = r.workouts.slice(0, 2).join(', ');
+		const more = r.workouts.length > 2 ? ` +${r.workouts.length - 2}` : '';
+		lines.push(`${r.workouts.length === 1 ? 'Workout' : 'Workouts'}: ${names}${more}`);
+	}
+	if (lines.length === 1) lines.push('No gym or workouts logged');
+	return lines;
+}
+
 /** The latest weigh-in on or before `date` and the one before it; delta is in kg. */
 export function weightDelta(days: Day[], date: string) {
 	const weighed = days.filter((d) => d.weight_kg !== null && d.date <= date).sort((a, b) => a.date.localeCompare(b.date));
