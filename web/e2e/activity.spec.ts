@@ -37,6 +37,9 @@ test.beforeAll(async ({ browser }) => {
 	server = await startCupful();
 	const ctx = await browser.newContext({ baseURL: server.base, viewport: { width: 360, height: 740 }, hasTouch: true });
 	page = await ctx.newPage();
+	await page.route('**/api/github', (route) =>
+		route.fulfill({ json: { url: 'https://github.com/SachinVenugopalan30/cupful', stars: 7 } })
+	);
 	await login(page);
 	await saveProfile(page);
 	await seedDay(page, TODAY, { steps: 6640 });
@@ -70,6 +73,9 @@ const weekDates = () =>
 test('cards, week strip and workouts panel; tapping a day selects it (workouts mocked)', async () => {
 	await page.goto('/activity');
 	await expect(page.getByRole('heading', { name: 'This week' })).toBeVisible();
+	const github = page.getByRole('link', { name: 'Cupful on GitHub, 7 stars' });
+	await expect(github).toBeVisible();
+	await expect(github).toHaveAttribute('href', 'https://github.com/SachinVenugopalan30/cupful');
 	// Steps card: 6,640 of a typical 8,000 is 83%.
 	await expect(page.locator('.fact', { hasText: 'of your typical day' })).toContainText('83%');
 	// Today's workouts, one with the name and one with a fallback.

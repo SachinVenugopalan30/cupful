@@ -3,6 +3,7 @@
 	import '#lib/styles/tokens.css';
 	import '#lib/styles/global.css';
 	import Wordmark from '#lib/Wordmark.svelte';
+	import GitHubLink from '#lib/GitHubLink.svelte';
 	import UserMenu from '#lib/UserMenu.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -84,6 +85,7 @@
 					<span>Settings</span>
 				</a>
 			</div>
+			<GitHubLink />
 			<UserMenu />
 		</nav>
 	{/if}
