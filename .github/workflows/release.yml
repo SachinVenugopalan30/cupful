@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      needs_release: ${{ steps.version.outputs.needs_release }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - name: Read the version and check for an existing release
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version=$(node scripts/check-version.mjs)
+          tag="v$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "needs_release=false" >> "$GITHUB_OUTPUT"
+            echo "$tag is already released"
+          else
+            echo "needs_release=true" >> "$GITHUB_OUTPUT"
+            echo "$tag needs a release"
+          fi
+
+  verify:
+    needs: preflight
+    if: needs.preflight.outputs.needs_release == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v4.4.0
+      - uses: docker/setup-buildx-action@v4.4.1
+      - name: Smoke test ${{ matrix.arch }}
+        run: |
+          arch="${{ matrix.arch }}"
+          docker buildx build \
+            --platform "linux/$arch" \
+            --tag "cupful:$arch" \
+            --load \
+            --cache-from "type=gha,scope=cupful-$arch" \
+            --cache-to "type=gha,mode=max,scope=cupful-$arch" \
+            .
+          docker run -d --name "cupful-$arch" --platform "linux/$arch" -p 8080 "cupful:$arch"
+          port=$(docker port "cupful-$arch" 8080 | head -1 | cut -d: -f2)
+          for i in $(seq 1 30); do curl -sf "localhost:$port/api/health" && break; sleep 1; done
+          curl -sf "localhost:$port/api/health" || { docker logs "cupful-$arch"; exit 1; }
+
+  publish:
+    needs: [preflight, verify]
+    if: needs.preflight.outputs.needs_release == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: ${{ needs.preflight.outputs.version }}
+
+  release:
+    needs: [preflight, publish]
+    if: needs.preflight.outputs.needs_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the tag and GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preflight.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists"
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --generate-notes \
+            --latest

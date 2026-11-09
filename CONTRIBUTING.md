@@ -142,3 +142,20 @@ npm run test:e2e
 - Say what changed, why, and how you tested it.
 - All checks green. Every commit signed off.
 - No telemetry. Cupful makes outbound calls only to configured AI providers, Open Food Facts and Google when connected. Pull requests that add analytics, crash reporting or update pings will be declined.
+
+## Releases
+
+Releases go through a version-bump pull request. Choose the semver step deliberately: patch for fixes, minor for features, major for breaking changes. A feature pull request does not release on its own.
+
+```sh
+git switch -c release/v0.4.0
+node scripts/bump-version.mjs 0.4.0
+git diff --check
+git commit -s -m "Release 0.4.0"
+git push -u origin release/v0.4.0
+gh pr create --title "Release 0.4.0" --body "Version bump only. release.yml publishes and creates the tag after merge."
+```
+
+`scripts/check-version.mjs` runs in CI and in the release workflow. After the pull request merges, the `Release` workflow publishes both architectures, creates the `vX.Y.Z` tag, and creates the GitHub release. Do not push tags by hand.
+
+If publishing fails, fix the cause and run `Release` manually from Actions. It is safe to re-run and skips an existing release.
