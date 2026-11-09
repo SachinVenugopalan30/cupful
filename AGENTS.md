@@ -14,6 +14,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - v0.3.0 shipped the optional fixed daily calorie goal: the goal is stored on each profile version, manual mode keeps the goal every day and shows the gap to maintenance, and backups carry it.
 - v0.3.1 added week-strip tooltips for steps, gym minutes, trained parts and workouts, plus a live GitHub star link backed by a cached public endpoint.
 - v0.3.2 softened the light theme panels to `#f8fafa` and kept input outlines at 3:1 contrast.
+- Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
 - Next: v0.4. Start with the known gaps below.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
@@ -51,6 +52,7 @@ web/                    SvelteKit app: /, /activity, /trends, /settings, /profil
 docs/                   design, offline, import-export, backups, providers, google-health, shortcuts, decisions
 data/                   staples, aliases, portions, USDA tools, golden estimates
 fixtures/               shared test vectors and samples
+scripts/                install-hooks, bump-version, check-version
 ```
 
 ## Commands
@@ -58,6 +60,10 @@ fixtures/               shared test vectors and samples
 ```sh
 # repo root, once per clone: pre-commit runs fmt, svelte-check and Vitest on staged changes
 ./scripts/install-hooks.sh
+
+# release pull request, from repo root
+node scripts/bump-version.mjs 0.4.0
+node scripts/check-version.mjs
 
 # backend, from server/
 CUPFUL_SECURE_COOKIES=false cargo run -- serve
