@@ -11,11 +11,11 @@
 
 	/* ---- surfaces and text ---- */
 	--bg: light-dark(#f2f5f6, #0e1418); /* cool pale stone */
-	--surface: light-dark(#ffffff, #151d22);
+	--surface: light-dark(#f8fafa, #151d22); /* cool off-white; pure white reads harsh */
 	--surface-2: light-dark(#e7edef, #1b262c); /* sunken: meter tracks, inputs, hover */
 	--border: light-dark(#dce5e8, #2a3740); /* hairlines; decorative */
 	--border-strong: light-dark(#9aabb3, #60747f); /* stronger rules and separators */
-	--control-border: light-dark(#8598a1, #60747f); /* input outlines: 3:1 on surface */
+	--control-border: light-dark(#7e919b, #60747f); /* input outlines: 3:1 on --surface */
 	--text: light-dark(#172025, #e9f1f4);
 	--text-muted: light-dark(#59666d, #9fb0b8);
 

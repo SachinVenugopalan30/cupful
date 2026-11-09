@@ -5,9 +5,9 @@ People open Cupful many times a day, on a phone, for a few seconds. They check w
 
 ## Direction
 
-**Mineral.** Cool pale stone, white panels, one deep sea blue. The light theme sits on `#f2f5f6`, not a warm tint. The dark theme sits on `#0e1418`, a green-black rather than navy. The palette is quiet and slightly cool, like a kitchen scale and a glass of water.
+**Mineral.** Cool pale stone, cool off-white panels, one deep sea blue. The light theme sits on `#f2f5f6`, not a warm tint. The panels are `#f8fafa`, not pure white, so the light theme does not glare. The dark theme sits on `#0e1418`, a green-black rather than navy. The palette is quiet and slightly cool, like a kitchen scale and a glass of water.
 
-**Pantry layout.** Soft surfaces, generous spacing and large radii. White cards sit on the pale ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and an account menu. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text, never an accent fill.
+**Pantry layout.** Soft surfaces, generous spacing and large radii. Off-white cards sit on the pale ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and an account menu. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text, never an accent fill.
 
 Nothing shouts. Strong colors carry meaning. Teal means "left". Brick means "over". Amber means "check this". Data hues come from pantry food: blue protein, ochre carbs, brick fat, teal steps, berry weight, and orange, teal, blue and gold for the four meals.
 
@@ -30,11 +30,11 @@ Nothing shouts. Strong colors carry meaning. Teal means "left". Brick means "ove
 | Role | Light | Dark |
 | --- | --- | --- |
 | Page `--bg` | `#f2f5f6` | `#0e1418` |
-| Card `--surface` | `#ffffff` | `#151d22` |
+| Card `--surface` | `#f8fafa` | `#151d22` |
 | Sunken `--surface-2` | `#e7edef` | `#1b262c` |
 | Hairline `--border` | `#dce5e8` | `#2a3740` |
 | Strong rule `--border-strong` | `#9aabb3` | `#60747f` |
-| Control outline `--control-border` | `#8598a1` | `#60747f` |
+| Control outline `--control-border` | `#7e919b` | `#60747f` |
 | Text `--text` | `#172025` | `#e9f1f4` |
 | Muted `--text-muted` | `#59666d` | `#9fb0b8` |
 | Accent `--accent` | `#245f8a` | `#82c2e8` |
