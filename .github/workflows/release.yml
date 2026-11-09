@@ -15,10 +15,12 @@ concurrency:
 
 jobs:
   preflight:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
+      stable: ${{ steps.version.outputs.stable }}
       needs_release: ${{ steps.version.outputs.needs_release }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -35,14 +37,27 @@ jobs:
         run: |
           version=$(node scripts/check-version.mjs)
           tag="v$version"
+          if [[ "$version" == *-* ]]; then stable=false; else stable=true; fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          echo "stable=$stable" >> "$GITHUB_OUTPUT"
+          if output=$(gh release view "$tag" 2>&1); then
             echo "needs_release=false" >> "$GITHUB_OUTPUT"
             echo "$tag is already released"
-          else
+          elif [[ "$output" == "release not found" ]]; then
+            git fetch --force --tags origin
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              tag_commit=$(git rev-parse "$tag^{commit}")
+              if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+                echo "::error::$tag points to $tag_commit, not $GITHUB_SHA"
+                exit 1
+              fi
+            fi
             echo "needs_release=true" >> "$GITHUB_OUTPUT"
             echo "$tag needs a release"
+          else
+            echo "$output"
+            exit 1
           fi
 
   verify:
@@ -95,13 +110,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.preflight.outputs.tag }}
+          STABLE: ${{ needs.preflight.outputs.stable }}
         run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if output=$(gh release view "$TAG" 2>&1); then
             echo "$TAG already exists"
             exit 0
+          elif [[ "$output" != "release not found" ]]; then
+            echo "$output"
+            exit 1
           fi
-          gh release create "$TAG" \
-            --target "$GITHUB_SHA" \
-            --title "$TAG" \
-            --generate-notes \
-            --latest
+          if [[ "$STABLE" == "true" ]]; then
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --generate-notes \
+              --latest
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --generate-notes \
+              --prerelease
+          fi

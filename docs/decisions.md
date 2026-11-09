@@ -171,3 +171,4 @@ One line per deviation from the design or notable choice: date - what - why.
 - 2026-11-08 - The Activity week strip explains a day on hover or focus with steps, gym minutes, trained parts and workout names. - The compact marks need readable detail without opening another screen.
 - 2026-11-09 - Light theme panels use `#f8fafa` instead of pure white, and the control outline darkens to `#7e919b` to keep 3:1 contrast. - Pure white was harsh against the pale stone ground.
 - 2026-11-09 - Releases use an explicit version-bump pull request; merging it makes `release.yml` publish both architectures, create the tag and create the GitHub release. - Semver stays a human decision, and a tag created with `GITHUB_TOKEN` would not trigger the tag workflow again.
+- 2026-11-09 - Pull requests always run CI, even for docs-only changes. - Protected `main` requires `rust`, `web`, `docker (amd64)` and DCO checks, and a skipped workflow leaves those checks missing instead of green.

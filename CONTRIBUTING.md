@@ -158,4 +158,4 @@ gh pr create --title "Release 0.4.0" --body "Version bump only. release.yml publ
 
 `scripts/check-version.mjs` runs in CI and in the release workflow. After the pull request merges, the `Release` workflow publishes both architectures, creates the `vX.Y.Z` tag, and creates the GitHub release. Do not push tags by hand.
 
-If publishing fails, fix the cause and run `Release` manually from Actions. It is safe to re-run and skips an existing release.
+If publishing fails, fix the cause and run `Release` manually from Actions on `main`. It is safe to re-run and skips an existing release. Other refs are refused, so a branch cannot publish unmerged code.

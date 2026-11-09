@@ -9,6 +9,7 @@ const errors = [];
 const check = (ok, message) => {
 	if (!ok) errors.push(message);
 };
+const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const semver = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const cargoToml = read("server/Cargo.toml");
@@ -45,16 +46,17 @@ check(
 
 const readme = read("README.md");
 check(readme.includes(`Version ${version}.`), `README.md does not say Version ${version}.`);
-check(readme.includes(`:${version}`), `README.md does not use the ${version} image tag`);
+const imageTag = new RegExp(`cupful:${escape(version)}(?![\\d.-])`);
+check(imageTag.test(readme), `README.md does not use the ${version} image tag`);
 
 const selfHosting = read("docs/self-hosting.md");
 check(
-	selfHosting.includes(`:${version}`),
+	imageTag.test(selfHosting),
 	`docs/self-hosting.md does not use the ${version} image tag`,
 );
 
 const compose = read("compose.yaml");
-check(compose.includes(`:${version}`), `compose.yaml does not use the ${version} image tag`);
+check(imageTag.test(compose), `compose.yaml does not use the ${version} image tag`);
 
 if (errors.length > 0) {
 	for (const error of errors) console.error(`version: ${error}`);

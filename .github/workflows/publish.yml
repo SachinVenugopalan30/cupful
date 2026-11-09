@@ -33,6 +33,10 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           version="${INPUT_VERSION#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid release version: $version"
+            exit 1
+          fi
           major_minor=$(printf '%s' "$version" | cut -d. -f1-2)
           if [[ "$version" == *-* ]]; then stable=false; else stable=true; fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -44,7 +48,7 @@ jobs:
           images: ${{ steps.image.outputs.name }}
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.major_minor }}
+            type=raw,value=${{ steps.version.outputs.major_minor }},enable=${{ steps.version.outputs.stable == 'true' }}
             type=raw,value=latest,enable=${{ steps.version.outputs.stable == 'true' }}
       - uses: docker/build-push-action@v7.4.0
         with:
