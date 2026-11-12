@@ -19,19 +19,31 @@
 	let {
 		itemId,
 		mode,
+		saved: shared,
+		savedError: sharedError,
 		onPick
-	}: { itemId: string; mode: 'replace' | 'append'; onPick: (p: Product) => void } = $props();
+	}: {
+		itemId: string;
+		mode: 'replace' | 'append';
+		/** The review sheet's shared list; omit to load the list just here. */
+		saved?: SavedProduct[] | null;
+		savedError?: string;
+		onPick: (p: Product) => void;
+	} = $props();
 
 	let query = $state('');
-	let saved = $state<SavedProduct[] | null>(null);
-	let savedError = $state('');
+	let ownSaved = $state<SavedProduct[] | null>(null);
+	let ownError = $state('');
+	const saved = $derived(shared !== undefined ? shared : ownSaved);
+	const savedError = $derived(sharedError !== undefined ? sharedError : ownError);
 	let view = $state<'list' | 'scan' | { label: string }>('list');
 	const matches = $derived(filterSaved(saved ?? [], query));
 
 	onMount(() => {
+		if (shared !== undefined) return;
 		products.list().then(
-			(l) => (saved = l),
-			(e) => (savedError = errorMessage(e))
+			(l) => (ownSaved = l),
+			(e) => (ownError = errorMessage(e))
 		);
 	});
 </script>

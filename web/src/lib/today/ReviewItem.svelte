@@ -3,7 +3,8 @@
 <script lang="ts">
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
 	import { portionGrams, portionLabel } from '#lib/products/portions.ts';
-	import type { Product } from '#lib/api.ts';
+	import type { Product, SavedProduct } from '#lib/api.ts';
+	import { matchProduct } from './productMatch';
 	import ReviewProductPicker from './ReviewProductPicker.svelte';
 	import { MACROS } from './review';
 	import {
@@ -20,6 +21,8 @@
 		item = $bindable(),
 		open,
 		picking,
+		saved = null,
+		savedError = '',
 		onRemove,
 		onToggle,
 		onPick,
@@ -28,6 +31,9 @@
 		item: DraftItem;
 		open: boolean;
 		picking: boolean;
+		/** The review sheet's saved products, loaded once for every row. */
+		saved?: SavedProduct[] | null;
+		savedError?: string;
 		onRemove: () => void;
 		onToggle: () => void;
 		onPick: () => void;
@@ -35,6 +41,7 @@
 	} = $props();
 
 	const ready = $derived(itemReady(item));
+	const suggested = $derived(matchProduct(item, saved));
 
 	const num = (e: Event) => {
 		const v = (e.currentTarget as HTMLInputElement).valueAsNumber;
@@ -110,6 +117,15 @@
 		{/if}
 		{#if !ready}<span class="chip chip-warning">Needs your numbers</span>{/if}
 	</p>
+
+	{#if suggested}
+		<div class="row suggest">
+			<span class="chip chip-db">Saved product</span>
+			<button type="button" class="btn btn-quiet" onclick={() => onSwap(suggested)}>
+				Use {suggested.name}
+			</button>
+		</div>
+	{/if}
 
 	{#if item.options.length}
 		<fieldset class="choice">
@@ -210,7 +226,7 @@
 	</div>
 
 	{#if picking}
-		<ReviewProductPicker itemId={item.id} mode="replace" onPick={onSwap} />
+		<ReviewProductPicker itemId={item.id} mode="replace" {saved} {savedError} onPick={onSwap} />
 	{/if}
 
 	{#if item.swapped && item.phrase.trim()}
@@ -266,6 +282,9 @@
 		stroke-linecap: round;
 	}
 	.meta {
+		gap: var(--space-2);
+	}
+	.suggest {
 		gap: var(--space-2);
 	}
 	.choice {

@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { errorMessage, foods } from '#lib/api.ts';
+	import { errorMessage, foods, products, type SavedProduct } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
@@ -58,6 +58,9 @@
 	let returnFocus: HTMLElement | null = null;
 	let saving = $state(false);
 	let error = $state('');
+	// The saved-product list for the whole sheet: every item shares it, so the picker doesn't fetch.
+	let saved = $state<SavedProduct[] | null>(null);
+	let savedError = $state('');
 
 	const totals = $derived(sumItems(d.items, d.scale));
 	const missing = $derived(d.items.filter((i) => !itemReady(i)).length);
@@ -67,6 +70,10 @@
 		returnFocus = document.activeElement as HTMLElement | null;
 		dialog.showModal();
 		heading?.focus();
+		products.list().then(
+			(list) => (saved = list),
+			(e) => (savedError = errorMessage(e))
+		);
 	});
 
 	function close(force = false) {
@@ -176,6 +183,8 @@
 					bind:item={d.items[n]}
 					open={opened.includes(item.id)}
 					picking={picking === item.id}
+					{saved}
+					{savedError}
 					onRemove={() => d.items.splice(n, 1)}
 					onToggle={() => toggle(item.id)}
 					onPick={() => pick(item.id)}
@@ -195,6 +204,8 @@
 			<ReviewProductPicker
 				itemId={APPEND}
 				mode="append"
+				{saved}
+				{savedError}
 				onPick={(p) => {
 					d.items = appendProduct(d.items, p);
 					picking = null;
