@@ -23,7 +23,9 @@
 	</header>
 	<div class="budget"><BudgetCard date={day.date} {refreshKey} /></div>
 	<div class="log">
-		<UsualMeal date={day.date} {refreshKey} onSaved={changed} />
+		{#key day.date}
+			<UsualMeal date={day.date} {refreshKey} onSaved={changed} />
+		{/key}
 		<Composer date={day.date} onSaved={changed} />
 		<BarcodeEntry date={day.date} onSaved={changed} />
 	</div>

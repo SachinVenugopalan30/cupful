@@ -66,4 +66,13 @@ test('shows the usual, logs in one tap, undoes, and lists the menu', async ({ pa
 	// The dismissal is local: a reload keeps it hidden for this browser.
 	await page.reload();
 	await expect(page.getByTestId('usual').locator('.usual-body')).toContainText('Alt bowl');
+
+	// Changing days resets the chip state: no stale undo bar after returning to today.
+	await page.getByTestId('usual').getByRole('button', { name: 'Log', exact: true }).click();
+	await expect(page.getByTestId('usual-undo')).toBeVisible();
+	await page.getByRole('button', { name: 'Previous day' }).click();
+	await page.getByRole('button', { name: 'Back to today' }).click();
+	await expect(page.getByTestId('usual-undo')).toHaveCount(0);
+	await expect(page.getByTestId('usual')).toHaveCount(0);
+	await expect(page.getByTestId('meal')).toHaveCount(1);
 });
