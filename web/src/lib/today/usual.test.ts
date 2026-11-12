@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
 import type { HistoryMeal } from '#lib/api.ts';
+import type { QueueStatus, QueuedOp } from '#lib/offline/types.ts';
+import { mealDelete, mealUpsert, type MealIn, type Op } from '#lib/sync/index.ts';
 import {
 	USUAL_MIN_TIMES,
 	dismissUsual,
 	isDismissed,
 	pickUsual,
+	queuedLog,
 	readDismissed,
 	usualAlternatives,
 	usualKey,
@@ -123,8 +126,8 @@ describe('local dismissal', () => {
 
 	it('adds a dismissal once', () => {
 		const s = store();
-		dismissUsual('lunch', 'Oats', s);
-		const list = dismissUsual('lunch', 'oats', s);
+		dismissUsual('lunch', 'Oats', [], s);
+		const list = dismissUsual('lunch', 'oats', [], s);
 		expect(list).toEqual(['lunch:oats']);
 		expect(isDismissed(meal(), list)).toBe(true);
 	});
@@ -152,5 +155,120 @@ describe('usual write payloads', () => {
 		const undo = usualUndoOp(logged.id);
 		expect(undo.kind).toBe('meal.delete');
 		expect(undo.payload).toEqual({ id: logged.id });
+	});
+});
+
+describe('queued usual logs', () => {
+	let n = 0;
+	const queued = (op: Op, status: QueueStatus = 'pending'): QueuedOp => ({
+		op_id: `q${++n}`,
+		user_id: 1,
+		op,
+		status,
+		queued_at: 1,
+		attempts: 0
+	});
+	const upsert = (overrides: Partial<MealIn> = {}): Op =>
+		mealUpsert({
+			id: 'u1',
+			date: today,
+			meal_type: 'lunch',
+			description: 'Oats',
+			scale: 1,
+			assumptions: null,
+			confidence: null,
+			source: 'repeat',
+			provider_id: null,
+			items: [],
+			...overrides
+		});
+
+	it('hides the usual when a queued upsert already logs it today', () => {
+		const usual = meal();
+		expect(queuedLog(usual, today, [queued(upsert())])).toBe(true);
+		expect(pickUsual([usual], 'lunch', today, [], [queued(upsert())])).toBeNull();
+	});
+
+	it('ignores queued logs for another date, slot or label', () => {
+		const usual = meal();
+		expect(queuedLog(usual, today, [queued(upsert({ date: '2026-11-11' }))])).toBe(false);
+		expect(queuedLog(usual, today, [queued(upsert({ meal_type: 'dinner' }))])).toBe(false);
+		expect(queuedLog(usual, today, [queued(upsert({ description: 'Rice' }))])).toBe(false);
+	});
+
+	it('ignores queued ops that are no longer going to land', () => {
+		const usual = meal();
+		for (const status of ['stale', 'rejected', 'failed'] as QueueStatus[]) {
+			expect(queuedLog(usual, today, [queued(upsert(), status)])).toBe(false);
+		}
+	});
+
+	it('counts an unnamed queued meal by its item names', () => {
+		const usual = meal({ description: '', label: 'Oats' });
+		const op = upsert({
+			description: '',
+			items: [
+				{
+					id: 'i1',
+					name: 'Oats',
+					portion_text: '1 bowl',
+					grams: 100,
+					kcal: 350,
+					protein_g: 12,
+					carbs_g: 60,
+					fat_g: 7,
+					food_id: null,
+					origin: 'ai_estimate'
+				}
+			]
+		});
+		expect(queuedLog(usual, today, [queued(op)])).toBe(true);
+	});
+
+	it('lets Undo bring the chip back', () => {
+		const usual = meal();
+		const log = upsert({ id: 'u1' });
+		expect(
+			queuedLog(usual, today, [queued(log), queued(mealDelete('u1'))])
+		).toBe(false);
+		expect(pickUsual([usual], 'lunch', today, [], [queued(log), queued(mealDelete('u1'))])).not.toBeNull();
+	});
+
+	it('stays hidden while the day is still the same but the history read is cached', () => {
+		// The chip is asked again after a reload: history still says last_date is old, the queue
+		// still holds the log, so nothing shows.
+		const usual = meal({ last_date: '2026-11-10' });
+		const ops = [queued(upsert({ id: 'u9' }))];
+		expect(pickUsual([usual], 'lunch', today, [], ops)).toBeNull();
+	});
+});
+
+describe('storage failures', () => {
+	it('reads an empty list when the localStorage getter throws', () => {
+		const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+		Object.defineProperty(globalThis, 'localStorage', {
+			configurable: true,
+			get() {
+				throw new Error('blocked by policy');
+			}
+		});
+		try {
+			expect(readDismissed()).toEqual([]);
+		} finally {
+			if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+			else Reflect.deleteProperty(globalThis, 'localStorage');
+		}
+	});
+
+	it('keeps earlier dismissals in memory when the write fails', () => {
+		const blocked = {
+			getItem: () => null,
+			setItem: () => {
+				throw new Error('quota');
+			}
+		};
+		const first = dismissUsual('lunch', 'Oats', [], blocked);
+		const second = dismissUsual('lunch', 'Rice', first, blocked);
+		expect(second).toEqual(['lunch:oats', 'lunch:rice']);
 	});
 });

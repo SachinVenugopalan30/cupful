@@ -3,13 +3,7 @@
 // and the menu lists the close alternatives plus the local dismissal action.
 import { expect, test } from '@playwright/test';
 import type { ChildProcess } from 'node:child_process';
-import {
-	login,
-	randomPort,
-	seedMeal,
-	startCupful,
-	type MealType
-} from './helpers/server';
+import { login, randomPort, seedMeal, startCupful, type MealType } from './helpers/server';
 
 const port = randomPort();
 let server: ChildProcess;

@@ -12,6 +12,7 @@
 	import { errorMessage, getMealHistory, type HistoryMeal } from '#lib/api.ts';
 	import { dismiss } from '#lib/dismiss.ts';
 	import { formatKcal } from '#lib/format.ts';
+	import { queueState } from '#lib/offline/state.svelte.ts';
 	import { defaultMealType } from '#lib/products/logic.ts';
 	import { today } from '#lib/session.svelte.ts';
 	import { sendOps } from '#lib/sync/index.ts';
@@ -35,7 +36,7 @@
 		onSaved
 	}: { date: string; refreshKey: number; onSaved: () => void } = $props();
 
-	const slot = defaultMealType(new Date().getHours());
+	let stamp = $state(Date.now());
 	let meals = $state<HistoryMeal[] | null>(null);
 	let dismissed = $state<string[]>(readDismissed());
 	let saving = $state(false);
@@ -45,12 +46,30 @@
 	let logged = $state<{ id: string; queued: boolean } | null>(null);
 	let review = $state<{ draft: Draft; title: string } | null>(null);
 
+	// The slot is recomputed from a clock that wakes with the app, so a tab left open from
+	// breakfast stops offering breakfast at lunch.
+	const slot = $derived(defaultMealType(new Date(stamp).getHours()));
 	const usual = $derived(
-		!hidden && date === today() && meals ? pickUsual(meals, slot, today(), dismissed) : null
+		!hidden && date === today() && meals
+			? pickUsual(meals, slot, today(), dismissed, queueState.ops)
+			: null
 	);
 	const alternatives = $derived(
 		usual && meals ? usualAlternatives(meals, slot, usual, dismissed) : []
 	);
+
+	$effect(() => {
+		const wake = () => (stamp = Date.now());
+		const onVisible = () => {
+			if (!document.hidden) wake();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		window.addEventListener('focus', wake);
+		return () => {
+			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('focus', wake);
+		};
+	});
 
 	$effect(() => {
 		const shown = date;
@@ -117,7 +136,7 @@
 
 	function dismissTop() {
 		if (!usual) return;
-		dismissed = dismissUsual(slot, usual.label);
+		dismissed = dismissUsual(slot, usual.label, dismissed);
 	}
 
 	function reviewSaved() {

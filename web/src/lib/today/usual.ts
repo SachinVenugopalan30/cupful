@@ -3,6 +3,7 @@
 // dismissal is a local preference, not a server setting.
 
 import type { HistoryMeal, MealType } from '#lib/api.ts';
+import type { QueuedOp } from '#lib/offline/types.ts';
 import { mealDelete, mealUpsert, type MealIn, type Op } from '#lib/sync/index.ts';
 import { mealFromDraft, repeatDraft } from './meal.ts';
 
@@ -19,7 +20,12 @@ type DismissStore = {
 };
 
 function localStore(): DismissStore | null {
-	return typeof localStorage === 'undefined' ? null : localStorage;
+	try {
+		return typeof localStorage === 'undefined' ? null : localStorage;
+	} catch {
+		// A browser policy can block the getter itself, not just reads and writes.
+		return null;
+	}
 }
 
 /** Stable key for a slot and a normalized label. */
@@ -31,6 +37,42 @@ export function isDismissed(meal: HistoryMeal, dismissed: readonly string[]): bo
 	return dismissed.includes(usualKey(meal.meal_type, meal.label));
 }
 
+const live = (entry: QueuedOp) => entry.status === 'pending' || entry.status === 'sending';
+
+/** The server's label rule for a meal: its description, else its item names joined. */
+function queuedLabel(meal: MealIn): string {
+	const description = meal.description.trim();
+	if (description) return description;
+	return meal.items
+		.map((i) => i.name.trim())
+		.filter((n) => n !== '')
+		.sort((a, b) => {
+			const left = a.toLowerCase();
+			const right = b.toLowerCase();
+			return left < right ? -1 : left > right ? 1 : 0;
+		})
+		.join(', ');
+}
+
+/**
+ * True when a still-queued log already records this usual for `date`. History reads come from the
+ * cache, so without this the chip returns after an offline Log and a second tap duplicates the
+ * meal. A queued delete of the same meal cancels it, so Undo brings the chip back.
+ */
+export function queuedLog(usual: HistoryMeal, date: string, ops: readonly QueuedOp[]): boolean {
+	const deleted = new Set<string>();
+	for (const entry of ops) {
+		if (live(entry) && entry.op.kind === 'meal.delete') deleted.add(entry.op.payload.id);
+	}
+	const key = usualKey(usual.meal_type, usual.label);
+	return ops.some((entry) => {
+		if (!live(entry) || entry.op.kind !== 'meal.upsert') return false;
+		const meal = entry.op.payload;
+		if (deleted.has(meal.id) || meal.date !== date || meal.meal_type !== usual.meal_type) return false;
+		return usualKey(meal.meal_type, queuedLabel(meal)) === key;
+	});
+}
+
 /**
  * The top usual for the slot: frequent first (the server's order), skipping dismissed groups.
  * Nothing shows until it has been eaten three times, and it hides once it was logged today.
@@ -39,10 +81,12 @@ export function pickUsual(
 	meals: readonly HistoryMeal[],
 	mealType: MealType,
 	today: string,
-	dismissed: readonly string[] = []
+	dismissed: readonly string[] = [],
+	ops: readonly QueuedOp[] = []
 ): HistoryMeal | null {
 	const top = meals.find((m) => m.meal_type === mealType && !isDismissed(m, dismissed));
-	if (!top || top.times < USUAL_MIN_TIMES || top.last_date === today) return null;
+	if (!top || top.times < USUAL_MIN_TIMES) return null;
+	if (top.last_date === today || queuedLog(top, today, ops)) return null;
 	return top;
 }
 
@@ -78,9 +122,11 @@ export function readDismissed(store: DismissStore | null = localStore()): string
 export function dismissUsual(
 	mealType: MealType,
 	label: string,
+	current: readonly string[] = [],
 	store: DismissStore | null = localStore()
 ): string[] {
-	const next = [...new Set([...readDismissed(store), usualKey(mealType, label)])];
+	// Merge the caller's list too: a failed write must not resurrect an earlier dismissal.
+	const next = [...new Set([...current, ...readDismissed(store), usualKey(mealType, label)])];
 	try {
 		store?.setItem(DISMISSED_KEY, JSON.stringify(next));
 	} catch {
