@@ -43,6 +43,13 @@ async fn hit_is_mapped_stored_and_saved() {
     assert_eq!(p["serving_unit"], "g");
     assert_eq!(p["serving_text"], "1 biscuit (12 g)");
     assert_eq!(
+        p["portions"],
+        serde_json::json!([
+            {"unit": "biscuit", "grams": 12.0},
+            {"unit": "serving", "grams": 12.0}
+        ])
+    );
+    assert_eq!(
         p["attribution"]["text"],
         "Product data from Open Food Facts (ODbL)"
     );

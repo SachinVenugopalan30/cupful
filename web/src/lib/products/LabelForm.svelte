@@ -14,6 +14,7 @@
 		barcode,
 		basis: 'serving' as LabelForm['basis'],
 		serving_g: null as number | null,
+		serving_text: '',
 		kcal: null as number | null,
 		protein_g: null as number | null,
 		carbs_g: null as number | null,
@@ -34,6 +35,7 @@
 		const form: LabelForm = {
 			...f,
 			serving_g: f.serving_g === null || f.serving_g === undefined ? null : Number(f.serving_g),
+			serving_text: f.serving_text.trim() || undefined,
 			kcal: num(f.kcal),
 			protein_g: num(f.protein_g),
 			carbs_g: num(f.carbs_g),
@@ -50,7 +52,8 @@
 				await products.label({
 					...form,
 					name: form.name.trim(),
-					brand: form.brand.trim() || null
+					brand: form.brand.trim() || null,
+					serving_text: form.serving_text ?? null
 				})
 			);
 		} catch (e) {
@@ -87,6 +90,12 @@
 		<label for="label-serving_g">Serving size (g){#if f.basis === '100g'} <span class="muted">(optional)</span>{/if}</label>
 		<input id="label-serving_g" type="number" inputmode="decimal" min="0" step="any" bind:value={f.serving_g} aria-invalid={invalid('serving_g')} aria-describedby={describedBy('serving_g')} />
 		{#if f.basis === '100g'}<p class="hint">Lets you log by servings.</p>{/if}
+	</div>
+
+	<div class="field">
+		<label for="label-serving_text">Serving description <span class="muted">(optional)</span></label>
+		<input id="label-serving_text" placeholder="1 scoop (31 g)" maxlength="100" bind:value={f.serving_text} aria-invalid={invalid('serving_text')} aria-describedby={describedBy('serving_text')} />
+		<p class="hint">A household unit from the label, like "1/4 cup (30 g)".</p>
 	</div>
 
 	<div class="grid">

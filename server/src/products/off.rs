@@ -9,7 +9,7 @@ use axum::http::StatusCode;
 use serde_json::Value;
 use sqlx::SqlitePool;
 
-use super::{Food, check_per_100g, gtin_ok, save, set_portions, text};
+use super::{Food, check_per_100g, gtin_ok, portions, save, set_portions, text};
 use crate::AppState;
 use crate::auth::User;
 use crate::error::{Error, Result};
@@ -53,7 +53,8 @@ pub async fn lookup(
         },
     };
     save(&s.db, user.id, food.id, None, now).await?;
-    Ok(Json(food.json()))
+    let portions = portions(&s.db, food.id).await?;
+    Ok(Json(food.json(&portions)))
 }
 
 /// The best stored entry for `barcode`: the user's own label entry, then the Open Food Facts copy.

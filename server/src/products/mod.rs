@@ -81,6 +81,24 @@ struct Food {
     fetched_at: Option<i64>,
 }
 
+/// One household unit for the Review picker.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub(crate) struct Portion {
+    pub unit: String,
+    pub grams: f64,
+}
+
+/// The food's `food_portions` rows, sorted by unit.
+pub(crate) async fn portions(db: impl SqliteExecutor<'_>, food_id: i64) -> Result<Vec<Portion>> {
+    Ok(sqlx::query_as!(
+        Portion,
+        "SELECT unit, grams FROM food_portions WHERE food_id = ? ORDER BY unit",
+        food_id
+    )
+    .fetch_all(db)
+    .await?)
+}
+
 impl Food {
     /// Liquids keep a millilitre serving; everything else is grams.
     fn serving_unit(&self) -> &'static str {
@@ -102,7 +120,7 @@ impl Food {
         self.source == "off" && self.serving_g.is_none() && self.serving_unit() == "ml"
     }
 
-    fn json(&self) -> Value {
+    fn json(&self, portions: &[Portion]) -> Value {
         let attribution = (self.source == "off").then(|| {
             json!({
                 "text": ATTRIBUTION,
@@ -123,6 +141,10 @@ impl Food {
             "serving_g": self.serving_g.map(r1),
             "serving_unit": self.serving_unit(),
             "serving_text": self.serving_text,
+            "portions": portions
+                .iter()
+                .map(|p| json!({"unit": p.unit, "grams": r1(p.grams)}))
+                .collect::<Vec<_>>(),
             "attribution": attribution,
         })
     }

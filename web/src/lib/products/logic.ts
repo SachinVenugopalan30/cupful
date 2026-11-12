@@ -84,6 +84,8 @@ export type LabelForm = {
 	barcode: string;
 	basis: '100g' | 'serving';
 	serving_g: number | null;
+	/** The label's household description, e.g. "1/4 cup (30 g)" or "1 scoop (31 g)". */
+	serving_text?: string;
 	kcal: number;
 	protein_g: number;
 	carbs_g: number;
@@ -106,6 +108,9 @@ export function labelProblem(f: LabelForm): { field: keyof LabelForm; message: s
 	if (!name || name.length > 200) return { field: 'name', message: 'Enter a name (up to 200 characters).' };
 	if (f.brand.trim().length > 200) return { field: 'brand', message: 'Brand is longer than 200 characters.' };
 	if (!gtinOk(f.barcode)) return { field: 'barcode', message: 'Barcode must be 8–14 digits with a valid check digit.' };
+	if ((f.serving_text?.trim().length ?? 0) > 100) {
+		return { field: 'serving_text', message: 'Serving description is longer than 100 characters.' };
+	}
 	if (f.basis === 'serving' && !(f.serving_g && f.serving_g > 0 && f.serving_g <= 2000)) {
 		return { field: 'serving_g', message: 'Enter the serving size in grams (up to 2000).' };
 	}

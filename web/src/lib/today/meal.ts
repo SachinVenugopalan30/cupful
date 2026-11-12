@@ -12,10 +12,12 @@ import type {
 	MealSource,
 	MealType,
 	Origin,
-	Product
+	Product,
+	ProductPortion
 } from '#lib/api.ts';
 import { dayLabel } from '#lib/date.ts';
 import { portionText } from '#lib/products/logic.ts';
+import { bestPortion, portionGrams, portionLabel, portionOptions } from '#lib/products/portions.ts';
 import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -56,6 +58,10 @@ export type DraftItem = Nums & {
 	/** Ambiguity choices; empty when there's nothing to choose. */
 	options: Option[];
 	chosen: number;
+	/** UI-only for a product row: its household units and the one selected, plus the count. */
+	portions?: ProductPortion[];
+	portion?: ProductPortion | null;
+	quantity?: number;
 };
 
 export type Draft = {
@@ -168,16 +174,37 @@ export function useProduct(i: DraftItem, p: Product): DraftItem {
 	const count = unitCount(i.portion_text);
 	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
 	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
-	return { ...i, ...nums, editable: false, options: [], chosen: 0, swapped: true, remember: false };
+	const portions = portionOptions(p.portions ?? []);
+	const portion = bestPortion(portions);
+	const quantity = portion ? Math.round((grams / portion.grams) * 100) / 100 : 1;
+	return {
+		...i,
+		...nums,
+		portions,
+		portion,
+		quantity,
+		portion_text: portion ? portionLabel(quantity, portion) : i.portion_text,
+		editable: false,
+		options: [],
+		chosen: 0,
+		swapped: true,
+		remember: false
+	};
 }
 
 /** A product as a new `food_db` item: one serving when it has one, else 100 g. */
 export function draftItemFromProduct(p: Product): DraftItem {
-	const grams = p.serving_g ?? 100;
-	const { id: _id, ...nums } = itemFromPer100(p, grams, portionText(grams, p.serving_g, p.serving_unit));
+	const portions = portionOptions(p.portions ?? []);
+	const portion = bestPortion(portions);
+	const grams = portion ? portionGrams(1, portion) : (p.serving_g ?? 100);
+	const text = portion ? portionLabel(1, portion) : portionText(grams, p.serving_g, p.serving_unit);
+	const { id: _id, ...nums } = itemFromPer100(p, grams, text);
 	return {
 		...blankItem(),
 		...nums,
+		portions,
+		portion,
+		quantity: 1,
 		editable: false,
 		options: [],
 		chosen: 0

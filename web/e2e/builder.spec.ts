@@ -14,7 +14,13 @@ test.beforeAll(async () => {
 test.afterAll(() => server?.stop());
 test.beforeEach(({ page }) => login(page));
 
-async function createProduct(page: Page, name: string, barcode: string, servingG = 40) {
+async function createProduct(
+	page: Page,
+	name: string,
+	barcode: string,
+	servingG = 40,
+	servingText?: string
+) {
 	const res = await page.request.post('/api/products', {
 		headers: { 'X-Cupful': '1' },
 		data: {
@@ -23,6 +29,7 @@ async function createProduct(page: Page, name: string, barcode: string, servingG
 			barcode,
 			basis: 'serving',
 			serving_g: servingG,
+			serving_text: servingText ?? null,
 			kcal: 150,
 			protein_g: 30,
 			carbs_g: 3,
@@ -109,6 +116,7 @@ test('+ Product scans inline and enters a missing label without a second modal',
 	await expect(sheet.getByLabel('Barcode')).toHaveValue('2000000000008');
 	await sheet.getByLabel('Name', { exact: true }).fill('Sea salt crackers');
 	await sheet.getByLabel('Serving size (g)').fill('25');
+	await sheet.getByLabel('Serving description').fill('1 biscuit (25 g)');
 	await sheet.getByLabel('Calories (kcal)').fill('120');
 	await sheet.getByLabel('Protein (g)').fill('3');
 	await sheet.getByLabel('Carbs (g)').fill('17');
@@ -117,6 +125,8 @@ test('+ Product scans inline and enters a missing label without a second modal',
 
 	await expect(sheet.locator('.item')).toHaveCount(1);
 	await expect(sheet.locator('.item').first()).toContainText('Sea salt crackers');
+	await expect(sheet.locator('.item').first().getByLabel('Unit')).toHaveValue('biscuit');
+	await expect(sheet.locator('.item').first()).toContainText('1 biscuit (25 g)');
 	await expect(sheet.locator('.item').first().getByLabel('Grams')).toHaveValue('25');
 	await sheet.getByRole('button', { name: 'Save meal' }).click();
 	await expect(sheet).toBeHidden();
@@ -125,4 +135,28 @@ test('+ Product scans inline and enters a missing label without a second modal',
 		origin: 'food_db',
 		grams: 25
 	});
+});
+
+test('a product row changes to a household unit and scales with quantity', async ({ page }) => {
+	await createProduct(page, 'Choc Scoop', '2000000000039', 31, '1 scoop (31 g)');
+	const sheet = await hand(page, 'protein shake');
+	await sheet.getByRole('button', { name: '+ Product' }).click();
+	await sheet.getByLabel('Search my products').fill('scoop');
+	await sheet.getByRole('button', { name: /Choc Scoop/ }).click();
+
+	const item = sheet.locator('.item').first();
+	await expect(item.getByLabel('Unit')).toHaveValue('scoop');
+	await expect(item.getByLabel('Quantity')).toHaveValue('1');
+	await expect(item.getByLabel('Grams')).toHaveValue('31');
+	await expect(item).toContainText('1 scoop (31 g)');
+
+	await item.getByLabel('Quantity').fill('2');
+	await expect(item.getByLabel('Grams')).toHaveValue('62');
+	await expect(item).toContainText('2 scoops (62 g)');
+	await expect(item).toContainText('300 kcal');
+
+	await sheet.getByRole('button', { name: 'Save meal' }).click();
+	await expect(sheet).toBeHidden();
+	const saved = (await meals(page)).at(-1)!;
+	expect(saved.items[0]).toMatchObject({ name: 'Choc Scoop', origin: 'food_db', grams: 62 });
 });

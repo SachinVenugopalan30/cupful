@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT unit, grams FROM food_portions WHERE food_id = ? ORDER BY unit",
+  "describe": {
+    "columns": [
+      {
+        "name": "unit",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "unit"
+          }
+        }
+      },
+      {
+        "name": "grams",
+        "ordinal": 1,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0dee6df2f26c44a87b9727d145eb32567263ba64b469dfcb4239f1788ff81c8f"
+}

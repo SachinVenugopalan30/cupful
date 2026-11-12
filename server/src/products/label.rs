@@ -6,7 +6,7 @@ use axum::extract::State;
 use serde::Deserialize;
 use serde_json::Value;
 
-use super::{Food, check_per_100g, gtin_ok, save, set_portions, text};
+use super::{Food, check_per_100g, gtin_ok, portions, save, set_portions, text};
 use crate::AppState;
 use crate::auth::User;
 use crate::error::{Error, JsonBody, Result};
@@ -144,6 +144,7 @@ pub async fn create(
     };
     set_portions(&mut tx, id, f.serving_g, f.serving_text.as_deref()).await?;
     save(&mut *tx, user.id, id, None, now).await?;
+    let portions = portions(&mut *tx, id).await?;
     tx.commit().await?;
-    Ok(Json(Food { id, ..f }.json()))
+    Ok(Json(Food { id, ..f }.json(&portions)))
 }
