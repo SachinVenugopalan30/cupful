@@ -62,7 +62,7 @@ fn meal_label(m: &MealRow) -> String {
         .map(|i| i.name.trim())
         .filter(|n| !n.is_empty())
         .collect();
-    names.sort_unstable();
+    names.sort_by_cached_key(|n| n.to_lowercase());
     names.join(", ")
 }
 
@@ -152,7 +152,8 @@ fn product_items(g: &MealGroup) -> usize {
         .count()
 }
 
-/// Recent first, or frequency first with the built product meal winning ties.
+/// Recent first, or frequency first with the built product meal winning ties. Remaining ties
+/// fall to the label and then the slot, so a limit picks the same groups every time.
 fn sort_groups(groups: &mut [MealGroup], sort: HistorySort) {
     match sort {
         HistorySort::Recent => groups.sort_by(|a, b| {
@@ -160,6 +161,7 @@ fn sort_groups(groups: &mut [MealGroup], sort: HistorySort) {
                 .cmp(&a.last_date)
                 .then_with(|| b.times.cmp(&a.times))
                 .then_with(|| a.label.cmp(&b.label))
+                .then_with(|| a.latest.meal_type.cmp(&b.latest.meal_type))
         }),
         HistorySort::Frequent => groups.sort_by(|a, b| {
             b.times
@@ -167,6 +169,7 @@ fn sort_groups(groups: &mut [MealGroup], sort: HistorySort) {
                 .then_with(|| product_items(b).cmp(&product_items(a)))
                 .then_with(|| b.last_date.cmp(&a.last_date))
                 .then_with(|| a.label.cmp(&b.label))
+                .then_with(|| a.latest.meal_type.cmp(&b.latest.meal_type))
         }),
     }
 }

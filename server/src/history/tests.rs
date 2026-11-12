@@ -261,3 +261,56 @@ fn frequent_sort_orders_by_times_before_product_items() {
     assert_eq!(groups[0].label, "AI bowl");
     assert_eq!(groups[1].label, "Product bowl");
 }
+
+#[test]
+fn fallback_labels_sort_item_names_ignoring_case() {
+    let lower = meal(
+        "m1",
+        "2026-11-01",
+        1,
+        "",
+        vec![item("Apple", 50.0), item("banana", 100.0)],
+    );
+    let mixed = meal(
+        "m2",
+        "2026-11-02",
+        2,
+        "",
+        vec![item("apple", 60.0), item("Banana", 90.0)],
+    );
+    // The same two foods in a different case order must produce one group, not two.
+    let groups = group_meals(vec![lower, mixed], true);
+    assert_eq!(groups.len(), 1);
+    assert_eq!(groups[0].times, 2);
+}
+
+#[test]
+fn sort_breaks_a_full_tie_on_meal_type() {
+    let breakfast = || {
+        typed(
+            meal("m1", "2026-11-02", 2, "Rice", vec![item("Rice", 100.0)]),
+            "breakfast",
+        )
+    };
+    let snack = || {
+        typed(
+            meal("m2", "2026-11-02", 2, "Rice", vec![item("Rice", 100.0)]),
+            "snack",
+        )
+    };
+
+    // Same label, times, date and items: only the slot tells the two groups apart.
+    for reverse in [false, true] {
+        for sort in [HistorySort::Recent, HistorySort::Frequent] {
+            let meals = if reverse {
+                vec![snack(), breakfast()]
+            } else {
+                vec![breakfast(), snack()]
+            };
+            let mut groups = group_meals(meals, true);
+            assert_eq!(groups.len(), 2);
+            sort_groups(&mut groups, sort);
+            assert_eq!(groups[0].latest.meal_type, "breakfast");
+        }
+    }
+}
