@@ -9,6 +9,7 @@ import {
 	dayTotals,
 	draftFromEstimate,
 	draftFromMeal,
+	draftItemFromProduct,
 	type DraftItem,
 	filterHistory,
 	fitWithin,
@@ -20,7 +21,9 @@ import {
 	sumItems,
 	useProduct,
 	withGrams,
+	withGramsInput,
 	withKcal,
+	withQuantity,
 	withValue
 } from './meal';
 
@@ -425,5 +428,85 @@ describe('useProduct', () => {
 		expect(useProduct(item('2 oz', 57), powder).grams).toBe(57);
 		expect(useProduct(item('some', 25), powder).grams).toBe(25);
 		expect(useProduct(item('2 scoops', 20), { ...powder, serving_g: null }).grams).toBe(20);
+	});
+
+	it('keeps a unit the product has and falls back to the best portion otherwise', () => {
+		const withScoop = {
+			...powder,
+			portions: [
+				{ unit: 'cup', grams: 80 },
+				{ unit: 'serving', grams: 31 },
+				{ unit: 'scoop', grams: 31 }
+			]
+		};
+		expect(useProduct(item('2 scoops', 20), withScoop)).toMatchObject({
+			portion: { unit: 'scoop', grams: 31 },
+			quantity: 2,
+			grams: 62,
+			portion_text: '2 scoops (62 g)'
+		});
+		// "2 cups" means two of the product's own cups (80 g each), not two servings.
+		expect(useProduct(item('2 cups', 20), withScoop)).toMatchObject({
+			portion: { unit: 'cup', grams: 80 },
+			quantity: 2,
+			grams: 160,
+			portion_text: '2 cups (160 g)'
+		});
+	});
+});
+
+describe('amount inputs', () => {
+	const powder = {
+		food_id: 42,
+		name: 'Choc protein',
+		serving_g: 31,
+		kcal: 387.1,
+		protein_g: 80,
+		carbs_g: 6.5,
+		fat_g: 4.8,
+		portions: [
+			{ unit: 'cup', grams: 80 },
+			{ unit: 'serving', grams: 31 }
+		]
+	} as SavedProduct;
+	const row = () => draftItemFromProduct(powder);
+
+	it('scales grams and numbers from a typed quantity', () => {
+		const next = withQuantity(row(), 2);
+		expect(next.grams).toBe(160);
+		expect(next.portion_text).toBe('2 cups (160 g)');
+		expect(next.kcal).toBeCloseTo(619.4, 1);
+	});
+
+	it('leaves the row alone for a blank or zero quantity, so retyping keeps the numbers', () => {
+		const before = row();
+		expect(withQuantity(before, null)).toBe(before);
+		expect(withQuantity(before, 0)).toBe(before);
+		expect(withQuantity(before, Number.NaN)).toBe(before);
+		// The old bug: clearing the field zeroed grams, and the next entry scaled from zero.
+		const typed = withQuantity(before, 2);
+		expect(typed.kcal).toBeCloseTo(before.kcal! * 2, 1);
+		expect(typed.protein_g).toBeCloseTo(before.protein_g! * 2, 1);
+	});
+
+	it('clears grams on a manual row but keeps the amount on a product row', () => {
+		expect(withGramsInput({ ...row(), editable: true }, null).grams).toBeNull();
+		const product = row();
+		expect(withGramsInput(product, null)).toBe(product);
+		expect(withGramsInput(product, 0)).toBe(product);
+	});
+
+	it('reads grams instead of zero cups when the count rounds away', () => {
+		const bigCup = { ...powder, portions: [{ unit: 'cup', grams: 240 }] } as SavedProduct;
+		const next = withGramsInput(draftItemFromProduct(bigCup), 1);
+		expect(next.grams).toBe(1);
+		expect(next.quantity).toBe(0);
+		expect(next.portion_text).toBe('1 g');
+	});
+
+	it('scales numbers down with the grams and labels the exact count', () => {
+		const next = withGramsInput(row(), 40);
+		expect(next.portion_text).toBe('½ cup (40 g)');
+		expect(next.kcal).toBeCloseTo(387.1 * 0.4, 1);
 	});
 });

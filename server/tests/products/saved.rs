@@ -66,6 +66,13 @@ async fn syncing_a_product_item_updates_saved_products() {
     let (_, list) = a.get("/api/products").await;
     assert_eq!(list["products"][0]["food_id"], p["food_id"]);
     assert_eq!(list["products"][0]["last_servings"], 3.0);
+    assert_eq!(
+        list["products"][0]["portions"],
+        json!([
+            {"unit": "biscuit", "grams": 12.0},
+            {"unit": "serving", "grams": 12.0}
+        ])
+    );
 }
 
 #[tokio::test]

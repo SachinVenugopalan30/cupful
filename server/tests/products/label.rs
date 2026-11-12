@@ -16,6 +16,13 @@ async fn product_servings_become_portions_the_estimate_uses() {
     let (_, p) = a.post("/api/products", body.clone()).await;
     let id = p["food_id"].as_i64().unwrap();
     assert_eq!(
+        p["portions"],
+        json!([
+            {"unit": "scoop", "grams": 31.0},
+            {"unit": "serving", "grams": 31.0}
+        ])
+    );
+    assert_eq!(
         portions(&state, id).await,
         [("scoop".into(), 31.0), ("serving".into(), 31.0)]
     );
@@ -79,6 +86,13 @@ async fn label_entry_per_serving_is_converted_and_private() {
     assert_eq!(p["fat_g"], 12.5);
     assert_eq!(p["serving_g"], 12.0);
     assert_eq!(p["source"], "user");
+    assert_eq!(
+        p["portions"],
+        json!([
+            {"unit": "biscuit", "grams": 12.0},
+            {"unit": "serving", "grams": 12.0}
+        ])
+    );
 
     let (_, list) = a.get("/api/products").await;
     assert_eq!(list["products"][0]["food_id"], p["food_id"]);

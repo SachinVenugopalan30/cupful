@@ -3,7 +3,7 @@
 // queued writes applied on top.
 
 import { api, cachedGet, enc } from './http.ts';
-import type { Budget, Day, Health, HistoryMeal, Meal, Trends, Workout } from './types.ts';
+import type { Budget, Day, Health, HistoryMeal, Meal, MealType, Trends, Workout } from './types.ts';
 import { overlayDay, overlayMeals } from '../offline/overlay.ts';
 import { queueState } from '../offline/state.svelte.ts';
 
@@ -37,8 +37,23 @@ export async function getWorkouts(from: string, to: string): Promise<Workout[]> 
 	return body.workouts;
 }
 
-/** Recent distinct meals, newest first. The server uses the profile timezone. */
-export async function getMealHistory(limit = 50): Promise<HistoryMeal[]> {
-	const body = await cachedGet<{ meals: HistoryMeal[] }>(`/api/meals/history?limit=${limit}`);
+export type MealHistoryOptions = {
+	/** Inclusive window ending today. Default 365 on the server. */
+	days?: number;
+	meal_type?: MealType;
+	/** `recent` (default) or `frequent`, with product meals winning frequency ties. */
+	sort?: 'recent' | 'frequent';
+};
+
+/** Recent distinct meals. The server uses the profile timezone. */
+export async function getMealHistory(
+	limit = 50,
+	options: MealHistoryOptions = {}
+): Promise<HistoryMeal[]> {
+	let path = `/api/meals/history?limit=${limit}`;
+	if (options.days !== undefined) path += `&days=${options.days}`;
+	if (options.meal_type !== undefined) path += `&meal_type=${options.meal_type}`;
+	if (options.sort !== undefined) path += `&sort=${options.sort}`;
+	const body = await cachedGet<{ meals: HistoryMeal[] }>(path);
 	return body.meals;
 }

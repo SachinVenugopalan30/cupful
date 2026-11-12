@@ -12,9 +12,19 @@ import type {
 	MealSource,
 	MealType,
 	Origin,
-	SavedProduct
+	Product,
+	ProductPortion
 } from '#lib/api.ts';
 import { dayLabel } from '#lib/date.ts';
+import { round } from '#lib/format.ts';
+import { portionText } from '#lib/products/logic.ts';
+import {
+	amountLabel,
+	bestPortion,
+	portionGrams,
+	portionLabel,
+	portionOptions
+} from '#lib/products/portions.ts';
 import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -55,6 +65,12 @@ export type DraftItem = Nums & {
 	/** Ambiguity choices; empty when there's nothing to choose. */
 	options: Option[];
 	chosen: number;
+	/** UI-only for a product row: its household units and the one selected, plus the count. */
+	portions?: ProductPortion[];
+	portion?: ProductPortion | null;
+	quantity?: number;
+	/** UI-only: the product's label amount unit, so liquids read in ml. */
+	amount_unit?: 'g' | 'ml';
 };
 
 export type Draft = {
@@ -138,6 +154,40 @@ export function withGrams(i: DraftItem, grams: number): DraftItem {
 	return { ...i, grams, ...(i.grams && i.grams > 0 ? scaleNums(i, k) : {}) };
 }
 
+/**
+ * A typed quantity applies only when it is positive. A blank or zero field leaves the item alone,
+ * so the grams the nutrients scale from survive the next entry.
+ */
+export function withQuantity(i: DraftItem, quantity: number | null): DraftItem {
+	const portion = i.portion;
+	if (!portion || quantity === null || !Number.isFinite(quantity) || quantity <= 0) return i;
+	const grams = portionGrams(quantity, portion);
+	const next = withGrams(i, grams);
+	return {
+		...next,
+		quantity,
+		portion_text: amountLabel(quantity, grams, portion, i.amount_unit ?? 'g')
+	};
+}
+
+/**
+ * Typed grams keep the household count in step. A blank or zero field is an unfinished edit: a
+ * manual row goes blank, while a product row keeps its amount so nothing stale is saved unseen.
+ */
+export function withGramsInput(i: DraftItem, grams: number | null): DraftItem {
+	if (grams === null || !Number.isFinite(grams) || grams <= 0) {
+		return i.editable ? { ...i, grams: null } : i;
+	}
+	const next = withGrams(i, grams);
+	if (!next.portion) return next;
+	const quantity = round(grams / next.portion.grams, 2);
+	return {
+		...next,
+		quantity,
+		portion_text: amountLabel(quantity, grams, next.portion, i.amount_unit ?? 'g')
+	};
+}
+
 /** A direct edit: the item no longer matches its database food, so it's marked manual. */
 export const withValue = (i: DraftItem, key: NumKey, v: number | null): DraftItem => ({
 	...i,
@@ -162,12 +212,81 @@ function unitCount(portion: string): number | null {
 	return b ? Number(a) / Number(b) : Number(a);
 }
 
+/** The household unit in a portion phrase ("2 scoops" -> "scoops"), or null for a weight. */
+function unitWord(portion: string): string | null {
+	const m = /^\s*(?:an?|\d+\s*\/\s*\d+|\d*\.?\d+)\s*([a-z][a-z ]*)?$/i.exec(portion);
+	const unit = (m?.[1] ?? '').trim().toLowerCase();
+	return unit && !WEIGHT_UNITS.test(unit) ? unit : null;
+}
+
+const singularUnit = (unit: string) =>
+	unit.endsWith('s') && !unit.endsWith('ss') ? unit.slice(0, -1) : unit;
+
 /** Swap in a saved product: grams = count x its serving for "2 scoops", else the current grams. */
-export function useProduct(i: DraftItem, p: SavedProduct): DraftItem {
+export function useProduct(i: DraftItem, p: Product): DraftItem {
 	const count = unitCount(i.portion_text);
-	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
+	const portions = portionOptions(p.portions ?? []);
+	const wanted = unitWord(i.portion_text);
+	const named = wanted ? portions.find((p) => p.unit.toLowerCase() === singularUnit(wanted)) : undefined;
+	// "2 cups" is two of the product's own cups when it has them; the serving is the fallback.
+	const grams =
+		named && count !== null
+			? portionGrams(count, named)
+			: p.serving_g && count !== null
+				? count * p.serving_g
+				: (i.grams ?? p.serving_g ?? 100);
 	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
-	return { ...i, ...nums, editable: false, options: [], chosen: 0, swapped: true, remember: false };
+	const portion = named ?? bestPortion(portions);
+	const quantity = portion ? Math.round((grams / portion.grams) * 100) / 100 : 1;
+	const amount_unit = p.serving_unit === 'ml' ? 'ml' : 'g';
+	return {
+		...i,
+		...nums,
+		portions,
+		portion,
+		quantity,
+		amount_unit,
+		portion_text: portion ? amountLabel(quantity, grams, portion, amount_unit) : i.portion_text,
+		editable: false,
+		options: [],
+		chosen: 0,
+		swapped: true,
+		remember: false
+	};
+}
+
+/** A product as a new `food_db` item: one serving when it has one, else 100 g. */
+export function draftItemFromProduct(p: Product): DraftItem {
+	const portions = portionOptions(p.portions ?? []);
+	const portion = bestPortion(portions);
+	const grams = portion ? portionGrams(1, portion) : (p.serving_g ?? 100);
+	const amount_unit = p.serving_unit === 'ml' ? 'ml' : 'g';
+	const text = portion ? portionLabel(1, portion, amount_unit) : portionText(grams, p.serving_g, p.serving_unit);
+	const { id: _id, ...nums } = itemFromPer100(p, grams, text);
+	return {
+		...blankItem(),
+		...nums,
+		portions,
+		portion,
+		quantity: 1,
+		amount_unit,
+		editable: false,
+		options: [],
+		chosen: 0
+	};
+}
+
+/** An untouched starter row: nothing typed, no numbers, no food. */
+const untouchedStarter = (i: DraftItem) =>
+	i.food_id === null &&
+	i.name.trim() === '' &&
+	i.portion_text.trim() === '' &&
+	i.grams === null &&
+	KEYS.every((k) => i[k] === null);
+
+/** Append a product, dropping any untouched blank starter rows first. */
+export function appendProduct(items: DraftItem[], p: Product): DraftItem[] {
+	return [...items.filter((i) => !untouchedStarter(i)), draftItemFromProduct(p)];
 }
 
 /** Swap in ambiguity option `n`, scaled to the item's current grams. */

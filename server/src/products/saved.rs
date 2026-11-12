@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! The user's saved products.
 
+use std::collections::HashMap;
+
 use axum::Json;
 use axum::extract::{Path, State};
 use serde_json::{Value, json};
 
-use super::Food;
+use super::{Food, Portion};
 use crate::AppState;
 use crate::auth::User;
 use crate::error::{Error, Result};
@@ -22,9 +24,26 @@ pub async fn list(State(s): State<AppState>, user: User) -> Result<Json<Value>> 
     )
     .fetch_all(&s.db)
     .await?;
+    let portion_rows = sqlx::query!(
+        "SELECT p.food_id, p.unit, p.grams
+         FROM food_portions p JOIN user_products up ON up.food_id = p.food_id
+         WHERE up.user_id = ?
+         ORDER BY p.food_id, p.unit",
+        user.id
+    )
+    .fetch_all(&s.db)
+    .await?;
+    let mut by_food: HashMap<i64, Vec<Portion>> = HashMap::new();
+    for p in portion_rows {
+        by_food.entry(p.food_id).or_default().push(Portion {
+            unit: p.unit,
+            grams: p.grams,
+        });
+    }
     let products: Vec<Value> = rows
         .into_iter()
         .map(|r| {
+            let portions = by_food.get(&r.id).map(Vec::as_slice).unwrap_or(&[]);
             let mut v = Food {
                 id: r.id,
                 source: r.source,
@@ -39,7 +58,7 @@ pub async fn list(State(s): State<AppState>, user: User) -> Result<Json<Value>> 
                 serving_text: r.serving_text,
                 fetched_at: r.fetched_at,
             }
-            .json();
+            .json(portions);
             v["last_servings"] = json!(r.last_servings);
             v["last_used_at"] = json!(r.last_used_at);
             v

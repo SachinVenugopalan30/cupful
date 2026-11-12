@@ -56,12 +56,14 @@ fn meal_label(m: &MealRow) -> String {
     if !description.is_empty() {
         return description.to_string();
     }
-    m.items
+    let mut names: Vec<_> = m
+        .items
         .iter()
         .map(|i| i.name.trim())
         .filter(|n| !n.is_empty())
-        .collect::<Vec<_>>()
-        .join(", ")
+        .collect();
+    names.sort_by_cached_key(|n| n.to_lowercase());
+    names.join(", ")
 }
 
 fn meal_key(label: &str) -> String {
@@ -72,8 +74,9 @@ fn meal_key(label: &str) -> String {
         .to_lowercase()
 }
 
-/// Returns one group per normalized label, in no particular order.
-fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
+/// Returns one group per normalized label, in no particular order. When
+/// `split_meal_type` is set, the same label in different slots stays separate.
+fn group_meals(meals: Vec<MealRow>, split_meal_type: bool) -> Vec<MealGroup> {
     let mut groups: HashMap<String, MealGroup> = HashMap::new();
     for meal in meals {
         if meal.items.is_empty() {
@@ -84,6 +87,11 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
             continue;
         }
         let key = meal_key(&label);
+        let key = if split_meal_type {
+            format!("{}|{}", meal.meal_type, key)
+        } else {
+            key
+        };
         let kcal = meal.items.iter().map(|i| i.kcal).sum::<f64>();
         match groups.entry(key) {
             Entry::Occupied(mut e) => {
@@ -128,9 +136,47 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
     out
 }
 
+#[derive(Clone, Copy, Default, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum HistorySort {
+    #[default]
+    Recent,
+    Frequent,
+}
+
+fn product_items(g: &MealGroup) -> usize {
+    g.latest
+        .items
+        .iter()
+        .filter(|i| i.origin == "food_db")
+        .count()
+}
+
+/// Recent first, or frequency first with the built product meal winning ties. Remaining ties
+/// fall to the label and then the slot, so a limit picks the same groups every time.
+fn sort_groups(groups: &mut [MealGroup], sort: HistorySort) {
+    match sort {
+        HistorySort::Recent => groups.sort_by(|a, b| {
+            b.last_date
+                .cmp(&a.last_date)
+                .then_with(|| b.times.cmp(&a.times))
+                .then_with(|| a.label.cmp(&b.label))
+                .then_with(|| a.latest.meal_type.cmp(&b.latest.meal_type))
+        }),
+        HistorySort::Frequent => groups.sort_by(|a, b| {
+            b.times
+                .cmp(&a.times)
+                .then_with(|| product_items(b).cmp(&product_items(a)))
+                .then_with(|| b.last_date.cmp(&a.last_date))
+                .then_with(|| a.label.cmp(&b.label))
+                .then_with(|| a.latest.meal_type.cmp(&b.latest.meal_type))
+        }),
+    }
+}
+
 /// The most-eaten meals as compact summaries, grouped by normalized label before the limit.
 pub(crate) fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
-    let mut groups = group_meals(meals);
+    let mut groups = group_meals(meals, false);
     groups.sort_by(|a, b| {
         b.times
             .cmp(&a.times)
@@ -155,6 +201,10 @@ pub(crate) fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
 #[derive(Deserialize)]
 pub struct HistoryQuery {
     limit: Option<i64>,
+    days: Option<i64>,
+    meal_type: Option<String>,
+    #[serde(default)]
+    sort: HistorySort,
 }
 
 pub async fn meal_history(
@@ -166,16 +216,23 @@ pub async fn meal_history(
     if !(1..=50).contains(&limit) {
         return Err(Error::bad_request("limit must be between 1 and 50"));
     }
+    let days = q.days.unwrap_or(365);
+    if !(1..=365).contains(&days) {
+        return Err(Error::bad_request("days must be between 1 and 365"));
+    }
+    let meal_type = match q.meal_type.as_deref() {
+        None => None,
+        Some(t @ ("breakfast" | "lunch" | "dinner" | "snack")) => Some(t),
+        Some(_) => return Err(Error::bad_request("unknown meal_type")),
+    };
     let to = crate::time::user_today(&s.db, user.id).await?;
-    let from = to - 364.days();
-    let meals = load_meals(&s.db, user.id, &from.to_string(), &to.to_string()).await?;
-    let mut groups = group_meals(meals);
-    groups.sort_by(|a, b| {
-        b.last_date
-            .cmp(&a.last_date)
-            .then_with(|| b.times.cmp(&a.times))
-            .then_with(|| a.label.cmp(&b.label))
-    });
+    let from = to - (days - 1).days();
+    let mut meals = load_meals(&s.db, user.id, &from.to_string(), &to.to_string()).await?;
+    if let Some(meal_type) = meal_type {
+        meals.retain(|m| m.meal_type == meal_type);
+    }
+    let mut groups = group_meals(meals, true);
+    sort_groups(&mut groups, q.sort);
     groups.truncate(limit as usize);
     let out: Vec<Value> = groups
         .into_iter()
@@ -291,165 +348,4 @@ pub(crate) fn meal_json(m: &MealRow) -> Value {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn item(name: &str, kcal: f64) -> ItemRow {
-        ItemRow {
-            id: format!("i-{name}-{kcal}"),
-            name: name.into(),
-            portion_text: "1 serving".into(),
-            grams: Some(100.0),
-            kcal,
-            protein_g: 1.0,
-            carbs_g: 1.0,
-            fat_g: 1.0,
-            food_id: None,
-            origin: "manual".into(),
-        }
-    }
-
-    fn meal(
-        id: &str,
-        date: &str,
-        updated_at: i64,
-        description: &str,
-        items: Vec<ItemRow>,
-    ) -> MealRow {
-        MealRow {
-            id: id.into(),
-            date: date.into(),
-            meal_type: "lunch".into(),
-            description: description.into(),
-            scale: 1.0,
-            assumptions: None,
-            confidence: None,
-            source: "manual".into(),
-            provider_id: None,
-            updated_at,
-            items,
-        }
-    }
-
-    #[test]
-    fn labels_fall_back_to_item_names() {
-        let m = meal(
-            "m1",
-            "2026-11-01",
-            1,
-            "  ",
-            vec![item("Rice", 200.0), item("Chicken", 300.0)],
-        );
-        assert_eq!(meal_label(&m), "Rice, Chicken");
-    }
-
-    #[test]
-    fn labels_skip_blank_item_names() {
-        let m = meal(
-            "m1",
-            "2026-11-01",
-            1,
-            "",
-            vec![item("  ", 10.0), item("Rice", 200.0), item("\t", 5.0)],
-        );
-        assert_eq!(meal_label(&m), "Rice");
-    }
-
-    #[test]
-    fn keys_collapse_case_and_whitespace() {
-        assert_eq!(meal_key("  Oats   With  Banana "), "oats with banana");
-    }
-
-    #[test]
-    fn keys_collapse_tabs_and_newlines() {
-        assert_eq!(meal_key("oats\twith\n banana"), "oats with banana");
-    }
-
-    #[test]
-    fn groups_by_normalized_description_and_averages_kcal() {
-        let meals = vec![
-            meal(
-                "m1",
-                "2026-11-01",
-                1,
-                "oats with banana",
-                vec![item("Oats", 400.0)],
-            ),
-            meal(
-                "m2",
-                "2026-11-02",
-                2,
-                "Oats with banana",
-                vec![item("Oats", 500.0)],
-            ),
-            meal(
-                "m3",
-                "2026-11-02",
-                3,
-                "Chicken rice",
-                vec![item("Rice", 600.0)],
-            ),
-        ];
-        let mut groups = group_meals(meals);
-        groups.sort_by(|a, b| a.label.cmp(&b.label));
-        assert_eq!(groups.len(), 2);
-        let oats = groups
-            .iter()
-            .find(|g| g.label == "Oats with banana")
-            .unwrap();
-        assert_eq!(oats.times, 2);
-        assert_eq!(oats.avg_kcal, 450.0);
-        assert_eq!(oats.last_date, "2026-11-02");
-        assert_eq!(oats.latest.id, "m2");
-    }
-
-    #[test]
-    fn group_label_prefers_the_most_common_spelling() {
-        let meals = vec![
-            meal("m1", "2026-11-01", 1, "rice", vec![item("Rice", 100.0)]),
-            meal("m2", "2026-11-02", 2, "Rice", vec![item("Rice", 200.0)]),
-            meal("m3", "2026-11-03", 3, "rice", vec![item("Rice", 300.0)]),
-        ];
-        let groups = group_meals(meals);
-        assert_eq!(groups.len(), 1);
-        assert_eq!(groups[0].label, "rice");
-        assert_eq!(groups[0].latest.id, "m3");
-    }
-
-    #[test]
-    fn latest_representative_uses_updated_at() {
-        let meals = vec![
-            meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
-            meal("m2", "2026-11-02", 20, "Rice", vec![item("Rice", 200.0)]),
-        ];
-        let groups = group_meals(meals);
-        assert_eq!(groups[0].latest.id, "m2");
-    }
-
-    #[test]
-    fn latest_representative_prefers_a_later_date() {
-        let meals = vec![
-            meal("m1", "2026-11-03", 5, "Rice", vec![item("Rice", 100.0)]),
-            meal("m2", "2026-11-02", 100, "Rice", vec![item("Rice", 200.0)]),
-        ];
-        let groups = group_meals(meals);
-        assert_eq!(groups[0].latest.id, "m1");
-        assert_eq!(groups[0].last_date, "2026-11-03");
-    }
-
-    #[test]
-    fn latest_representative_breaks_ties_on_larger_id() {
-        let meals = vec![
-            meal("m2", "2026-11-02", 10, "Rice", vec![item("Rice", 200.0)]),
-            meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
-        ];
-        let groups = group_meals(meals);
-        assert_eq!(groups[0].latest.id, "m2");
-    }
-
-    #[test]
-    fn skips_itemless_meals() {
-        let meals = vec![meal("m1", "2026-11-02", 1, "Rice", vec![])];
-        assert!(group_meals(meals).is_empty());
-    }
-}
+mod tests;

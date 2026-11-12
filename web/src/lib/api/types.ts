@@ -201,6 +201,9 @@ export type AliasRow = {
 };
 export type Portion = { phrase: string; food_id: number; grams: number };
 
+/** A household unit from the product's label, e.g. `scoop` = 31 g. */
+export type ProductPortion = { unit: string; grams: number };
+
 /** A packaged product; values per 100 g. */
 export type Product = Macros & {
 	food_id: number;
@@ -214,6 +217,8 @@ export type Product = Macros & {
 	serving_text: string | null;
 	/** Set for Open Food Facts data: show it on the product sheet. */
 	attribution: { text: string; url: string } | null;
+	/** Label units for the Review picker. Always sent by the server; read as `?? []`. */
+	portions?: ProductPortion[];
 };
 export type SavedProduct = Product & { last_servings: number | null; last_used_at: number };
 /** POST /api/products ("Enter from the label"). */

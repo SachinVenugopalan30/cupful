@@ -17,6 +17,18 @@ fn meal_with(id: &str, date: &str, description: &str, kcal: f64) -> serde_json::
     m
 }
 
+fn typed_meal_with(
+    id: &str,
+    date: &str,
+    description: &str,
+    kcal: f64,
+    meal_type: &str,
+) -> serde_json::Value {
+    let mut m = meal_with(id, date, description, kcal);
+    m["meal_type"] = json!(meal_type);
+    m
+}
+
 #[tokio::test]
 async fn groups_by_description_and_returns_the_latest() {
     let (app, _) = app().await;
@@ -281,4 +293,164 @@ async fn limit_defaults_to_20() {
     assert_eq!(meals.len(), 20);
     assert_eq!(meals[0]["label"], "Meal 00");
     assert_eq!(meals[19]["label"], "Meal 19");
+}
+
+#[tokio::test]
+async fn days_is_an_inclusive_window() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &date(59), "Inside", 100.0),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            meal_with(&uuid(), &date(60), "Outside", 200.0),
+        ),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?days=60&limit=50").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Inside"]);
+}
+
+#[tokio::test]
+async fn meal_type_filters_and_separates_groups() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let d = date(1);
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &d, "Rice", 100.0, "breakfast"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &d, "Rice", 200.0, "lunch"),
+        ),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50").await;
+    assert_eq!(body["meals"].as_array().unwrap().len(), 2);
+
+    let (_, body) = a
+        .get("/api/meals/history?limit=50&meal_type=breakfast")
+        .await;
+    let meals = body["meals"].as_array().unwrap();
+    assert_eq!(meals.len(), 1);
+    assert_eq!(meals[0]["meal_type"], "breakfast");
+}
+
+#[tokio::test]
+async fn frequent_sort_orders_by_times_before_product_items() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let (older, newer) = (date(3), date(1));
+    let mut product = item(&uuid(), 100.0);
+    product["origin"] = json!("food_db");
+    let mut product_meal = meal(&uuid(), &older, json!([product]));
+    product_meal["description"] = json!("Product bowl");
+
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &newer, "AI bowl", 100.0, "lunch"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &older, "AI bowl", 100.0, "lunch"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &older, "AI bowl", 100.0, "lunch"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &older, "Product bowl", 100.0, "lunch"),
+        ),
+        op("meal.upsert", &at(0), product_meal),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50&sort=frequent").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels[0], "AI bowl");
+    assert_eq!(labels[1], "Product bowl");
+}
+
+#[tokio::test]
+async fn frequent_sort_puts_the_product_group_first_when_frequency_ties() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    let (oldest, older, newer) = (date(4), date(3), date(1));
+    let mut product = item(&uuid(), 100.0);
+    product["origin"] = json!("food_db");
+    let mut product_meal = meal(&uuid(), &older, json!([product]));
+    product_meal["description"] = json!("Product bowl");
+
+    a.sync(vec![
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &older, "AI bowl", 100.0, "lunch"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &newer, "AI bowl", 100.0, "lunch"),
+        ),
+        op(
+            "meal.upsert",
+            &at(0),
+            typed_meal_with(&uuid(), &oldest, "Product bowl", 100.0, "lunch"),
+        ),
+        op("meal.upsert", &at(0), product_meal),
+    ])
+    .await;
+
+    let (_, body) = a.get("/api/meals/history?limit=50&sort=frequent").await;
+    let labels: Vec<_> = body["meals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(labels, ["Product bowl", "AI bowl"], "{body}");
+}
+
+#[tokio::test]
+async fn history_query_parameters_are_validated() {
+    let (app, _) = app().await;
+    let mut a = admin(&app).await;
+    for q in [
+        "days=0",
+        "days=366",
+        "days=nope",
+        "sort=often",
+        "meal_type=brunch",
+    ] {
+        let (status, _) = a.get(&format!("/api/meals/history?{q}")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{q}");
+    }
 }

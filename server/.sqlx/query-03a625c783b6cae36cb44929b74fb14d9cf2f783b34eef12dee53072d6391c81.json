@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT p.food_id, p.unit, p.grams\n         FROM food_portions p JOIN user_products up ON up.food_id = p.food_id\n         WHERE up.user_id = ?\n         ORDER BY p.food_id, p.unit",
+  "describe": {
+    "columns": [
+      {
+        "name": "food_id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "food_id"
+          }
+        }
+      },
+      {
+        "name": "unit",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "unit"
+          }
+        }
+      },
+      {
+        "name": "grams",
+        "ordinal": 2,
+        "type_info": "Float",
+        "origin": {
+          "Table": {
+            "table": "food_portions",
+            "name": "grams"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "03a625c783b6cae36cb44929b74fb14d9cf2f783b34eef12dee53072d6391c81"
+}

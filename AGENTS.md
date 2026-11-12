@@ -14,6 +14,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - v0.3.0 shipped the optional fixed daily calorie goal: the goal is stored on each profile version, manual mode keeps the goal every day and shows the gap to maintenance, and backups carry it.
 - v0.3.1 added week-strip tooltips for steps, gym minutes, trained parts and workouts, plus a live GitHub star link backed by a cached public endpoint.
 - v0.3.2 softened the light theme panels to `#f8fafa` and kept input outlines at 3:1 contrast.
+- After v0.3.2: Review builds multi-product meals (optional name, appended products, inline scan or label entry, one save), Today offers the usual meal for the current slot as a one-tap chip, product rows use household units, and saved products are offered on exact AI item matches.
 - Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
 - Next: v0.4. Start with the known gaps below.
 - Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
@@ -30,7 +31,7 @@ server/                 Rust crate `cupful`
   src/history.rs        meal history grouping, recent-meals endpoint, top meals
   src/nutrition/        estimate pipeline, prompt, measures, food matching
   src/ai/               providers, HTTP hardening, admin settings
-  src/products/         barcode lookup, label entry, saved products
+  src/products/         barcode lookup, label entry, saved products with household portions
   src/transfer/         CSV export/import, backup/restore
   src/google/           optional Google Health sync: steps (sync.rs), workouts + gym minutes + gym types (workouts.rs)
   src/{budget,profile,ingest,demo,cleanup,time,error,crypto,assets,config,db}.rs
@@ -44,6 +45,10 @@ web/                    SvelteKit app: /, /activity, /trends, /settings, /profil
   src/lib/offline/      IndexedDB queue, cache, overlay, session cache, sync UI
   src/lib/{today,products,settings,activity,trends}/   screens and their logic
   src/lib/today/RepeatSheet.svelte   recent meals picker, opens Review
+  src/lib/today/ReviewItem.svelte    one Review row, its product and unit picker
+  src/lib/today/UsualMeal.svelte     one-tap usual chip and its alternatives
+  src/lib/today/usual.ts             usuals selection, dismissal, payload
+  src/lib/today/productMatch.ts      exact saved-product match for AI items
   src/lib/trends/FrequentMeals.svelte  "Eaten most" card
   src/lib/sheet.ts      dialog exit lifecycle shared by the sheets
   static/fonts/         self-hosted Manrope woff2 and its OFL licence

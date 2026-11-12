@@ -88,7 +88,7 @@ When the browser reports itself offline, the cache is read without attempting th
 Only these reads are cacheable:
 
 - `GET /api/meals?date=...`
-- `GET /api/meals/history?limit=50` (the recent-meals picker)
+- `GET /api/meals/history` (the recent-meals picker and the usuals chip, any query)
 - `GET /api/days/{date}`
 - `GET /api/days?from=...&to=...`
 - `GET /api/budget/{date}`
