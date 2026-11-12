@@ -21,6 +21,7 @@
 		mode,
 		saved: shared,
 		savedError: sharedError,
+		onRetry,
 		onPick
 	}: {
 		itemId: string;
@@ -28,6 +29,8 @@
 		/** The review sheet's shared list; omit to load the list just here. */
 		saved?: SavedProduct[] | null;
 		savedError?: string;
+		/** Reload the shared list after a failed load; omitted when this picker owns its own. */
+		onRetry?: () => void;
 		onPick: (p: Product) => void;
 	} = $props();
 
@@ -39,12 +42,17 @@
 	let view = $state<'list' | 'scan' | { label: string }>('list');
 	const matches = $derived(filterSaved(saved ?? [], query));
 
-	onMount(() => {
-		if (shared !== undefined) return;
+	function load() {
+		ownSaved = null;
+		ownError = '';
 		products.list().then(
 			(l) => (ownSaved = l),
 			(e) => (ownError = errorMessage(e))
 		);
+	}
+
+	onMount(() => {
+		if (shared === undefined) load();
 	});
 </script>
 
@@ -61,6 +69,9 @@
 	{:else}
 		{#if savedError}
 			<p class="notice notice-error" role="alert">{savedError}</p>
+			<button type="button" class="btn btn-quiet" onclick={() => (onRetry ?? load)()}>
+				Try again
+			</button>
 		{:else if saved === null}
 			<p class="small muted" role="status">Loading…</p>
 		{:else if saved.length === 0}

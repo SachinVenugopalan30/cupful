@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Household portions: the picker's options, de-duplication, labels and grams.
 import { describe, expect, it } from 'vitest';
-import { formatQuantity, portionGrams, portionLabel, portionOptions, bestPortion } from './portions';
+import {
+	amountLabel,
+	bestPortion,
+	formatQuantity,
+	portionGrams,
+	portionLabel,
+	portionOptions
+} from './portions';
 
 const p = (unit: string, grams: number) => ({ unit, grams });
 
@@ -63,5 +70,23 @@ describe('portionGrams', () => {
 		expect(portionGrams(2, p('tsp', 5))).toBe(10);
 		expect(portionGrams(0.5, p('cup', 80))).toBe(40);
 		expect(portionGrams(1.25, p('scoop', 31))).toBe(38.8);
+	});
+});
+
+describe('amountLabel', () => {
+	const p = (unit: string, grams: number) => ({ unit, grams });
+
+	it('shows the household label while the count is real', () => {
+		expect(amountLabel(2, 160, p('cup', 80))).toBe('2 cups (160 g)');
+		expect(amountLabel(0.5, 40, p('cup', 80))).toBe('½ cup (40 g)');
+	});
+
+	it('falls back to grams when the count rounds away', () => {
+		expect(amountLabel(0, 1, p('cup', 240))).toBe('1 g');
+		expect(amountLabel(0.004, 1, p('cup', 240))).toBe('1 g');
+	});
+
+	it('reads liquids in ml', () => {
+		expect(amountLabel(1, 250, p('cup', 250), 'ml')).toBe('1 cup (250 ml)');
 	});
 });

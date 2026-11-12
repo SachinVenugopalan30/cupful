@@ -59,6 +59,19 @@ export function portionLabel(quantity: number, portion: ProductPortion, unit: 'g
 	return `${formatQuantity(quantity)} ${unitLabel(quantity, portion.unit)} (${formatGrams(portionGrams(quantity, portion))} ${unit})`;
 }
 
+/**
+ * The label for a stored amount: the household label, or the grams alone when the count rounds
+ * away. "1 g" of a 240 g cup reads better than "0 cups (1 g)" and stays true to the grams.
+ */
+export function amountLabel(
+	quantity: number,
+	grams: number,
+	portion: ProductPortion,
+	unit: 'g' | 'ml' = 'g'
+): string {
+	return round(quantity, 2) > 0 ? portionLabel(quantity, portion, unit) : `${formatGrams(grams)} ${unit}`;
+}
+
 /** Quantity times grams per unit, rounded like the rest of the UI. */
 export function portionGrams(quantity: number, portion: ProductPortion): number {
 	return round(quantity * portion.grams, 1);

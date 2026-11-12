@@ -70,11 +70,18 @@
 		returnFocus = document.activeElement as HTMLElement | null;
 		dialog.showModal();
 		heading?.focus();
+		loadProducts();
+	});
+
+	/** The one saved-product list for the sheet. Retried from the picker when a load failed. */
+	function loadProducts() {
+		saved = null;
+		savedError = '';
 		products.list().then(
 			(list) => (saved = list),
 			(e) => (savedError = errorMessage(e))
 		);
-	});
+	}
 
 	function close(force = false) {
 		if (saving && !force) return;
@@ -185,6 +192,7 @@
 					picking={picking === item.id}
 					{saved}
 					{savedError}
+					onRetry={loadProducts}
 					onRemove={() => d.items.splice(n, 1)}
 					onToggle={() => toggle(item.id)}
 					onPick={() => pick(item.id)}
@@ -206,6 +214,7 @@
 				mode="append"
 				{saved}
 				{savedError}
+				onRetry={loadProducts}
 				onPick={(p) => {
 					d.items = appendProduct(d.items, p);
 					picking = null;

@@ -16,8 +16,15 @@ import type {
 	ProductPortion
 } from '#lib/api.ts';
 import { dayLabel } from '#lib/date.ts';
+import { round } from '#lib/format.ts';
 import { portionText } from '#lib/products/logic.ts';
-import { bestPortion, portionGrams, portionLabel, portionOptions } from '#lib/products/portions.ts';
+import {
+	amountLabel,
+	bestPortion,
+	portionGrams,
+	portionLabel,
+	portionOptions
+} from '#lib/products/portions.ts';
 import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -147,6 +154,40 @@ export function withGrams(i: DraftItem, grams: number): DraftItem {
 	return { ...i, grams, ...(i.grams && i.grams > 0 ? scaleNums(i, k) : {}) };
 }
 
+/**
+ * A typed quantity applies only when it is positive. A blank or zero field leaves the item alone,
+ * so the grams the nutrients scale from survive the next entry.
+ */
+export function withQuantity(i: DraftItem, quantity: number | null): DraftItem {
+	const portion = i.portion;
+	if (!portion || quantity === null || !Number.isFinite(quantity) || quantity <= 0) return i;
+	const grams = portionGrams(quantity, portion);
+	const next = withGrams(i, grams);
+	return {
+		...next,
+		quantity,
+		portion_text: amountLabel(quantity, grams, portion, i.amount_unit ?? 'g')
+	};
+}
+
+/**
+ * Typed grams keep the household count in step. A blank or zero field is an unfinished edit: a
+ * manual row goes blank, while a product row keeps its amount so nothing stale is saved unseen.
+ */
+export function withGramsInput(i: DraftItem, grams: number | null): DraftItem {
+	if (grams === null || !Number.isFinite(grams) || grams <= 0) {
+		return i.editable ? { ...i, grams: null } : i;
+	}
+	const next = withGrams(i, grams);
+	if (!next.portion) return next;
+	const quantity = round(grams / next.portion.grams, 2);
+	return {
+		...next,
+		quantity,
+		portion_text: amountLabel(quantity, grams, next.portion, i.amount_unit ?? 'g')
+	};
+}
+
 /** A direct edit: the item no longer matches its database food, so it's marked manual. */
 export const withValue = (i: DraftItem, key: NumKey, v: number | null): DraftItem => ({
 	...i,
@@ -184,11 +225,17 @@ const singularUnit = (unit: string) =>
 /** Swap in a saved product: grams = count x its serving for "2 scoops", else the current grams. */
 export function useProduct(i: DraftItem, p: Product): DraftItem {
 	const count = unitCount(i.portion_text);
-	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
-	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
 	const portions = portionOptions(p.portions ?? []);
 	const wanted = unitWord(i.portion_text);
 	const named = wanted ? portions.find((p) => p.unit.toLowerCase() === singularUnit(wanted)) : undefined;
+	// "2 cups" is two of the product's own cups when it has them; the serving is the fallback.
+	const grams =
+		named && count !== null
+			? portionGrams(count, named)
+			: p.serving_g && count !== null
+				? count * p.serving_g
+				: (i.grams ?? p.serving_g ?? 100);
+	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
 	const portion = named ?? bestPortion(portions);
 	const quantity = portion ? Math.round((grams / portion.grams) * 100) / 100 : 1;
 	const amount_unit = p.serving_unit === 'ml' ? 'ml' : 'g';
@@ -199,7 +246,7 @@ export function useProduct(i: DraftItem, p: Product): DraftItem {
 		portion,
 		quantity,
 		amount_unit,
-		portion_text: portion ? portionLabel(quantity, portion, amount_unit) : i.portion_text,
+		portion_text: portion ? amountLabel(quantity, grams, portion, amount_unit) : i.portion_text,
 		editable: false,
 		options: [],
 		chosen: 0,

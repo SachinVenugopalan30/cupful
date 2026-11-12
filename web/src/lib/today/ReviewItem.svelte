@@ -2,7 +2,6 @@
 <!-- One item row in Review: name, origin, number inputs, household unit picker and the product swap. -->
 <script lang="ts">
 	import { formatGrams, formatKcal, round } from '#lib/format.ts';
-	import { portionGrams, portionLabel } from '#lib/products/portions.ts';
 	import type { Product, SavedProduct } from '#lib/api.ts';
 	import { matchProduct } from './productMatch';
 	import ReviewProductPicker from './ReviewProductPicker.svelte';
@@ -10,8 +9,9 @@
 	import {
 		choose,
 		itemReady,
-		withGrams,
+		withGramsInput,
 		withKcal,
+		withQuantity,
 		withValue,
 		type DraftItem,
 		type NumKey
@@ -23,6 +23,7 @@
 		picking,
 		saved = null,
 		savedError = '',
+		onRetry,
 		onRemove,
 		onToggle,
 		onPick,
@@ -34,6 +35,7 @@
 		/** The review sheet's saved products, loaded once for every row. */
 		saved?: SavedProduct[] | null;
 		savedError?: string;
+		onRetry?: () => void;
 		onRemove: () => void;
 		onToggle: () => void;
 		onPick: () => void;
@@ -48,41 +50,33 @@
 		return Number.isFinite(v) && v >= 0 ? v : null;
 	};
 
-	/** Grams and the portion count follow each other; macros scale with the grams. */
-	const amountUnit = $derived(item.amount_unit ?? 'g');
-
 	function setGrams(e: Event) {
-		const g = num(e);
-		if (g === null || g <= 0) {
-			if (item.editable) item = { ...item, grams: null };
-			return;
-		}
-		const next = withGrams(item, g);
-		if (!next.portion) return void (item = next);
-		const quantity = round(g / next.portion.grams, 2);
-		item = { ...next, quantity, portion_text: portionLabel(quantity, next.portion, amountUnit) };
+		item = withGramsInput(item, num(e));
 	}
 
 	function setValue(k: NumKey, e: Event) {
 		item = k === 'kcal' ? withKcal(item, num(e)) : withValue(item, k, num(e));
 	}
 
+	/** A blank or zero amount is an unfinished edit, so the stored value comes back on blur. */
+	function restoreAmount(e: FocusEvent, shown: string | number) {
+		const input = e.currentTarget as HTMLInputElement;
+		const v = input.valueAsNumber;
+		if (!Number.isFinite(v) || v <= 0) input.value = String(shown);
+	}
+
+	const amountUnit = $derived(item.amount_unit ?? 'g');
+
 	function pickUnit(e: Event) {
 		const unit = (e.currentTarget as HTMLSelectElement).value;
 		const portion = item.portions?.find((p) => p.unit === unit);
 		if (!portion) return;
 		const quantity = item.quantity ?? 1;
-		const next = withGrams({ ...item, portion }, portionGrams(quantity, portion));
-		item = { ...next, portion_text: portionLabel(quantity, portion, amountUnit) };
+		item = withQuantity({ ...item, portion }, quantity);
 	}
 
 	function setQuantity(e: Event) {
-		const portion = item.portion;
-		if (!portion) return;
-		const v = (e.currentTarget as HTMLInputElement).valueAsNumber;
-		const quantity = Number.isFinite(v) && v >= 0 ? v : 0;
-		const next = withGrams(item, portionGrams(quantity, portion));
-		item = { ...next, quantity, portion_text: portionLabel(quantity, portion, amountUnit) };
+		item = withQuantity(item, num(e));
 	}
 </script>
 
@@ -167,6 +161,7 @@
 					step="any"
 					value={item.quantity ?? 1}
 					oninput={setQuantity}
+					onblur={(e) => restoreAmount(e, item.quantity ?? 1)}
 				/>
 			</div>
 		{/if}
@@ -180,6 +175,7 @@
 				step="any"
 				value={item.grams === null ? '' : Number(formatGrams(item.grams))}
 				oninput={setGrams}
+				onblur={(e) => restoreAmount(e, item.grams === null ? '' : Number(formatGrams(item.grams)))}
 			/>
 		</div>
 		{#if item.editable || open}
@@ -226,7 +222,14 @@
 	</div>
 
 	{#if picking}
-		<ReviewProductPicker itemId={item.id} mode="replace" {saved} {savedError} onPick={onSwap} />
+		<ReviewProductPicker
+			itemId={item.id}
+			mode="replace"
+			{saved}
+			{savedError}
+			{onRetry}
+			onPick={onSwap}
+		/>
 	{/if}
 
 	{#if item.swapped && item.phrase.trim()}
