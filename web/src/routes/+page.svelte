@@ -3,6 +3,7 @@
 	import DayNav from '#lib/DayNav.svelte';
 	import BudgetCard from '#lib/today/BudgetCard.svelte';
 	import Composer from '#lib/today/Composer.svelte';
+	import UsualMeal from '#lib/today/UsualMeal.svelte';
 	import ActivitySection from '#lib/activity/ActivitySection.svelte';
 	import MealList from '#lib/today/MealList.svelte';
 	import BarcodeEntry from '#lib/products/BarcodeEntry.svelte';
@@ -22,6 +23,7 @@
 	</header>
 	<div class="budget"><BudgetCard date={day.date} {refreshKey} /></div>
 	<div class="log">
+		<UsualMeal date={day.date} {refreshKey} onSaved={changed} />
 		<Composer date={day.date} onSaved={changed} />
 		<BarcodeEntry date={day.date} onSaved={changed} />
 	</div>

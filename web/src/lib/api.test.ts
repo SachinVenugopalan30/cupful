@@ -226,6 +226,17 @@ describe('cached reads', () => {
 		expect(mocks.cachedGetJson).toHaveBeenCalledWith('/api/meals/history?limit=50', 42);
 	});
 
+	it('adds history filters to the URL without changing the default', async () => {
+		mocks.connection.activeUserId = 42;
+		mocks.cachedGetJson.mockResolvedValue({ meals: [] });
+
+		await getMealHistory(3, { days: 60, meal_type: 'lunch', sort: 'frequent' });
+		expect(mocks.cachedGetJson).toHaveBeenCalledWith(
+			'/api/meals/history?limit=3&days=60&meal_type=lunch&sort=frequent',
+			42
+		);
+	});
+
 	it('uses the cache for budget, trends, profile and saved products', async () => {
 		mocks.connection.activeUserId = 7;
 		mocks.cachedGetJson.mockImplementation(async (path: string) => {
