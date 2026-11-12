@@ -12,9 +12,10 @@ import type {
 	MealSource,
 	MealType,
 	Origin,
-	SavedProduct
+	Product
 } from '#lib/api.ts';
 import { dayLabel } from '#lib/date.ts';
+import { portionText } from '#lib/products/logic.ts';
 import { itemFromPer100, scaleItems, uuidv7, type MealIn } from '#lib/sync/index.ts';
 
 export const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -163,11 +164,37 @@ function unitCount(portion: string): number | null {
 }
 
 /** Swap in a saved product: grams = count x its serving for "2 scoops", else the current grams. */
-export function useProduct(i: DraftItem, p: SavedProduct): DraftItem {
+export function useProduct(i: DraftItem, p: Product): DraftItem {
 	const count = unitCount(i.portion_text);
 	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
 	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
 	return { ...i, ...nums, editable: false, options: [], chosen: 0, swapped: true, remember: false };
+}
+
+/** A product as a new `food_db` item: one serving when it has one, else 100 g. */
+export function draftItemFromProduct(p: Product): DraftItem {
+	const grams = p.serving_g ?? 100;
+	const { id: _id, ...nums } = itemFromPer100(p, grams, portionText(grams, p.serving_g, p.serving_unit));
+	return {
+		...blankItem(),
+		...nums,
+		editable: false,
+		options: [],
+		chosen: 0
+	};
+}
+
+/** An untouched starter row: nothing typed, no numbers, no food. */
+const untouchedStarter = (i: DraftItem) =>
+	i.food_id === null &&
+	i.name.trim() === '' &&
+	i.portion_text.trim() === '' &&
+	i.grams === null &&
+	KEYS.every((k) => i[k] === null);
+
+/** Append a product, dropping any untouched blank starter rows first. */
+export function appendProduct(items: DraftItem[], p: Product): DraftItem[] {
+	return [...items.filter((i) => !untouchedStarter(i)), draftItemFromProduct(p)];
 }
 
 /** Swap in ambiguity option `n`, scaled to the item's current grams. */
