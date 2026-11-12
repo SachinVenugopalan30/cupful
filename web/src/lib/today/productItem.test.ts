@@ -82,6 +82,19 @@ describe('draftItemFromProduct', () => {
 		expect(i.portions).toEqual([]);
 		expect(i).toMatchObject({ grams: 31, portion_text: '1 serving (31 g)' });
 	});
+
+	it('carries the product amount unit for liquids', () => {
+		const milk = draftItemFromProduct({
+			...product,
+			name: 'Milk',
+			serving_g: 240,
+			serving_unit: 'ml',
+			serving_text: '1 cup (240 ml)',
+			portions: [{ unit: 'cup', grams: 240 }]
+		});
+		expect(milk).toMatchObject({ amount_unit: 'ml', grams: 240, portion_text: '1 cup (240 ml)' });
+		expect(draftItemFromProduct(product).amount_unit).toBe('g');
+	});
 });
 
 describe('appendProduct', () => {
@@ -134,6 +147,7 @@ describe('picker metadata', () => {
 		expect(item).not.toHaveProperty('portions');
 		expect(item).not.toHaveProperty('portion');
 		expect(item).not.toHaveProperty('quantity');
+		expect(item).not.toHaveProperty('amount_unit');
 	});
 
 	it('a saved meal without portion metadata falls back to grams', () => {

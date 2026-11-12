@@ -426,4 +426,25 @@ describe('useProduct', () => {
 		expect(useProduct(item('some', 25), powder).grams).toBe(25);
 		expect(useProduct(item('2 scoops', 20), { ...powder, serving_g: null }).grams).toBe(20);
 	});
+
+	it('keeps a unit the product has and falls back to the best portion otherwise', () => {
+		const withScoop = {
+			...powder,
+			portions: [
+				{ unit: 'cup', grams: 80 },
+				{ unit: 'serving', grams: 31 },
+				{ unit: 'scoop', grams: 31 }
+			]
+		};
+		expect(useProduct(item('2 scoops', 20), withScoop)).toMatchObject({
+			portion: { unit: 'scoop', grams: 31 },
+			quantity: 2,
+			grams: 62,
+			portion_text: '2 scoops (62 g)'
+		});
+		expect(useProduct(item('2 cups', 20), withScoop)).toMatchObject({
+			portion: { unit: 'cup', grams: 80 },
+			grams: 62
+		});
+	});
 });

@@ -62,6 +62,8 @@ export type DraftItem = Nums & {
 	portions?: ProductPortion[];
 	portion?: ProductPortion | null;
 	quantity?: number;
+	/** UI-only: the product's label amount unit, so liquids read in ml. */
+	amount_unit?: 'g' | 'ml';
 };
 
 export type Draft = {
@@ -169,21 +171,35 @@ function unitCount(portion: string): number | null {
 	return b ? Number(a) / Number(b) : Number(a);
 }
 
+/** The household unit in a portion phrase ("2 scoops" -> "scoops"), or null for a weight. */
+function unitWord(portion: string): string | null {
+	const m = /^\s*(?:an?|\d+\s*\/\s*\d+|\d*\.?\d+)\s*([a-z][a-z ]*)?$/i.exec(portion);
+	const unit = (m?.[1] ?? '').trim().toLowerCase();
+	return unit && !WEIGHT_UNITS.test(unit) ? unit : null;
+}
+
+const singularUnit = (unit: string) =>
+	unit.endsWith('s') && !unit.endsWith('ss') ? unit.slice(0, -1) : unit;
+
 /** Swap in a saved product: grams = count x its serving for "2 scoops", else the current grams. */
 export function useProduct(i: DraftItem, p: Product): DraftItem {
 	const count = unitCount(i.portion_text);
 	const grams = p.serving_g && count !== null ? count * p.serving_g : (i.grams ?? p.serving_g ?? 100);
 	const { id: _id, ...nums } = itemFromPer100(p, grams, i.portion_text);
 	const portions = portionOptions(p.portions ?? []);
-	const portion = bestPortion(portions);
+	const wanted = unitWord(i.portion_text);
+	const named = wanted ? portions.find((p) => p.unit.toLowerCase() === singularUnit(wanted)) : undefined;
+	const portion = named ?? bestPortion(portions);
 	const quantity = portion ? Math.round((grams / portion.grams) * 100) / 100 : 1;
+	const amount_unit = p.serving_unit === 'ml' ? 'ml' : 'g';
 	return {
 		...i,
 		...nums,
 		portions,
 		portion,
 		quantity,
-		portion_text: portion ? portionLabel(quantity, portion) : i.portion_text,
+		amount_unit,
+		portion_text: portion ? portionLabel(quantity, portion, amount_unit) : i.portion_text,
 		editable: false,
 		options: [],
 		chosen: 0,
@@ -197,7 +213,8 @@ export function draftItemFromProduct(p: Product): DraftItem {
 	const portions = portionOptions(p.portions ?? []);
 	const portion = bestPortion(portions);
 	const grams = portion ? portionGrams(1, portion) : (p.serving_g ?? 100);
-	const text = portion ? portionLabel(1, portion) : portionText(grams, p.serving_g, p.serving_unit);
+	const amount_unit = p.serving_unit === 'ml' ? 'ml' : 'g';
+	const text = portion ? portionLabel(1, portion, amount_unit) : portionText(grams, p.serving_g, p.serving_unit);
 	const { id: _id, ...nums } = itemFromPer100(p, grams, text);
 	return {
 		...blankItem(),
@@ -205,6 +222,7 @@ export function draftItemFromProduct(p: Product): DraftItem {
 		portions,
 		portion,
 		quantity: 1,
+		amount_unit,
 		editable: false,
 		options: [],
 		chosen: 0

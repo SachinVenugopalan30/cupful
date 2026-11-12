@@ -16,7 +16,7 @@ const rank = (unit: string) => {
 };
 
 const isServing = (unit: string) => unit.trim().toLowerCase() === 'serving';
-const INVARIANT = new Set(['tsp', 'tbsp', 'g', 'ml', 'oz', 'kg', 'lb']);
+const INVARIANT = new Set(['tsp', 'tbsp', 'g', 'ml', 'oz', 'fl oz', 'kg', 'lb']);
 
 /** "2 scoops", but "½ cup" and "2 tsp". */
 function unitLabel(quantity: number, unit: string): string {
@@ -54,9 +54,9 @@ export function formatQuantity(q: number): string {
 	return String(round(q, 2));
 }
 
-/** "½ cup (40 g)", "2 tsp (10 g)", "1 scoop (31 g)". */
-export function portionLabel(quantity: number, portion: ProductPortion): string {
-	return `${formatQuantity(quantity)} ${unitLabel(quantity, portion.unit)} (${formatGrams(portionGrams(quantity, portion))} g)`;
+/** "½ cup (40 g)", "2 tsp (10 g)", "1 scoop (31 g)"; liquids use ml. */
+export function portionLabel(quantity: number, portion: ProductPortion, unit: 'g' | 'ml' = 'g'): string {
+	return `${formatQuantity(quantity)} ${unitLabel(quantity, portion.unit)} (${formatGrams(portionGrams(quantity, portion))} ${unit})`;
 }
 
 /** Quantity times grams per unit, rounded like the rest of the UI. */

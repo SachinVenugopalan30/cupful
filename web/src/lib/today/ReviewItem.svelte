@@ -42,6 +42,8 @@
 	};
 
 	/** Grams and the portion count follow each other; macros scale with the grams. */
+	const amountUnit = $derived(item.amount_unit ?? 'g');
+
 	function setGrams(e: Event) {
 		const g = num(e);
 		if (g === null || g <= 0) {
@@ -51,7 +53,7 @@
 		const next = withGrams(item, g);
 		if (!next.portion) return void (item = next);
 		const quantity = round(g / next.portion.grams, 2);
-		item = { ...next, quantity, portion_text: portionLabel(quantity, next.portion) };
+		item = { ...next, quantity, portion_text: portionLabel(quantity, next.portion, amountUnit) };
 	}
 
 	function setValue(k: NumKey, e: Event) {
@@ -64,7 +66,7 @@
 		if (!portion) return;
 		const quantity = item.quantity ?? 1;
 		const next = withGrams({ ...item, portion }, portionGrams(quantity, portion));
-		item = { ...next, portion_text: portionLabel(quantity, portion) };
+		item = { ...next, portion_text: portionLabel(quantity, portion, amountUnit) };
 	}
 
 	function setQuantity(e: Event) {
@@ -73,7 +75,7 @@
 		const v = (e.currentTarget as HTMLInputElement).valueAsNumber;
 		const quantity = Number.isFinite(v) && v >= 0 ? v : 0;
 		const next = withGrams(item, portionGrams(quantity, portion));
-		item = { ...next, quantity, portion_text: portionLabel(quantity, portion) };
+		item = { ...next, quantity, portion_text: portionLabel(quantity, portion, amountUnit) };
 	}
 </script>
 
@@ -135,7 +137,7 @@
 				<label for="unit-{item.id}">Unit</label>
 				<select id="unit-{item.id}" value={item.portion.unit} onchange={pickUnit}>
 					{#each item.portions as p (p.unit)}
-						<option value={p.unit}>{p.unit} ({formatGrams(p.grams)} g)</option>
+						<option value={p.unit}>{p.unit} ({formatGrams(p.grams)} {amountUnit})</option>
 					{/each}
 				</select>
 			</div>

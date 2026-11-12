@@ -51,6 +51,11 @@ describe('portionLabel', () => {
 		expect(portionLabel(1, p('scoop', 31))).toBe('1 scoop (31 g)');
 		expect(portionLabel(2, p('scoop', 31))).toBe('2 scoops (62 g)');
 	});
+
+	it('uses millilitres for liquids and keeps fl oz invariant', () => {
+		expect(portionLabel(1, p('cup', 240), 'ml')).toBe('1 cup (240 ml)');
+		expect(portionLabel(2, p('fl oz', 30), 'ml')).toBe('2 fl oz (60 ml)');
+	});
 });
 
 describe('portionGrams', () => {

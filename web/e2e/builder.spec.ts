@@ -160,3 +160,17 @@ test('a product row changes to a household unit and scales with quantity', async
 	const saved = (await meals(page)).at(-1)!;
 	expect(saved.items[0]).toMatchObject({ name: 'Choc Scoop', origin: 'food_db', grams: 62 });
 });
+
+test('a liquid product reads its household unit in millilitres', async ({ page }) => {
+	await createProduct(page, 'Oat milk', '2000000000046', 240, '1 cup (240 ml)');
+	const sheet = await hand(page, 'a glass of milk');
+	await sheet.getByRole('button', { name: '+ Product' }).click();
+	await sheet.getByLabel('Search my products').fill('oat milk');
+	await sheet.getByRole('button', { name: /Oat milk/ }).click();
+
+	const item = sheet.locator('.item').first();
+	await expect(item.getByLabel('Unit')).toHaveValue('cup');
+	await expect(item).toContainText('1 cup (240 ml)');
+	await expect(item).not.toContainText('1 cup (240 g)');
+	await expect(item.getByLabel('Grams')).toHaveValue('240');
+});
