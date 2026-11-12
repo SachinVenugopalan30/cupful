@@ -105,7 +105,7 @@ fn groups_by_normalized_description_and_averages_kcal() {
             vec![item("Rice", 600.0)],
         ),
     ];
-    let mut groups = group_meals(meals);
+    let mut groups = group_meals(meals, false);
     groups.sort_by(|a, b| a.label.cmp(&b.label));
     assert_eq!(groups.len(), 2);
     let oats = groups
@@ -130,7 +130,7 @@ fn groups_separate_meal_types() {
             "lunch",
         ),
     ];
-    let groups = group_meals(meals);
+    let groups = group_meals(meals, true);
     assert_eq!(groups.len(), 2);
     assert_eq!(
         groups
@@ -142,13 +142,31 @@ fn groups_separate_meal_types() {
 }
 
 #[test]
+fn groups_merge_meal_types_when_not_split() {
+    let meals = vec![
+        typed(
+            meal("m1", "2026-11-01", 1, "Rice", vec![item("Rice", 100.0)]),
+            "breakfast",
+        ),
+        typed(
+            meal("m2", "2026-11-02", 2, "Rice", vec![item("Rice", 200.0)]),
+            "lunch",
+        ),
+    ];
+    let groups = group_meals(meals, false);
+    assert_eq!(groups.len(), 1);
+    assert_eq!(groups[0].label, "Rice");
+    assert_eq!(groups[0].times, 2);
+}
+
+#[test]
 fn group_label_prefers_the_most_common_spelling() {
     let meals = vec![
         meal("m1", "2026-11-01", 1, "rice", vec![item("Rice", 100.0)]),
         meal("m2", "2026-11-02", 2, "Rice", vec![item("Rice", 200.0)]),
         meal("m3", "2026-11-03", 3, "rice", vec![item("Rice", 300.0)]),
     ];
-    let groups = group_meals(meals);
+    let groups = group_meals(meals, false);
     assert_eq!(groups.len(), 1);
     assert_eq!(groups[0].label, "rice");
     assert_eq!(groups[0].latest.id, "m3");
@@ -160,7 +178,7 @@ fn latest_representative_uses_updated_at() {
         meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
         meal("m2", "2026-11-02", 20, "Rice", vec![item("Rice", 200.0)]),
     ];
-    let groups = group_meals(meals);
+    let groups = group_meals(meals, false);
     assert_eq!(groups[0].latest.id, "m2");
 }
 
@@ -170,7 +188,7 @@ fn latest_representative_prefers_a_later_date() {
         meal("m1", "2026-11-03", 5, "Rice", vec![item("Rice", 100.0)]),
         meal("m2", "2026-11-02", 100, "Rice", vec![item("Rice", 200.0)]),
     ];
-    let groups = group_meals(meals);
+    let groups = group_meals(meals, false);
     assert_eq!(groups[0].latest.id, "m1");
     assert_eq!(groups[0].last_date, "2026-11-03");
 }
@@ -181,14 +199,14 @@ fn latest_representative_breaks_ties_on_larger_id() {
         meal("m2", "2026-11-02", 10, "Rice", vec![item("Rice", 200.0)]),
         meal("m1", "2026-11-02", 10, "Rice", vec![item("Rice", 100.0)]),
     ];
-    let groups = group_meals(meals);
+    let groups = group_meals(meals, false);
     assert_eq!(groups[0].latest.id, "m2");
 }
 
 #[test]
 fn skips_itemless_meals() {
     let meals = vec![meal("m1", "2026-11-02", 1, "Rice", vec![])];
-    assert!(group_meals(meals).is_empty());
+    assert!(group_meals(meals, false).is_empty());
 }
 
 #[test]
@@ -204,14 +222,17 @@ fn frequent_sort_prefers_the_group_with_product_items_on_a_tie() {
             vec![product_item("Bowl", 100.0)],
         )
     };
-    let mut groups = group_meals(vec![
-        ai("a1", "2026-11-01", 1),
-        ai("a2", "2026-11-02", 2),
-        ai("a3", "2026-11-03", 3),
-        product("p1", "2026-10-30", 4),
-        product("p2", "2026-10-31", 5),
-        product("p3", "2026-10-31", 6),
-    ]);
+    let mut groups = group_meals(
+        vec![
+            ai("a1", "2026-11-01", 1),
+            ai("a2", "2026-11-02", 2),
+            ai("a3", "2026-11-03", 3),
+            product("p1", "2026-10-30", 4),
+            product("p2", "2026-10-31", 5),
+            product("p3", "2026-10-31", 6),
+        ],
+        false,
+    );
     assert_eq!(groups.len(), 2);
     sort_groups(&mut groups, HistorySort::Frequent);
     // Equal frequency: the more recently seen AI group would win on date alone, but its latest
@@ -222,17 +243,20 @@ fn frequent_sort_prefers_the_group_with_product_items_on_a_tie() {
 
 #[test]
 fn frequent_sort_orders_by_times_before_product_items() {
-    let mut groups = group_meals(vec![
-        meal("a1", "2026-11-01", 1, "AI bowl", vec![item("Bowl", 100.0)]),
-        meal("a2", "2026-11-02", 2, "AI bowl", vec![item("Bowl", 100.0)]),
-        meal(
-            "p1",
-            "2026-11-03",
-            3,
-            "Product bowl",
-            vec![product_item("Bowl", 100.0)],
-        ),
-    ]);
+    let mut groups = group_meals(
+        vec![
+            meal("a1", "2026-11-01", 1, "AI bowl", vec![item("Bowl", 100.0)]),
+            meal("a2", "2026-11-02", 2, "AI bowl", vec![item("Bowl", 100.0)]),
+            meal(
+                "p1",
+                "2026-11-03",
+                3,
+                "Product bowl",
+                vec![product_item("Bowl", 100.0)],
+            ),
+        ],
+        false,
+    );
     sort_groups(&mut groups, HistorySort::Frequent);
     assert_eq!(groups[0].label, "AI bowl");
     assert_eq!(groups[1].label, "Product bowl");

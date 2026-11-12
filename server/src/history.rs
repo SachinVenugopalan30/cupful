@@ -74,8 +74,9 @@ fn meal_key(label: &str) -> String {
         .to_lowercase()
 }
 
-/// Returns one group per normalized label, in no particular order.
-fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
+/// Returns one group per normalized label, in no particular order. When
+/// `split_meal_type` is set, the same label in different slots stays separate.
+fn group_meals(meals: Vec<MealRow>, split_meal_type: bool) -> Vec<MealGroup> {
     let mut groups: HashMap<String, MealGroup> = HashMap::new();
     for meal in meals {
         if meal.items.is_empty() {
@@ -85,7 +86,12 @@ fn group_meals(meals: Vec<MealRow>) -> Vec<MealGroup> {
         if label.is_empty() {
             continue;
         }
-        let key = format!("{}|{}", meal.meal_type, meal_key(&label));
+        let key = meal_key(&label);
+        let key = if split_meal_type {
+            format!("{}|{}", meal.meal_type, key)
+        } else {
+            key
+        };
         let kcal = meal.items.iter().map(|i| i.kcal).sum::<f64>();
         match groups.entry(key) {
             Entry::Occupied(mut e) => {
@@ -167,7 +173,7 @@ fn sort_groups(groups: &mut [MealGroup], sort: HistorySort) {
 
 /// The most-eaten meals as compact summaries, grouped by normalized label before the limit.
 pub(crate) fn top_meals(meals: Vec<MealRow>, limit: usize) -> Vec<Value> {
-    let mut groups = group_meals(meals);
+    let mut groups = group_meals(meals, false);
     groups.sort_by(|a, b| {
         b.times
             .cmp(&a.times)
@@ -222,7 +228,7 @@ pub async fn meal_history(
     if let Some(meal_type) = meal_type {
         meals.retain(|m| m.meal_type == meal_type);
     }
-    let mut groups = group_meals(meals);
+    let mut groups = group_meals(meals, true);
     sort_groups(&mut groups, q.sort);
     groups.truncate(limit as usize);
     let out: Vec<Value> = groups

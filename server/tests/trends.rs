@@ -107,6 +107,34 @@ async fn top_meals_counts_by_description() {
 }
 
 #[tokio::test]
+async fn top_meals_groups_the_same_label_across_meal_types() {
+    let mut a = setup().await;
+    let mut lunch = meal(&uuid(), D3, json!([item(&uuid(), 100.0)]));
+    lunch["description"] = json!("Oat Crackers");
+    let mut snack = meal(&uuid(), D3, json!([item(&uuid(), 100.0)]));
+    snack["description"] = json!("Oat Crackers");
+    snack["meal_type"] = json!("snack");
+    a.sync(vec![
+        op("meal.upsert", &at(-30), lunch),
+        op("meal.upsert", &at(-29), snack),
+    ])
+    .await;
+
+    let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D3}")).await;
+    let top = t["top_meals"].as_array().unwrap();
+    let oats: Vec<_> = top
+        .iter()
+        .filter(|m| m["label"] == "Oat Crackers")
+        .collect();
+    assert_eq!(
+        oats.len(),
+        1,
+        "top_meals must not split by meal_type: {top:?}"
+    );
+    assert_eq!(oats[0]["times"], 2);
+}
+
+#[tokio::test]
 async fn top_meals_is_empty_without_meals() {
     let mut a = setup().await;
     let (_, t) = a.get(&format!("/api/trends?from={D1}&to={D1}")).await;
