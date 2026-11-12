@@ -22,7 +22,9 @@
 	import { closeSheet } from '#lib/sheet.ts';
 	import {
 		MEAL_TYPES,
+		MAX_DESCRIPTION,
 		MULTIPLIERS,
+		appendProduct,
 		blankItem,
 		capitalize,
 		choose,
@@ -95,6 +97,7 @@
 	let opened = $state<string[]>([]);
 	const toggle = (id: string) => (opened = opened.includes(id) ? opened.filter((x) => x !== id) : [...opened, id]);
 	let picking = $state<string | null>(null);
+	const APPEND = 'append';
 
 	function pick(id: string) {
 		picking = picking === id ? null : id;
@@ -168,6 +171,8 @@
 				<label><input type="radio" name="review-type-{uid}" value={t} bind:group={d.meal_type} />{capitalize(t)}</label>
 			{/each}
 		</fieldset>
+
+		<div class="field"><label for="review-name-{uid}">Name <span class="muted">(optional)</span></label><input id="review-name-{uid}" maxlength={MAX_DESCRIPTION} bind:value={d.description} /></div>
 
 		{#if d.warnings.length}
 			<div class="notice notice-warning">
@@ -304,7 +309,8 @@
 					{#if picking === item.id}
 						<ReviewProductPicker
 							itemId={item.id}
-							onSwap={(p) => {
+							mode="replace"
+							onPick={(p) => {
 								d.items[n] = useProduct(d.items[n], p);
 								picking = null;
 							}}
@@ -320,7 +326,21 @@
 				</li>
 			{/each}
 		</ul>
-		<button type="button" class="btn btn-quiet add" onclick={addItem}>Add item</button>
+		<div class="row actions">
+			<button type="button" class="btn btn-quiet add" onclick={addItem}>Add item</button>
+			<button type="button" class="btn" aria-expanded={picking === APPEND}
+				aria-controls="picker-{APPEND}" onclick={() => pick(APPEND)}>+ Product</button>
+		</div>
+		{#if picking === APPEND}
+			<ReviewProductPicker
+				itemId={APPEND}
+				mode="append"
+				onPick={(p) => {
+					d.items = appendProduct(d.items, p);
+					picking = null;
+				}}
+			/>
+		{/if}
 
 		<fieldset class="field">
 			<legend class="label">Portion of the whole meal</legend>
