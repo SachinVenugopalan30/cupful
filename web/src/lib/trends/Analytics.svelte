@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import type { Budget, MealMix, TrendAverages } from '../api';
-	import CountUp from './CountUp.svelte';
+	import CountUp from '#lib/motion/CountUp.svelte';
 	import { formatNumber, mealShares } from './logic.ts';
 
 	let {

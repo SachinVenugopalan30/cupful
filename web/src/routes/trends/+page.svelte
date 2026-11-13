@@ -7,7 +7,7 @@
 	import Analytics from '#lib/trends/Analytics.svelte';
 	import Charts from '#lib/trends/Charts.svelte';
 	import Consistency from '#lib/trends/Consistency.svelte';
-	import CountUp from '#lib/trends/CountUp.svelte';
+	import CountUp from '#lib/motion/CountUp.svelte';
 	import FrequentMeals from '#lib/trends/FrequentMeals.svelte';
 
 	let range = $state<Range>(loadRange());

@@ -1,84 +1,91 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /*
- * Cupful design tokens. See docs/design.md. Mineral palette: cool pale stone, a deep sea blue,
- * and data hues drawn from pantry colors. Every color is `light-dark(light, dark)`;
- * `color-scheme` picks the side: System follows prefers-color-scheme, `<html data-theme>` forces
- * one (Settings). Text and muted text meet WCAG AA on --bg, --surface and --surface-2.
- * Semantic text meets AA on its soft fill. Marks and meter fills meet 3:1 on surfaces.
+ * Cupful design tokens. See docs/design.md. Ember jug palette: graphite ground, a burnt-ember
+ * accent, teal and rose for under and over, and a jug liquid for the budget. Every color is
+ * `light-dark(light, dark)`; `color-scheme` picks the side: System follows prefers-color-scheme,
+ * `<html data-theme>` forces one (Settings). Text and muted text meet WCAG AA on --bg, --surface
+ * and --surface-2. Semantic text meets AA on its soft fill. Marks and meter fills meet 3:1 on
+ * surfaces, except the jug liquid, which is decorative (the outline and the figures carry meaning).
  */
 :root {
 	color-scheme: light dark;
 
 	/* ---- surfaces and text ---- */
-	--bg: light-dark(#f2f5f6, #0e1418); /* cool pale stone */
-	--surface: light-dark(#f8fafa, #151d22); /* cool off-white; pure white reads harsh */
-	--surface-2: light-dark(#e7edef, #1b262c); /* sunken: meter tracks, inputs, hover */
-	--border: light-dark(#dce5e8, #2a3740); /* hairlines; decorative */
-	--border-strong: light-dark(#9aabb3, #60747f); /* stronger rules and separators */
-	--control-border: light-dark(#7e919b, #60747f); /* input outlines: 3:1 on --surface */
-	--text: light-dark(#172025, #e9f1f4);
-	--text-muted: light-dark(#59666d, #9fb0b8);
+	--bg: light-dark(#f1f3f6, #0a0d10); /* cool pale stone */
+	--surface: light-dark(#fafbfc, #12161b); /* cool off-white; pure white reads harsh */
+	--surface-2: light-dark(#e6e9ee, #1b2027); /* sunken: meter tracks, inputs, hover */
+	--border: light-dark(#dde1e7, #232a32); /* hairlines; decorative */
+	--border-strong: light-dark(#a9b1bb, #47515c); /* stronger rules and separators */
+	--control-border: light-dark(#8a929c, #66717d); /* input outlines: 3:1 on --surface */
+	--text: light-dark(#12161b, #edf1f5);
+	--text-muted: light-dark(#59616b, #96a1ad);
 
 	/* ---- brand ---- */
-	--accent: light-dark(#245f8a, #82c2e8); /* buttons, links, focus */
-	--accent-hover: light-dark(#1c4d70, #9ad1ef);
-	--on-accent: light-dark(#ffffff, #071820);
-	--accent-soft: light-dark(#e1eef6, #173647); /* selected chips, quiet fills */
+	--accent: light-dark(#c2410c, #d9824f); /* buttons, links, focus */
+	--accent-hover: light-dark(#a8380a, #e39264);
+	--on-accent: light-dark(#fff8f3, #1c0d05);
+	--accent-soft: light-dark(#fbe7da, #2a1d15); /* selected chips, quiet fills */
+	--accent-text: light-dark(#9a330a, #eba783); /* ember as text on soft fills and tab labels */
 	--focus-ring: var(--accent);
 
 	/* ---- meaning ---- */
-	--under: light-dark(#2f7a6b, #8bd3c0); /* left in budget, success */
-	--under-soft: light-dark(#edf4f2, #1b3132);
-	--over: light-dark(#a64a52, #e39aa8); /* over budget */
-	--over-soft: light-dark(#f3e7e9, #35272d);
+	--under: light-dark(#0e7862, #4fd1b0); /* left in budget, success */
+	--under-soft: light-dark(#d9f2ea, #0f2a24);
+	--over: light-dark(#ba3858, #e48aa0); /* over budget */
+	--over-soft: light-dark(#fbe3e9, #2e1820);
 	--warning: light-dark(#8a5a00, #e0b45a); /* provisional, flags */
 	--warning-soft: light-dark(#f0eade, #2f2a1b);
-	--error: light-dark(#b3261e, #e39aa8);
+	--error: light-dark(#b3261e, #e48aa0);
 	--error-soft: light-dark(#f5e3e2, #381f21);
 
-	/* ---- palette aliases: coral, sage and gold map onto Mineral data hues ---- */
-	--coral: light-dark(#a64a52, #e39aa8); /* was the products and fat tone */
-	--coral-soft: light-dark(#f3e7e9, #35272d);
-	--coral-text: light-dark(#a64a52, #e39aa8);
-	--sage: light-dark(#2f7a6b, #8bd3c0); /* was steps and lunch */
-	--sage-soft: light-dark(#edf4f2, #1b3132);
-	--sage-text: light-dark(#2f7a6b, #8bd3c0);
+	/* ---- the jug: liquid is decorative; the outline (--text) carries 3:1 ---- */
+	--fill: light-dark(#f2955a, #c9743f);
+	--fill-top: light-dark(#f9bf98, #dd9a70);
+	--glass: light-dark(rgb(43 99 196 / 0.05), rgb(127 176 255 / 0.05));
+
+	/* ---- palette aliases: coral, sage and gold map onto the Ember jug hues ---- */
+	--coral: var(--over); /* was the products and fat tone */
+	--coral-soft: var(--over-soft);
+	--coral-text: var(--over);
+	--sage: var(--under); /* was steps and lunch */
+	--sage-soft: var(--under-soft);
+	--sage-text: var(--under);
 	--sand: var(--surface-2); /* quiet panel fill */
 	--sand-soft: var(--surface);
-	--gold: light-dark(#8a6a1f, #e0c078); /* snack and sand-gold mark */
-	--gold-soft: light-dark(#f0ece2, #2f2e21);
-	--gold-text: light-dark(#81621a, #e0c078);
+	--gold: var(--snack); /* snack and sand-gold mark */
+	--gold-soft: light-dark(#f3ecd9, #2a2414);
+	--gold-text: light-dark(#7a5d17, #e7c76a);
 
 	/* ---- data hues: macros, steps, weight and meal types ---- */
-	--protein: light-dark(#2c6e9e, #8fc3e6);
-	--carbs: light-dark(#9a651c, #e0b45a);
-	--fat: light-dark(#a64a52, #e39aa8);
-	--steps: light-dark(#2f7a6b, #8bd3c0);
+	--protein: light-dark(#2b63c4, #7fb0ff);
+	--carbs: light-dark(#a16207, #fcd34d);
+	--fat: light-dark(#be3a5a, #fb93ad);
+	--steps: var(--under);
 	--weight: light-dark(#8e4f6b, #d8a6c8);
-	--breakfast: light-dark(#c26a2a, #e8a06a);
-	--lunch: light-dark(#2f7a6b, #8bd3c0);
-	--dinner: light-dark(#3a5f8e, #8fb3e0);
-	--snack: light-dark(#8a6a1f, #e0c078);
+	--breakfast: light-dark(#c2410c, #d9824f);
+	--lunch: var(--under);
+	--dinner: light-dark(#2b63c4, #7fb0ff);
+	--snack: light-dark(#8a6a1f, #e7c76a);
 	--protein-text: var(--protein);
 	--carbs-text: var(--carbs);
 	--fat-text: var(--fat);
 
 	/* ---- where a number came from (estimate review, meal items) ---- */
-	--src-db: light-dark(#2c6e9e, #8fc3e6); /* "Database": matched food or product, blue */
-	--src-db-soft: light-dark(#e4ecf2, #1a2f3d);
+	--src-db: light-dark(#2b63c4, #7fb0ff); /* "Database": matched food or product, blue */
+	--src-db-soft: light-dark(#e2eafa, #142338);
 	--src-ai: light-dark(#8e4f6b, #d8a6c8); /* "AI estimate": the model's guess, berry */
 	--src-ai-soft: light-dark(#f0e8ec, #302832);
 
 	/* ---- meal types (headers, dots, selected segmented control) ---- */
 	--meal-breakfast: var(--breakfast);
-	--meal-breakfast-soft: light-dark(#f7ece3, #3b2e24);
-	--meal-breakfast-text: light-dark(#a9531d, #e8a06a);
+	--meal-breakfast-soft: var(--accent-soft);
+	--meal-breakfast-text: var(--accent-text);
 	--meal-lunch: var(--lunch);
 	--meal-lunch-soft: var(--sage-soft);
 	--meal-lunch-text: var(--sage-text);
 	--meal-dinner: var(--dinner);
-	--meal-dinner-soft: light-dark(#e5eaf0, #1d2c3a);
-	--meal-dinner-text: light-dark(#3a5f8e, #8fb3e0);
+	--meal-dinner-soft: var(--src-db-soft);
+	--meal-dinner-text: light-dark(#2b63c4, #7fb0ff);
 	--meal-snack: var(--snack);
 	--meal-snack-soft: var(--gold-soft);
 	--meal-snack-text: var(--gold-text);
@@ -89,7 +96,7 @@
 	--chart-3: var(--steps);
 	--chart-4: var(--carbs);
 	--chart-intake: var(--protein); /* blue intake bars */
-	--chart-budget: light-dark(#172025, #e9f1f4); /* budget tick */
+	--chart-budget: var(--text); /* budget tick */
 	--chart-weight: var(--weight);
 	--chart-average: var(--steps); /* rolling averages */
 	--chart-steps: var(--steps);
@@ -97,8 +104,9 @@
 	--chart-grid: var(--border);
 	--chart-axis: var(--text-muted);
 
-	/* ---- type: one family, Manrope, self-hosted ---- */
-	--font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+	/* ---- type: Bricolage Grotesque for figures and titles, Instrument Sans for the rest; self-hosted ---- */
+	--font-display: 'Bricolage Grotesque', 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
 	--font-numeric: var(--font-sans); /* tabular figures come from font-variant-numeric */
 	--text-xs: 0.8125rem; /* 13px: captions, chips */
 	--text-sm: 0.875rem; /* 14px: small text */
@@ -134,16 +142,18 @@
 	--radius-sheet: 1.5rem; /* bottom sheets, dialogs */
 	--radius-pill: 999px;
 	--shadow-card: none; /* resting cards are flat: border only */
-	--shadow-sheet: 0 24px 64px -24px rgb(7 24 32 / 0.38);
+	--shadow-sheet: 0 24px 64px -24px rgb(0 0 0 / 0.45);
 
-	/* ---- motion ---- */
-	--dur-fast: 160ms; /* hover, press, focus, chips */
-	--dur-med: 240ms; /* saved text, small state changes */
-	--dur-slow: 360ms; /* meters, week bars, progress fills */
-	--dur-enter: 420ms; /* sheets */
-	--dur-exit: 200ms; /* sheet close, backdrop fade */
-	--ease: cubic-bezier(0.22, 1, 0.36, 1);
-	--ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+	/* ---- motion: one scale everywhere ---- */
+	--dur-fast: 140ms; /* press, hover, focus */
+	--dur-med: 260ms; /* state swaps, chevrons, chips, view fade */
+	--dur-slow: 520ms; /* meters, count-ups, bars growing */
+	--dur-pour: 820ms; /* the jug fill only */
+	--dur-enter: 420ms; /* sheets in */
+	--dur-exit: 180ms; /* sheets and swaps out */
+	--ease: cubic-bezier(0.22, 1, 0.36, 1); /* entering or changing */
+	--ease-in: cubic-bezier(0.4, 0, 1, 1); /* exits */
+	--ease-state: var(--ease);
 }
 
 :root[data-theme='light'] {
@@ -158,6 +168,7 @@
 		--dur-fast: 0ms;
 		--dur-med: 0ms;
 		--dur-slow: 0ms;
+		--dur-pour: 0ms;
 		--dur-enter: 0ms;
 		--dur-exit: 0ms;
 	}

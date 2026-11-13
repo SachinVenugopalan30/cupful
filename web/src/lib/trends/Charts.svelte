@@ -9,7 +9,7 @@
 	import type { TrendDay } from '../api';
 	import { formatWeight, type WeightUnit } from '../format';
 	import ChartCard from './ChartCard.svelte';
-	import CountUp from './CountUp.svelte';
+	import CountUp from '#lib/motion/CountUp.svelte';
 	import {
 		averages,
 		formatNumber,

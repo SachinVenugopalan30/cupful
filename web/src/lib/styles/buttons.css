@@ -1,0 +1,93 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Buttons: default, primary, soft, quiet, coral, danger. Press feedback is opt-in under no-preference. */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: var(--touch);
+	min-width: var(--touch);
+	padding: 0 var(--space-4);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-md);
+	background: var(--surface);
+	color: var(--text);
+	font: inherit;
+	font-weight: var(--weight-bold);
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background var(--dur-fast) var(--ease),
+		border-color var(--dur-fast) var(--ease),
+		color var(--dur-fast) var(--ease),
+		scale var(--dur-fast) var(--ease);
+}
+.btn:hover {
+	background: var(--surface-2);
+	color: var(--text);
+}
+@media (prefers-reduced-motion: no-preference) {
+	.btn:active {
+		scale: 0.97;
+	}
+}
+.btn:disabled,
+.btn[aria-disabled='true'] {
+	opacity: 0.55;
+	cursor: not-allowed;
+	scale: none;
+}
+.btn-primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--on-accent);
+}
+.btn-primary:hover {
+	background: var(--accent-hover);
+	border-color: var(--accent-hover);
+	color: var(--on-accent);
+}
+/* No border or fill: icon buttons, "Cancel", inline actions. */
+.btn-quiet {
+	background: transparent;
+	border-color: transparent;
+	color: var(--accent-text);
+}
+.btn-quiet:hover {
+	background: var(--accent-soft);
+	color: var(--accent-text);
+}
+/* A tinted secondary action: Scan, My products, Repeat. */
+.btn-soft {
+	background: var(--accent-soft);
+	border-color: transparent;
+	color: var(--accent-text);
+}
+.btn-soft:hover {
+	background: var(--accent-soft);
+	border-color: var(--accent);
+	color: var(--accent-text);
+}
+.btn-coral {
+	background: var(--coral-soft);
+	border-color: transparent;
+	color: var(--coral-text);
+}
+.btn-coral:hover {
+	background: var(--coral-soft);
+	border-color: var(--coral);
+	color: var(--coral-text);
+}
+.btn-danger {
+	color: var(--error);
+	border-color: var(--error);
+	background: transparent;
+}
+.btn-danger:hover {
+	background: var(--error-soft);
+	color: var(--error);
+}
+.btn-block {
+	width: 100%;
+}
