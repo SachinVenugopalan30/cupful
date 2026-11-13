@@ -148,7 +148,7 @@
 
 <section class="card composer" aria-labelledby="composer-title">
 	<form class="stack" onsubmit={(e) => (e.preventDefault(), runEstimate())}>
-		<header class="panel-head">
+		<header class="card-head">
 			<div>
 				<h2 id="composer-title">Log a meal</h2>
 				<p class="small muted">Words or a photo, then check the estimate.</p>
@@ -204,7 +204,7 @@
 					<button type="button" class="btn btn-quiet" onclick={() => setPhoto(null)}>Remove photo</button>
 				</div>
 			{:else}
-				<label class="btn photo">
+				<label class="btn btn-soft photo">
 					<svg viewBox="0 0 24 24" aria-hidden="true"
 						><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg
 					>
@@ -254,12 +254,9 @@
 	.composer form {
 		gap: var(--space-3);
 	}
-	.panel-head {
-		display: flex;
+	.card-head {
 		flex-wrap: wrap;
 		align-items: start;
-		justify-content: space-between;
-		gap: var(--space-1) var(--space-3);
 	}
 	fieldset {
 		min-width: 0;

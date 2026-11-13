@@ -4,24 +4,31 @@
   Props (fixed contract; Today page passes these):
     date: string        YYYY-MM-DD, the selected day
     refreshKey: number  bumped after any write to the day; refetch when it changes
-  The server computes the budget; this card only sums the day's meals for "eaten".
+    budget, eaten       bindable: the loaded budget and the day's eaten kcal, for the cards beside it
+  The server computes the budget; this card only sums the day's meals for "eaten". Before a profile
+  exists the budget answers 409: the jug stays empty and the card points at /profile.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { ApiError, errorMessage, getBudget, getMeals, type Budget, type Macros } from '#lib/api.ts';
 	import { dismiss } from '#lib/dismiss.ts';
+	import CountUp from '#lib/motion/CountUp.svelte';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { session } from '#lib/session.svelte.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
 	import { breakdown, flagMessages, leftOver, macroRows } from './budget.ts';
 	import { dayTotals } from './meal.ts';
+	import Jug from './Jug.svelte';
+	import { jugFraction, jugLabel, jugMarks } from './jug.ts';
 
-	// `budget` is optional and bindable: the Activity page reads the loaded budget from here.
+	// `budget` and `eaten` are optional and bindable: the Activity page reads the budget from here,
+	// and Today's week card follows the eaten figure.
 	let {
 		date,
 		refreshKey,
-		budget = $bindable(null)
-	}: { date: string; refreshKey: number; budget?: Budget | null } = $props();
+		budget = $bindable(null),
+		eaten = $bindable(0)
+	}: { date: string; refreshKey: number; budget?: Budget | null; eaten?: number } = $props();
 
 	type State =
 		| { kind: 'loading' }
@@ -57,55 +64,59 @@
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	$effect(() => {
 		budget = s.kind === 'ready' && s.budget.date === date ? s.budget : null;
+		eaten = s.kind === 'ready' ? s.eaten.kcal : 0;
 	});
 </script>
 
 <section class="card budget" aria-labelledby="budget-h" aria-busy={s.kind === 'loading'}>
-	<header class="panel-head">
-		<h2 id="budget-h">Budget</h2>
-		{#if s.kind === 'ready'}
-			<p class="plan small muted num">
-				{formatKcal(s.budget.budget)} kcal {s.budget.manual ? 'goal' : 'plan'}
-			</p>
-		{/if}
-	</header>
-	{#if s.kind === 'loading'}
-		<div class="skeleton hero-skel"></div>
-		<div class="skeleton"></div>
-		<div class="skeleton"></div>
-		<div class="skeleton"></div>
-	{:else if s.kind === 'no-profile'}
-		<div class="empty stack">
-			<p>Set up your profile to see your daily budget. It needs your height, weight and goal.</p>
-			<p><a class="btn btn-primary" href="/profile">Set up your profile</a></p>
-		</div>
-	{:else if s.kind === 'error'}
-		<div class="notice notice-error" role="alert">
-			<p>{s.message}</p>
-			<p><button class="btn" onclick={() => attempt++}>Try again</button></p>
-		</div>
-	{:else}
+	<h2 id="budget-h" class="visually-hidden">Budget</h2>
+	{#if s.kind === 'ready'}
 		{@const b = s.budget}
 		{@const lo = leftOver(s.eaten.kcal, b.budget)}
-		<div class="lead" class:is-over={lo.over}>
-			<p class="left num">{formatKcal(lo.kcal)}</p>
-			<p class="left-label">kcal {lo.over ? 'over' : 'left'}</p>
+		<div class="jug-row">
+			<Jug
+				fraction={jugFraction(s.eaten.kcal, b.budget)}
+				marks={jugMarks(b.budget)}
+				label={jugLabel(s.eaten.kcal, b.budget, b.manual)}
+			/>
+			<div class="side">
+				<div class="lead" class:is-over={lo.over}>
+					<p class="fig left"><CountUp value={lo.kcal} /></p>
+					<p class="left-label">kcal {lo.over ? 'over' : 'left'}</p>
+				</div>
+				<p class="caption small muted">
+					<CountUp value={Math.round(s.eaten.kcal)} /> eaten of
+					<span class="num">{b.budget.toLocaleString('en-US')}</span> kcal {b.manual ? 'goal' : 'plan'}
+				</p>
+				<ul class="macros">
+					{#each macroRows(b, s.eaten) as m (m.key)}
+						<li style="--c: var(--{m.key.slice(0, -2)}-text)">
+							<span class="macro-name">{m.label}</span>
+							<span class="num small macro-val">
+								{#if m.target === null}
+									{formatGrams(m.eaten)} g · no target today
+								{:else}
+									{formatGrams(m.eaten)} / {formatGrams(m.target)} g{m.over ? ' · over' : ''}
+								{/if}
+							</span>
+							{#if m.target !== null}
+								<div
+									class="meter macro-meter"
+									class:is-over={m.over}
+									style="--value: {m.value}; --fill: var(--{m.key.slice(0, -2)})"
+									role="meter"
+									aria-label={m.label}
+									aria-valuemin="0"
+									aria-valuemax={m.target}
+									aria-valuenow={Math.round(m.eaten * 10) / 10}
+									aria-valuetext="{formatGrams(m.eaten)} of {formatGrams(m.target)} g{m.over ? ', over' : ''}"
+								></div>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</div>
 		</div>
-		<p class="caption small muted">
-			<span class="num">{formatKcal(s.eaten.kcal)}</span> eaten of
-			<span class="num">{formatKcal(b.budget)}</span> kcal
-		</p>
-		<div
-			class="meter budget-meter"
-			class:is-over={lo.over}
-			style="--value: {b.budget ? s.eaten.kcal / b.budget : 0}"
-			role="meter"
-			aria-label="Calories eaten"
-			aria-valuemin="0"
-			aria-valuemax={b.budget}
-			aria-valuenow={Math.round(s.eaten.kcal)}
-			aria-valuetext="{formatKcal(s.eaten.kcal)} of {formatKcal(b.budget)} kcal"
-		></div>
 
 		{#if b.flags.length}
 			<ul class="flags">
@@ -114,36 +125,6 @@
 				{/each}
 			</ul>
 		{/if}
-
-		<ul class="macros">
-			{#each macroRows(b, s.eaten) as m (m.key)}
-				<li>
-					<div class="macro-head">
-						<span class="macro-name" style="--c: var(--{m.key.slice(0, -2)}-text)">{m.label}</span>
-						<span class="num small">
-							{#if m.target === null}
-								{formatGrams(m.eaten)} g · no target today
-							{:else}
-								{formatGrams(m.eaten)} / {formatGrams(m.target)} g{m.over ? ' · over' : ''}
-							{/if}
-						</span>
-					</div>
-					{#if m.target !== null}
-						<div
-							class="meter macro-meter"
-							class:is-over={m.over}
-							style="--value: {m.value}; --fill: var(--{m.key.slice(0, -2)})"
-							role="meter"
-							aria-label={m.label}
-							aria-valuemin="0"
-							aria-valuemax={m.target}
-							aria-valuenow={Math.round(m.eaten * 10) / 10}
-							aria-valuetext="{formatGrams(m.eaten)} of {formatGrams(m.target)} g{m.over ? ', over' : ''}"
-						></div>
-					{/if}
-				</li>
-			{/each}
-		</ul>
 
 		<details class="menu working" use:dismiss={true}>
 			<summary>How it's worked out</summary>
@@ -161,6 +142,29 @@
 				<button type="button" class="btn done" data-close>Close</button>
 			</div>
 		</details>
+	{:else if s.kind === 'loading'}
+		<div class="jug-row" aria-hidden="true">
+			<Jug fraction={0} label="" />
+			<div class="side">
+				<div class="skeleton hero-skel"></div>
+				<div class="skeleton"></div>
+				<div class="skeleton"></div>
+			</div>
+		</div>
+	{:else if s.kind === 'no-profile'}
+		<div class="jug-row">
+			<Jug fraction={0} label="Empty jug: no daily plan yet" />
+			<div class="side stack">
+				<p class="empty-title">Save your profile to see your daily plan.</p>
+				<p class="small muted">It needs your height, weight and goal. You can log meals meanwhile.</p>
+				<p><a class="btn btn-primary" href="/profile">Set up your profile</a></p>
+			</div>
+		</div>
+	{:else}
+		<div class="notice notice-error" role="alert">
+			<p>{s.message}</p>
+			<p><button class="btn" onclick={() => attempt++}>Try again</button></p>
+		</div>
 	{/if}
 </section>
 
@@ -169,45 +173,54 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
+		--jug-h: 14.75rem;
 	}
-	.panel-head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
+	.jug-row {
+		display: grid;
+		grid-template-columns: 6.5rem minmax(0, 1fr);
+		gap: var(--space-4);
+		align-items: end;
+	}
+	.side {
+		display: grid;
 		gap: var(--space-2);
-	}
-	.plan {
-		text-align: right;
+		min-width: 0;
 	}
 	.lead {
-		color: var(--under);
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
+		display: grid;
+		gap: var(--space-1);
+		color: var(--text);
 	}
 	.lead.is-over {
 		color: var(--over);
 	}
+	/* The largest figure on the screen. */
 	.left {
-		font-size: var(--text-hero);
-		font-weight: var(--weight-bold);
-		line-height: var(--leading-tight);
-		letter-spacing: -0.03em;
+		font-size: 3.375rem;
 	}
 	.left-label {
+		margin: 0;
 		font-size: var(--text-md);
 		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+	}
+	.lead.is-over .left-label {
+		color: inherit;
 	}
 	.caption {
-		margin-top: calc(-1 * var(--space-2));
+		margin: 0;
 	}
 	.hero-skel {
-		height: var(--text-hero);
-		width: 60%;
+		height: 3.375rem;
+		width: 70%;
 	}
-	/* The meter fills after a save. 420 ms is the one long motion; reduced motion sets it to zero. */
-	.budget :global(.meter)::after {
-		transition-duration: 420ms;
+	.empty-title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		font-weight: 700;
+		line-height: var(--leading-tight);
 	}
 	.flags,
 	.macros {
@@ -223,28 +236,31 @@
 	.macros {
 		display: grid;
 		gap: var(--space-2);
+		margin-top: var(--space-1);
 	}
 	.macros > li {
 		display: grid;
-		gap: var(--space-1);
+		grid-template-columns: auto minmax(0, 1fr);
+		column-gap: var(--space-2);
+		row-gap: var(--space-1);
+		align-items: baseline;
 	}
 	.macro-name {
 		color: var(--c);
-		font-weight: var(--weight-medium);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-bold);
 	}
-	.macro-head {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--space-2);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
+	.macro-val {
+		text-align: right;
+		color: var(--text-muted);
 	}
 	.macro-meter {
-		height: 0.5rem;
+		grid-column: 1 / -1;
+		height: 0.375rem;
 	}
 	.working {
 		border-top: 1px solid var(--border);
-		padding-top: var(--space-2);
+		padding-top: var(--space-1);
 		/* In a stretched card the row sits at the bottom. */
 		margin-top: auto;
 	}
@@ -252,7 +268,7 @@
 		min-height: var(--touch);
 		display: flex;
 		align-items: center;
-		color: var(--accent);
+		color: var(--accent-text);
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		cursor: pointer;
@@ -279,5 +295,16 @@
 	.working .done {
 		width: 100%;
 		margin-top: var(--space-2);
+	}
+	/* The 400px desktop column: a taller jug and more room for the figure. */
+	@media (min-width: 60rem) {
+		.budget {
+			--jug-h: 17.5rem;
+			padding: var(--space-5);
+		}
+		.jug-row {
+			grid-template-columns: 7.5rem minmax(0, 1fr);
+			gap: var(--space-5);
+		}
 	}
 </style>

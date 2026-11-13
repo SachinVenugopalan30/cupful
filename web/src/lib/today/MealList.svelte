@@ -136,7 +136,7 @@
 </script>
 
 <section class="card meals" aria-labelledby="meals-title" aria-busy={meals === null && !loadError}>
-	<header class="panel-head">
+	<header class="card-head">
 		<h2 id="meals-title" bind:this={heading} tabindex="-1">Meals</h2>
 		{#if meals?.length}
 			<p class="day-total" data-testid="day-total">
@@ -167,11 +167,11 @@
 		<p class="empty">Nothing logged yet. Describe what you ate above.</p>
 	{:else}
 		<ul class="meal-list">
-			{#each groups.flatMap((g) => g.meals) as m (m.id)}
+			{#each groups.flatMap((g) => g.meals) as m, n (m.id)}
 				<li
-					class="meal-row"
+					class="meal-row rise"
 					data-testid="meal"
-					style="--m: var(--meal-{m.meal_type}); --m-soft: var(--meal-{m.meal_type}-soft); --m-text: var(--meal-{m.meal_type}-text)"
+					style="--n: {Math.min(n, 6)}; --m: var(--meal-{m.meal_type}); --m-soft: var(--meal-{m.meal_type}-soft); --m-text: var(--meal-{m.meal_type}-text)"
 				>
 					<details>
 						<summary>
@@ -188,6 +188,7 @@
 									{#if m.scale !== 1}<span class="chip chip-warning">×{m.scale}</span>{/if}
 								</span>
 							</span>
+							<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
 						</summary>
 						<ul class="list items">
 							{#each m.items as i (i.id)}
@@ -271,11 +272,7 @@
 		flex-direction: column;
 		gap: var(--space-2);
 	}
-	.panel-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: var(--space-3);
+	.card-head {
 		flex-wrap: wrap;
 		margin-bottom: var(--space-1);
 	}
@@ -302,7 +299,7 @@
 	}
 	summary {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: start;
 		gap: var(--space-3);
 		padding: var(--space-3) var(--space-1);
@@ -320,6 +317,35 @@
 	}
 	summary::-webkit-details-marker {
 		display: none;
+	}
+	.chev {
+		inline-size: 1.25rem;
+		block-size: 1.25rem;
+		margin-block-start: 0.125rem;
+		fill: none;
+		stroke: var(--text-muted);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		transition: rotate var(--dur-med) var(--ease);
+	}
+	details[open] .chev {
+		rotate: 180deg;
+	}
+	/* The item list opens and closes by height. block-size is the one non-compositor property
+	   the motion rules allow; unsupported browsers just open at once. */
+	details {
+		interpolate-size: allow-keywords;
+	}
+	details::details-content {
+		block-size: 0;
+		overflow: clip;
+		transition:
+			block-size var(--dur-med) var(--ease),
+			content-visibility var(--dur-med) allow-discrete;
+	}
+	details[open]::details-content {
+		block-size: auto;
 	}
 	.dot {
 		width: 0.5625rem;
