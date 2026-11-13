@@ -31,9 +31,13 @@ Version 0.3.2.
 
 ## Screenshots
 
-| Today, light | Today, dark | Trends |
-| --- | --- | --- |
-| ![Today in light mode](docs/screenshots/today-360-light.png) | ![Today in dark mode](docs/screenshots/today-360-dark.png) | ![Trends on desktop](docs/screenshots/trends-1280.png) |
+| Today on a phone, light | Today on a phone, dark |
+| --- | --- |
+| ![Today in light mode on a phone](docs/screenshots/today-360-light.png) | ![Today in dark mode on a phone](docs/screenshots/today-360-dark.png) |
+
+| Today on desktop | Trends on desktop |
+| --- | --- |
+| ![Today in dark mode on desktop](docs/screenshots/today-1280-dark.png) | ![Trends on desktop](docs/screenshots/trends-1280.png) |
 
 ## Install with Tailscale
 
