@@ -17,7 +17,8 @@ Version 1.0.0.
 ## Features
 
 - Describe meals in words, with optional photos. Review and edit before saving.
-- Barcode scan, label entry and saved products.
+- Build a meal from several products in Review, and log your usual meal in one tap.
+- Barcode scan, label entry and saved products, with the household units from the label.
 - Daily calorie and macro budget from your profile, or a fixed daily calorie goal.
 - Week-strip tooltips for steps and activity, and a live GitHub star link.
 - Trends for intake, weight and steps.
