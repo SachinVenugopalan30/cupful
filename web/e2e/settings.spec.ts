@@ -78,7 +78,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(profilePage.getByRole('status')).toHaveText('Profile saved. Your budget uses it from today.');
 
 	await page.getByRole('link', { name: 'Today' }).click();
-	await expect(budget.getByText('1800 kcal goal')).toBeVisible();
+	await expect(budget.getByText('1,800 kcal goal')).toBeVisible();
 	await budget.getByText("How it's worked out").click();
 	await expect(budget.getByText('Your goal', { exact: true })).toBeVisible();
 	await expect(budget.getByText('Gap to maintenance')).toBeVisible();
