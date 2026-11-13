@@ -50,10 +50,10 @@
 </script>
 
 <section class="card panel" aria-labelledby="workouts-h" aria-busy={list === null}>
-	<header class="head">
-		<h3 id="workouts-h">Workouts</h3>
-		{#if list?.length}<p class="small muted">{list.length} synced</p>{/if}
-	</header>
+	<div class="card-head">
+		<h2 id="workouts-h">Workouts</h2>
+		{#if list?.length}<span>{list.length} synced</span>{/if}
+	</div>
 
 	{#if list === null}
 		<div class="skeleton skel" aria-hidden="true"></div>
@@ -65,14 +65,14 @@
 			{/if}
 		</div>
 	{:else}
-		<ul class="rows">
-			{#each all ? list : list.slice(0, CAP) as w (w.id)}
-				<li class="row-w" data-testid="workout">
+		<ul class="rows rise">
+			{#each all ? list : list.slice(0, CAP) as w, i (w.id)}
+				<li class="row-w" data-testid="workout" style="--n: {i}">
 					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d={PATHS[workoutKind(w.type)]} /></svg>
 					<div class="body">
 						<p class="title">
 							<span class="name">{w.name || w.type_label}</span>
-							{#if w.counts_as_gym}<span class="chip chip-gym">Counts as gym</span>{/if}
+							{#if w.counts_as_gym}<span class="chip chip-accent">Counts as gym</span>{/if}
 							<span class="time small muted num">{formatClock(w.start, tz)}</span>
 						</p>
 						<p class="stats small muted">
@@ -105,34 +105,13 @@
 		gap: var(--space-3);
 		min-width: 0;
 	}
-	.head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	.head h3 {
-		font-size: var(--text-lg);
-		letter-spacing: -0.01em;
-	}
 	.skel {
 		height: 4.5rem;
 		border-radius: var(--radius-md);
 	}
-	.rows {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
 	.row-w {
-		display: flex;
-		gap: var(--space-3);
+		align-items: flex-start;
 		padding: var(--space-2) 0;
-		border-top: 1px solid var(--border);
-	}
-	.row-w:first-child {
-		border-top: 0;
-		padding-top: 0;
 	}
 	.icon {
 		flex: none;
@@ -154,18 +133,16 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0 var(--space-2);
+		margin: 0;
 		font-weight: var(--weight-bold);
+	}
+	.stats {
+		margin: 0;
 	}
 	.time {
 		margin-left: auto;
 		flex: none;
 		font-weight: var(--weight-regular);
-	}
-	.chip-gym {
-		flex: none;
-		background: var(--accent-soft);
-		color: var(--accent);
-		font-weight: var(--weight-medium);
 	}
 	.more {
 		align-self: flex-start;

@@ -1,16 +1,17 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  ActivityWeek — a fixed seven-day window: steps as bars (scaled to the week's highest, with a
-  dashed line at your typical day), a dot on gym days, a count of synced workouts. Tapping a day
+  ActivityWeek — a fixed seven-day window: steps as bars (scaled to the week's highest or your
+  typical day, with a dashed line at the typical day), a dot on gym days, a count of synced
+  workouts. Tapping or focusing a day reads it out in the line under the title; tapping also
   selects it (writes `day.date`) without moving the window. Props:
     date: string                 the selected day, highlighted in the window
     end: string                  the last day of the fixed window
-    win: ActivityWindow | null   from ActivitySection's `win`; null shows a skeleton
+    win: ActivityWindow | null   from ActivityDay's `win`; null shows a skeleton
 -->
 <script lang="ts">
 	import { dayLabel } from '#lib/date.ts';
 	import { day, session, today } from '#lib/session.svelte.ts';
-	import { groupByDate, gymDates, weekDayLines, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
+	import { groupByDate, gymDates, weekBars, weekDayLines, weekWindow, windowCovers, type ActivityWindow } from './logic.ts';
 
 	let { date, end, win }: { date: string; end: string; win: ActivityWindow | null } = $props();
 
@@ -30,33 +31,42 @@
 				workouts: (byDay.get(d) ?? []).map((w) => w.name || w.type_label)
 			};
 		});
-		const max = Math.max(typical ?? 0, ...rows.map((r) => r.steps ?? 0), 1);
-		return { rows, max, sessions: rows.filter((r) => r.gym).length, workouts: rows.reduce((n, r) => n + r.workouts.length, 0) };
+		const bars = weekBars(rows, typical);
+		return {
+			rows: rows.map((r, i) => ({ ...r, h: bars.bars[i].h })),
+			typicalAt: bars.typicalAt,
+			sessions: rows.filter((r) => r.gym).length,
+			workouts: rows.reduce((n, r) => n + r.workouts.length, 0)
+		};
 	});
 
 	const weekday = (d: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short' }).format(new Date(`${d}T00:00:00Z`));
 	const dom = (d: string) => Number(d.slice(8));
 
-	function label(r: { date: string; steps: number | null; gym_minutes: number | null; trained: string[]; workouts: string[] }) {
-		return `${dayLabel(r.date, today())}: ${weekDayLines(r).join(', ')}`;
-	}
+	type Row = { date: string; steps: number | null; gym_minutes: number | null; trained: string[]; workouts: string[] };
+	const label = (r: Row) => `${dayLabel(r.date, today())}: ${weekDayLines(r).join(', ')}`;
+
+	// The readout follows the focused day, and falls back to the selected one.
+	let focused = $state<string | null>(null);
+	const reading = $derived(cols?.rows.find((r) => r.date === (focused ?? date)) ?? null);
 </script>
 
 <section class="card week" aria-labelledby="week-h" aria-busy={cols === null}>
-	<header class="head">
-		<h3 id="week-h">This week</h3>
+	<div class="card-head">
+		<h2 id="week-h">This week</h2>
 		{#if cols}
-			<p class="small muted">
+			<span>
 				{cols.sessions} gym {cols.sessions === 1 ? 'day' : 'days'} · {cols.workouts}
 				{cols.workouts === 1 ? 'workout' : 'workouts'}
-			</p>
+			</span>
 		{/if}
-	</header>
+	</div>
 	{#if !cols}
 		<div class="skeleton skel" aria-hidden="true"></div>
 	{:else}
+		<p class="readout" aria-live="polite">{reading ? label(reading) : ''}</p>
 		<ul class="days">
-			{#each cols.rows as r (r.date)}
+			{#each cols.rows as r, i (r.date)}
 				<li>
 					<button
 						type="button"
@@ -65,30 +75,28 @@
 						aria-label={label(r)}
 						aria-current={r.date === date ? 'date' : undefined}
 						onclick={() => (day.date = r.date)}
+						onfocus={() => (focused = r.date)}
+						onblur={() => (focused = null)}
 					>
 						<span class="plot" aria-hidden="true">
-							{#if typical}<span class="typical" style="bottom: {(typical / cols.max) * 100}%"></span>{/if}
-							{#if r.steps === null}
+							{#if cols.typicalAt !== null}<span class="typical" style="bottom: {cols.typicalAt * 100}%"></span>{/if}
+							{#if r.h === null}
 								<span class="bar none"></span>
 							{:else}
-								<span class="bar" style="height: {Math.max((r.steps / cols.max) * 100, 2)}%"></span>
+								<span class="bar grow-y" style="height: {Math.max(r.h * 100, 2)}%; --n: {i}"></span>
 							{/if}
 						</span>
 						<span class="mark" aria-hidden="true">{#if r.gym}<i class="dot"></i>{/if}</span>
 						<span class="count num" class:zero={!r.workouts.length} aria-hidden="true">{r.workouts.length || ''}</span>
 						<span class="dow" aria-hidden="true">{weekday(r.date)}</span>
 						<span class="dom num" aria-hidden="true">{dom(r.date)}</span>
-						<span class="tip" aria-hidden="true">
-							<span class="tip-date">{dayLabel(r.date, today())}</span>
-							{#each weekDayLines(r) as line}<span>{line}</span>{/each}
-						</span>
 					</button>
 				</li>
 			{/each}
 		</ul>
 		<p class="key small muted">
 			<span><span class="k-bar"></span>Steps</span>
-			<span><span class="k-line"></span>Typical day</span>
+			{#if typical}<span><span class="k-line"></span>Typical day</span>{/if}
 			<span><i class="dot"></i> Gym day</span>
 			<span><span class="num k-n">2</span> Workouts</span>
 		</p>
@@ -102,19 +110,15 @@
 		gap: var(--space-3);
 		min-width: 0;
 	}
-	.head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	.head h3 {
-		font-size: var(--text-lg);
-		letter-spacing: -0.01em;
-	}
 	.skel {
 		height: 9rem;
 		border-radius: var(--radius-md);
+	}
+	.readout {
+		min-height: 1.5em;
+		margin: 0;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
 	}
 	.days {
 		list-style: none;
@@ -140,7 +144,7 @@
 		font: inherit;
 		font-size: var(--text-xs);
 		cursor: pointer;
-		transition: background-color var(--dur-fast) var(--ease-state);
+		transition: background-color var(--dur-fast) var(--ease);
 	}
 	.col:hover {
 		background: var(--surface-2);
@@ -154,66 +158,28 @@
 		color: var(--text);
 		font-weight: var(--weight-bold);
 	}
-	.tip {
-		position: absolute;
-		top: 0;
-		left: 50%;
-		z-index: 3;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-		width: max-content;
-		max-width: 11rem;
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface);
-		color: var(--text);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-normal);
-		text-align: left;
-		box-shadow: 0 8px 24px -16px rgb(7 24 32 / 0.4);
-		transform: translateX(-50%);
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transition: opacity var(--dur-fast) var(--ease-state);
-	}
-	.days li:first-child .tip {
-		left: 0;
-		transform: none;
-	}
-	.days li:last-child .tip {
-		left: auto;
-		right: 0;
-		transform: none;
-	}
-	.col:hover .tip,
-	.col:focus .tip {
-		opacity: 1;
-		visibility: visible;
-	}
-	.tip-date {
-		font-weight: var(--weight-bold);
-	}
 	.plot {
 		position: relative;
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
 		width: 100%;
-		height: 5rem;
+		height: 6rem;
 	}
 	.bar {
 		width: 55%;
 		max-width: 1.75rem;
 		background: var(--steps);
+		opacity: 0.6;
 		border-radius: var(--radius-sm) var(--radius-sm) 2px 2px;
-		transition: height var(--dur-slow) var(--ease);
+	}
+	.col[aria-current='date'] .bar {
+		opacity: 1;
 	}
 	/* No steps logged: a thin base tick, not a zero bar. */
 	.bar.none {
-		height: 2px;
+		height: 3px;
+		opacity: 1;
 		background: var(--border-strong);
 		border-radius: 1px;
 	}
@@ -221,7 +187,7 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		border-top: 1px dashed var(--text-muted);
+		border-top: 1.5px dashed var(--text-muted);
 	}
 	/* Two fixed rows under each bar, so dots and counts line up across days and never touch. */
 	.mark {
@@ -262,6 +228,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1) var(--space-3);
+		margin: 0;
 	}
 	.k-bar,
 	.k-line {
@@ -276,16 +243,10 @@
 	}
 	.k-line {
 		width: 0.875rem;
-		border-top: 1px dashed var(--text-muted);
+		border-top: 1.5px dashed var(--text-muted);
 		vertical-align: middle;
 	}
 	.k-n {
 		color: var(--text);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.bar,
-		.col {
-			transition: none;
-		}
 	}
 </style>

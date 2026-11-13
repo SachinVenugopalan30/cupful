@@ -174,3 +174,25 @@ export function workoutKind(type: string): WorkoutKind {
 	if (/STRENGTH|WEIGHT|GYM|CROSSFIT/.test(t)) return 'strength';
 	return 'other';
 }
+
+// ---- the budget gain and the week bars ----
+
+/** The two server values the Activity card adds up for display; no budget math happens here. */
+export const addedToBudget = (b: { steps_kcal: number; gym_kcal: number }) => ({
+	steps: b.steps_kcal,
+	gym: b.gym_kcal,
+	total: b.steps_kcal + b.gym_kcal
+});
+
+/**
+ * Bar heights as 0..1 of the week's scale, which is the highest of the logged steps and the typical
+ * day (so the typical line is always on the chart). A day with no steps is `null`, not zero.
+ */
+export function weekBars(rows: { date: string; steps: number | null }[], typical: number | null) {
+	const max = Math.max(typical ?? 0, ...rows.map((r) => r.steps ?? 0), 1);
+	return {
+		max,
+		typicalAt: typical && typical > 0 ? typical / max : null,
+		bars: rows.map((r) => ({ date: r.date, h: r.steps === null ? null : r.steps / max }))
+	};
+}
