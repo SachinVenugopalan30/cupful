@@ -3,6 +3,7 @@
 // logs an anonymous visitor in without a password and invites are hidden. With mode off, the same
 // forged header changes nothing. Each server gets its own data dir.
 import { expect, test } from '@playwright/test';
+import { openRow } from './helpers/settings.ts';
 import { USER_A, randomPort, startCupful, type CupfulServer } from './helpers/server.ts';
 
 test.describe.configure({ mode: 'serial' });
@@ -56,7 +57,7 @@ test('the header signs sam in without a password and hides invites', async ({ br
 	});
 	expect(login.ok()).toBe(true);
 	await admin.goto('/settings');
-	const users = admin.getByRole('region', { name: 'Users' });
+	const users = await openRow(admin.getByRole('region', { name: 'Users' }));
 	await expect(users).toBeVisible();
 	await expect(users.getByText(/This server signs people in with Tailscale\./)).toBeVisible();
 	await expect(users.getByRole('button', { name: 'Create invite' })).toHaveCount(0);

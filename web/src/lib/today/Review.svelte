@@ -161,7 +161,6 @@
 	<form class="stack" method="dialog" onsubmit={(e) => (e.preventDefault(), save())} novalidate>
 		<header class="sheet-head">
 			<h2 id="review-title-{uid}" tabindex="-1" bind:this={heading}>{title}</h2>
-			<button type="button" class="btn btn-quiet" onclick={() => close()} disabled={saving}>Cancel</button>
 		</header>
 
 		<fieldset class="segmented" aria-label="Meal">
@@ -203,10 +202,10 @@
 				/>
 			{/each}
 		</ul>
-		<div class="row actions">
-			<button type="button" class="btn btn-quiet add" onclick={addItem}>Add item</button>
-			<button type="button" class="btn" aria-expanded={picking === APPEND}
+		<div class="actions">
+			<button type="button" class="btn btn-soft" aria-expanded={picking === APPEND}
 				aria-controls="picker-{APPEND}" onclick={() => pick(APPEND)}>+ Product</button>
+			<button type="button" class="btn btn-soft" onclick={addItem}>Add item</button>
 		</div>
 		{#if picking === APPEND}
 			<ReviewProductPicker
@@ -232,18 +231,21 @@
 		</fieldset>
 
 		<div class="totals" aria-live="polite">
-			<p><span class="small muted">Total{d.scale !== 1 ? ` (×${d.scale})` : ''}</span></p>
-			<p class="num total-kcal">{formatKcal(totals.kcal)} <span class="small">kcal</span></p>
-			<p class="small num muted">
-				<span class="m-protein">Protein {formatGrams(totals.protein_g)} g</span> ·
-				<span class="m-carbs">Carbs {formatGrams(totals.carbs_g)} g</span> ·
-				<span class="m-fat">Fat {formatGrams(totals.fat_g)} g</span>
+			<p class="num total-kcal">{formatKcal(totals.kcal)} <span>kcal</span></p>
+			<p class="num macros">
+				<span class="label">Total{d.scale !== 1 ? ` (×${d.scale})` : ''}</span>
+				<span>Protein {formatGrams(totals.protein_g)} g</span> ·
+				<span>Carbs {formatGrams(totals.carbs_g)} g</span> ·
+				<span>Fat {formatGrams(totals.fat_g)} g</span>
 			</p>
 		</div>
 
 		{#if error}<p class="notice notice-error" role="alert">{error}</p>{/if}
 
-		<button class="btn btn-primary btn-block" disabled={saving}>{saving ? 'Saving…' : 'Save meal'}</button>
+		<div class="sheet-foot">
+			<button type="button" class="btn btn-quiet" onclick={() => close()} disabled={saving}>Cancel</button>
+			<button class="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save meal'}</button>
+		</div>
 	</form>
 </dialog>
 
@@ -257,22 +259,20 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		background: var(--surface);
+		overflow: hidden;
+	}
+	.items:empty {
+		display: none;
 	}
 	.actions {
-		gap: var(--space-1);
+		display: flex;
+		gap: var(--space-2);
 	}
-	.m-protein {
-		color: var(--protein-text);
-	}
-	.m-carbs {
-		color: var(--carbs-text);
-	}
-	.m-fat {
-		color: var(--fat-text);
-	}
-	.add {
-		align-self: flex-start;
+	.actions .btn {
+		flex: 1;
 	}
 	fieldset.field {
 		border: 0;
@@ -282,15 +282,46 @@
 	.segmented label {
 		padding: 0 var(--space-1);
 	}
+	/* The total sits on the soft accent; text is --accent-text, never --accent. */
 	.totals {
-		padding: var(--space-4);
-		background: var(--surface-2);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-3);
+		padding: var(--space-3) var(--space-4);
+		background: var(--accent-soft);
+		color: var(--accent-text);
 		border-radius: var(--radius-lg);
 	}
+	.totals p {
+		margin: 0;
+	}
 	.total-kcal {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-bold);
+		font-family: var(--font-display);
+		font-size: 1.75rem;
+		font-weight: 800;
 		line-height: var(--leading-tight);
 		letter-spacing: -0.02em;
+	}
+	.total-kcal span {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
+	.macros {
+		font-size: var(--text-sm);
+	}
+	.macros .label {
+		margin-right: var(--space-2);
+		opacity: 0.85;
+	}
+	.sheet-foot {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+	.sheet-foot .btn-primary {
+		flex: 1;
 	}
 </style>
