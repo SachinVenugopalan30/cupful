@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TrendDay } from '../api';
 import {
+	axisLabels,
+	averageNote,
 	averages,
 	consistency,
 	consistencyColumns,
@@ -171,7 +173,8 @@ describe('consistency', () => {
 	});
 	it('caps the grid at 30 columns', () => {
 		expect(consistencyColumns(7)).toBe(7);
-		expect(consistencyColumns(30)).toBe(30);
+		expect(consistencyColumns(30)).toBe(10);
+		expect(consistencyColumns(90)).toBe(15);
 		expect(consistencyColumns(365)).toBe(30);
 		expect(consistencyColumns(0)).toBe(1);
 	});
@@ -234,5 +237,23 @@ describe('mealShares', () => {
 	it('is null for no mix', () => {
 		expect(mealShares(null)).toBe(null);
 		expect(mealShares({ breakfast: 0, lunch: 0, dinner: 0, snack: 0 })).toBe(null);
+	});
+});
+
+describe('axisLabels', () => {
+	const dates = ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'];
+	it('gives start, middle and end, and calls today Today', () => {
+		expect(axisLabels(dates, '2026-10-18')).toEqual(['Oct 14', 'Oct 16', 'Today']);
+		expect(axisLabels(dates, '2026-11-01')).toEqual(['Oct 14', 'Oct 16', 'Oct 18']);
+		expect(axisLabels([], '2026-11-01')).toEqual([]);
+	});
+});
+
+describe('averageNote', () => {
+	it('says under, over, or nothing', () => {
+		expect(averageNote({ intake: 1860, budget: 2002 })).toBe('142 kcal under your 2,002 kcal budget on average');
+		expect(averageNote({ intake: 2100.4, budget: 2002 })).toBe('98 kcal over your 2,002 kcal budget on average');
+		expect(averageNote({ intake: 1900, budget: null })).toBe('');
+		expect(averageNote({ intake: null, budget: 2000 })).toBe('');
 	});
 });

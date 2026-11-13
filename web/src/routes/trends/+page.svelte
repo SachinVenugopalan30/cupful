@@ -3,33 +3,33 @@
 	import { errorMessage, getBudget, getTrends, type Budget, type Trends } from '#lib/api.ts';
 	import { session, today } from '#lib/session.svelte.ts';
 	import { dataVersion } from '#lib/offline/state.svelte.ts';
-	import { averages, formatNumber, loadRange, RANGES, rangeDates, saveRange, type Range } from '#lib/trends/logic.ts';
-	import Analytics from '#lib/trends/Analytics.svelte';
-	import Charts from '#lib/trends/Charts.svelte';
+	import { loadRange, RANGES, rangeDates, saveRange, type Range } from '#lib/trends/logic.ts';
 	import Consistency from '#lib/trends/Consistency.svelte';
-	import CountUp from '#lib/motion/CountUp.svelte';
 	import FrequentMeals from '#lib/trends/FrequentMeals.svelte';
+	import IntakeChart from '#lib/trends/IntakeChart.svelte';
+	import MacroBalance from '#lib/trends/MacroBalance.svelte';
+	import MealMix from '#lib/trends/MealMix.svelte';
+	import StepsChart from '#lib/trends/StepsChart.svelte';
+	import WeightChart from '#lib/trends/WeightChart.svelte';
 
 	let range = $state<Range>(loadRange());
-	let data = $state<Trends | null>(null);
+	// The range the screen shows. It lags `range` while a new one loads, so the old charts stay up
+	// (no skeleton flash) and the average can count from its old value to the new one.
+	let shown = $state<{ range: Range; data: Trends } | null>(null);
 	let targets = $state<Budget | null>(null);
 	let error = $state('');
 	let retry = $state(0);
-	let loadedRange: Range | null = null;
 
 	$effect(() => {
-		saveRange(range);
+		const r = range;
+		saveRange(r);
 		void dataVersion.n;
 		void retry;
-		const { from, to } = rangeDates(range, today());
+		const { from, to } = rangeDates(r, today());
 		let stale = false;
-		if (loadedRange !== range) {
-			data = null;
-			loadedRange = range;
-		}
 		error = '';
 		getTrends(from, to).then(
-			(r) => !stale && (data = r),
+			(d) => !stale && (shown = { range: r, data: d }),
 			(e) => !stale && (error = errorMessage(e))
 		);
 		return () => (stale = true);
@@ -46,18 +46,6 @@
 		return () => (stale = true);
 	});
 
-	const avg = $derived(data ? averages(data.days) : null);
-	const totalDays = $derived(data?.days.length ?? 0);
-	const diff = $derived.by(() => {
-		if (!avg || avg.intake === null || avg.budget === null) return '';
-		const left = Math.round(avg.budget - avg.intake);
-		return left >= 0 ? `${formatNumber(left)} left` : `${formatNumber(-left)} over`;
-	});
-	const caption = $derived.by(() => {
-		if (!avg || avg.intake === null) return '';
-		const budget = avg.budget === null ? '' : `Budget ${formatNumber(avg.budget)} kcal, ${diff} a day. `;
-		return `${budget}${totalDays} days, ${avg.days} with meals.`;
-	});
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	const typicalSteps = $derived(session.profile?.version?.typical_steps ?? null);
 	const goalKg = $derived(session.profile?.version?.goal_kg ?? null);
@@ -67,10 +55,7 @@
 
 <div class="trends">
 	<header class="page-head">
-		<div>
-			<h1>Trends</h1>
-			<p class="muted small">{range} days</p>
-		</div>
+		<h1>Trends</h1>
 		<fieldset class="segmented ranges">
 			<legend class="visually-hidden">Range</legend>
 			{#each RANGES as r (r)}
@@ -87,53 +72,24 @@
 			<p>{error}</p>
 			<div class="row"><button class="btn" onclick={() => retry++}>Try again</button></div>
 		</div>
-	{:else if data === null}
+	{:else if shown === null}
 		<div aria-busy="true" class="stack">
-			<div class="skeleton" style="height: 7rem"></div>
-			<div class="skeleton" style="height: 8rem"></div>
+			<div class="skeleton" style="height: 14rem"></div>
+			<div class="skeleton" style="height: 10rem"></div>
 			<div class="skeleton" style="height: 16rem"></div>
 		</div>
 	{:else}
-		{#key range}
-			<section class="card summary" aria-label="Average intake against budget">
-				<p class="small muted">Average a day</p>
-				{#if avg && avg.intake !== null}
-					<p class="lead">
-						<CountUp value={avg.intake} />
-						<span class="unit">kcal eaten</span>
-					</p>
-					<p class="small muted">{caption}</p>
-				{:else}
-					<p class="lead"><span class="num dash">—</span><span class="unit">kcal eaten</span></p>
-					<p class="small muted">
-						No meals logged in this range. Log a meal on Today and its day shows up here.
-					</p>
-				{/if}
-			</section>
-
-			<Consistency days={data.days} />
-
-			<Charts
-				days={data.days}
-				today={today()}
-				{unit}
-				{typicalSteps}
-				{goalKg}
-			/>
-
-			<Analytics
-				averages={data.averages}
-				mealMix={data.meal_mix}
-				{targets}
-				days={range}
-			/>
-
-			{#if data.top_meals}
-				<FrequentMeals meals={data.top_meals} days={range} />
-			{/if}
-
-			<p class="footnote">Past budgets use the weights recorded for those days.</p>
-		{/key}
+		{@const d = shown.data}
+		<div class="grid" aria-busy={shown.range !== range}>
+			<div class="intake"><IntakeChart days={d.days} today={today()} /></div>
+			<div class="consistency"><Consistency days={d.days} /></div>
+			<div class="weight"><WeightChart days={d.days} today={today()} {unit} {goalKg} /></div>
+			<div class="steps"><StepsChart days={d.days} today={today()} {typicalSteps} /></div>
+			<div class="mix"><MealMix mealMix={d.meal_mix} days={shown.range} /></div>
+			<div class="macros"><MacroBalance averages={d.averages} {targets} days={shown.range} /></div>
+			{#if d.top_meals}<div class="frequent"><FrequentMeals meals={d.top_meals} days={shown.range} /></div>{/if}
+		</div>
+		<p class="footnote">Past budgets use the weights recorded for those days.</p>
 	{/if}
 </div>
 
@@ -145,7 +101,7 @@
 	}
 	.page-head {
 		display: flex;
-		align-items: flex-end;
+		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-4);
 		flex-wrap: wrap;
@@ -153,47 +109,59 @@
 	h1 {
 		margin: 0;
 	}
-	.page-head p {
-		margin: var(--space-1) 0 0;
-	}
 	.ranges {
 		flex: 0 0 auto;
 		min-width: 15rem;
 	}
-	.summary {
-		background: var(--accent-soft);
-		border-color: transparent;
+	/* Phone: one column in the order intake, consistency, weight, steps, meal mix, macros, eaten most. */
+	.grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3);
+		align-items: start;
 	}
-	.summary p {
-		margin: 0;
-	}
-	.summary .lead {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-		flex-wrap: wrap;
-		margin: var(--space-1) 0 var(--space-2);
-	}
-	.lead :global(.num) {
-		font-size: var(--text-hero);
-		font-weight: var(--weight-bold);
-		line-height: 1;
-		letter-spacing: -0.03em;
-		color: var(--accent);
-	}
-	.unit {
-		font-size: var(--text-md);
-		color: var(--text-muted);
+	.grid > * {
+		min-width: 0;
 	}
 	.footnote {
 		margin: 0;
 		font-size: var(--text-xs);
 		color: var(--text-muted);
 	}
-	@media (max-width: 30rem) {
-		.page-head {
-			align-items: stretch;
+	/* Desktop: wide charts span two of three columns, each with a narrow card beside it. */
+	@media (min-width: 60rem) {
+		.grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-areas:
+				'intake intake consistency'
+				'weight weight mix'
+				'steps steps macros'
+				'frequent frequent frequent';
+			gap: var(--space-5);
 		}
+		.intake {
+			grid-area: intake;
+		}
+		.consistency {
+			grid-area: consistency;
+		}
+		.weight {
+			grid-area: weight;
+		}
+		.mix {
+			grid-area: mix;
+		}
+		.steps {
+			grid-area: steps;
+		}
+		.macros {
+			grid-area: macros;
+		}
+		.frequent {
+			grid-area: frequent;
+		}
+	}
+	@media (max-width: 30rem) {
 		.ranges {
 			width: 100%;
 		}
