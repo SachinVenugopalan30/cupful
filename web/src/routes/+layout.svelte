@@ -99,7 +99,7 @@
 			<span class="sync-state" data-tone={syncState.tone} aria-hidden="true"
 				><i></i>{syncState.text}</span
 			>
-			<span class="gh"><GitHubLink /></span>
+			<GitHubLink />
 			<UserMenu />
 		</nav>
 	{/if}
@@ -146,7 +146,6 @@
 		border-top: 1px solid var(--border);
 	}
 	.brand,
-	.gh,
 	.sync-state {
 		display: none;
 	}
@@ -238,9 +237,6 @@
 		.tabs svg {
 			width: 1.25rem;
 			height: 1.25rem;
-		}
-		.gh {
-			display: inline-flex;
 		}
 		.sync-state {
 			display: inline-flex;

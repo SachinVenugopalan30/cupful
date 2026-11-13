@@ -32,7 +32,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	// Another spec may have saved a profile first; the set-up card shows only before that.
 	const { version } = await (await page.request.get('/api/profile')).json();
 	if (version === null) {
-		await expect(budget.getByText('Set up your profile to see your daily budget')).toBeVisible();
+		await expect(budget.getByText('Save your profile to see your daily plan')).toBeVisible();
 		await budget.getByRole('link', { name: 'Set up your profile' }).click();
 	} else {
 		await page.goto('/profile');
