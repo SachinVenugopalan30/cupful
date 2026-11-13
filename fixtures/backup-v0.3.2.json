@@ -1,0 +1,276 @@
+{
+  "aliases": [
+    {
+      "alias": "my basmati",
+      "alias_norm": "my basmati",
+      "food_id": 1,
+      "id": 536
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-11-13",
+      "gym_minutes": 45,
+      "gym_source": "manual",
+      "gym_updated_at": "2026-11-13T14:57:07.707Z",
+      "steps": 9123,
+      "steps_source": "manual",
+      "steps_updated_at": "2026-11-13T14:57:07.707Z",
+      "trained": [
+        "Chest",
+        "Arms"
+      ],
+      "trained_updated_at": "2026-11-13T14:57:07.707Z",
+      "weight_kg": 82.4,
+      "weight_updated_at": "2026-11-13T14:57:07.707Z"
+    }
+  ],
+  "exported_at": "2026-11-13T14:57:37.712Z",
+  "foods": [
+    {
+      "barcode": null,
+      "brand": null,
+      "carbs_g": 28.2,
+      "default_portion_g": 158.0,
+      "fat_g": 0.28,
+      "fetched_at": null,
+      "id": 1,
+      "is_prepared": false,
+      "kcal": 130.0,
+      "name": "Rice, white, cooked",
+      "name_norm": "rice white cooked",
+      "portions": [
+        {
+          "grams": 158.0,
+          "unit": "cup"
+        }
+      ],
+      "protein_g": 2.69,
+      "serving_g": null,
+      "serving_text": null,
+      "source": "staple",
+      "source_ref": "168878",
+      "user_id": null
+    },
+    {
+      "barcode": "99999991",
+      "brand": null,
+      "carbs_g": 62.0,
+      "default_portion_g": null,
+      "fat_g": 11.0,
+      "fetched_at": null,
+      "id": 267,
+      "is_prepared": false,
+      "kcal": 380.0,
+      "name": "Off oat bar",
+      "name_norm": "off oat bar",
+      "portions": [],
+      "protein_g": 9.0,
+      "serving_g": null,
+      "serving_text": null,
+      "source": "off",
+      "source_ref": "99999991",
+      "user_id": null
+    },
+    {
+      "barcode": null,
+      "brand": null,
+      "carbs_g": 10.0,
+      "default_portion_g": 30.0,
+      "fat_g": 5.0,
+      "fetched_at": null,
+      "id": 268,
+      "is_prepared": false,
+      "kcal": 400.0,
+      "name": "My protein scoop",
+      "name_norm": "my protein scoop",
+      "portions": [],
+      "protein_g": 80.0,
+      "serving_g": null,
+      "serving_text": null,
+      "source": "user",
+      "source_ref": "1",
+      "user_id": 1
+    },
+    {
+      "barcode": "4006381333931",
+      "brand": "Test",
+      "carbs_g": 8.0,
+      "default_portion_g": 150.0,
+      "fat_g": 2.0,
+      "fetched_at": null,
+      "id": 269,
+      "is_prepared": false,
+      "kcal": 70.0,
+      "name": "Test yogurt",
+      "name_norm": "test yogurt",
+      "portions": [
+        {
+          "grams": 150.0,
+          "unit": "cup"
+        },
+        {
+          "grams": 150.0,
+          "unit": "serving"
+        }
+      ],
+      "protein_g": 4.0,
+      "serving_g": 150.0,
+      "serving_text": "1 cup (150 g)",
+      "source": "user",
+      "source_ref": "1",
+      "user_id": 1
+    }
+  ],
+  "format": "cupful-backup",
+  "meals": [
+    {
+      "assumptions": "assumed cooked rice",
+      "confidence": "high",
+      "date": "2026-11-13",
+      "description": "rice and chicken",
+      "id": "01a1d56a-05ac-7074-ac59-5e42fbe9339f",
+      "items": [
+        {
+          "carbs_g": 3.0,
+          "fat_g": 1.5,
+          "food": {
+            "source": "user",
+            "source_ref": "1"
+          },
+          "food_id": 268,
+          "grams": 30.0,
+          "id": "01a1d56a-05ac-7074-ac59-5e4350e09a4c",
+          "kcal": 120.0,
+          "name": "protein",
+          "origin": "food_db",
+          "portion_text": "1 scoop",
+          "position": 0,
+          "protein_g": 24.0
+        },
+        {
+          "carbs_g": 12.0,
+          "fat_g": 3.0,
+          "food": {
+            "source": "user",
+            "source_ref": "1"
+          },
+          "food_id": 269,
+          "grams": 150.0,
+          "id": "01a1d56a-05ac-7074-ac59-5e44906c9a90",
+          "kcal": 105.0,
+          "name": "yogurt",
+          "origin": "food_db",
+          "portion_text": "1 cup",
+          "position": 1,
+          "protein_g": 6.0
+        },
+        {
+          "carbs_g": 42.0,
+          "fat_g": 1.0,
+          "food": {
+            "source": "staple",
+            "source_ref": "168878"
+          },
+          "food_id": 1,
+          "grams": 150.0,
+          "id": "01a1d56a-05ac-7074-ac59-5e457ea227f1",
+          "kcal": 200.0,
+          "name": "rice",
+          "origin": "food_db",
+          "portion_text": "1 cup",
+          "position": 2,
+          "protein_g": 4.0
+        },
+        {
+          "carbs_g": 34.1,
+          "fat_g": 6.0,
+          "food": {
+            "source": "off",
+            "source_ref": "99999991"
+          },
+          "food_id": 267,
+          "grams": 55.0,
+          "id": "01a1d56a-05ac-7074-ac59-5e4659b44984",
+          "kcal": 209.0,
+          "name": "bar",
+          "origin": "food_db",
+          "portion_text": "1 bar",
+          "position": 3,
+          "protein_g": 5.0
+        },
+        {
+          "carbs_g": 4.0,
+          "fat_g": 10.0,
+          "food": null,
+          "food_id": null,
+          "grams": 20.0,
+          "id": "01a1d56a-05ac-7074-ac59-5e47fd1888d9",
+          "kcal": 120.0,
+          "name": "handful of nuts",
+          "origin": "ai_estimate",
+          "portion_text": "handful",
+          "position": 4,
+          "protein_g": 3.0
+        }
+      ],
+      "meal_type": "lunch",
+      "provider_id": null,
+      "received_at": "2026-11-13T14:57:37.709Z",
+      "scale": 1.25,
+      "source": "ai",
+      "updated_at": "2026-11-13T14:57:17.708Z"
+    }
+  ],
+  "portions": [
+    {
+      "food_id": 267,
+      "grams": 55.0,
+      "phrase_norm": "my usual bar"
+    }
+  ],
+  "products": [
+    {
+      "food_id": 267,
+      "last_servings": null,
+      "last_used_at": "2026-11-13T14:57:37.709Z"
+    },
+    {
+      "food_id": 269,
+      "last_servings": 1.0,
+      "last_used_at": "2026-11-13T14:57:37.709Z"
+    }
+  ],
+  "profile": {
+    "gym_types": null,
+    "height_unit": "cm",
+    "timezone": "Asia/Kolkata",
+    "weight_unit": "kg"
+  },
+  "profile_versions": [
+    {
+      "birth_year": 1992,
+      "calorie_goal": 1600,
+      "effective_from": "2026-04-27",
+      "goal_kg": 65.0,
+      "height_cm": 165.0,
+      "pace_kg_per_week": 0.25,
+      "sex": "female",
+      "start_weight_kg": 72.0,
+      "typical_steps": 6000
+    },
+    {
+      "birth_year": 1990,
+      "calorie_goal": null,
+      "effective_from": "2026-11-13",
+      "goal_kg": 75.0,
+      "height_cm": 180.0,
+      "pace_kg_per_week": 0.5,
+      "sex": "male",
+      "start_weight_kg": 85.0,
+      "typical_steps": 8000
+    }
+  ],
+  "username": "admin",
+  "version": 1
+}

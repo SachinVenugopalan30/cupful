@@ -248,6 +248,8 @@ Backup and restore steps, including the nightly SQLite copy and file ownership: 
 
 Back up first. Every release runs its database migrations at startup.
 
+Migrations only move forward and a released migration is never edited, so an upgrade never rewrites history behind your back. JSON backups from older releases restore into newer ones; see [backups.md](backups.md#format-version-and-upgrades).
+
 Pin the image to an exact release, such as `0.3.2`. Do not use `latest` on a server you care about. A `latest` pull can jump several releases, run migrations you cannot undo, and leave you unable to start the previous image against the migrated database. `0.3` is a middle ground that follows patch releases, but still back up first.
 
 ### Upgrade checklist
@@ -284,6 +286,10 @@ docker rm cupful
 ```
 
 The app shell updates itself. When a new build is available, an **Update available** banner appears; **Reload** switches to it. That banner does not update the server image. Server updates are always the deliberate step above.
+
+## Browser notes
+
+- **Barcode camera on Brave.** Brave can ignore the camera focus hints the scanner sends, so close-up barcodes may stay blurry. Hold the phone a little farther away, or type the barcode or use label entry instead.
 
 ## Reset a password
 

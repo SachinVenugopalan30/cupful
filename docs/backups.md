@@ -26,9 +26,18 @@ A backup deliberately excludes:
 - ingest tokens and the Google Health connection and tokens;
 - `sync_ops` bookkeeping and sessions;
 - deleted meals (tombstones);
-- the account's username and password hash.
+- the account's password hash. The username is written as a label, so you can tell backups apart; restore ignores it.
 
 It is a data restore, not a server clone. Restoring a backup never brings back an old password, provider key or phone token. It never changes another user's data.
+
+## Format version and upgrades
+
+Every backup starts with `"format": "cupful-backup"` and a `"version"`. It has been version 1 since v0.1.0.
+
+- **Newer builds restore older backups.** A backup from any earlier release restores into the current one. The reverse is not promised: an older build may refuse a newer backup.
+- **Compatible additions keep the version.** A release that only adds a field (v0.3.0 added `calorie_goal`) keeps the version, and restore fills the missing field with its default.
+- **An incompatible change bumps it.** Restore then upgrades older versions on the way in instead of refusing them.
+- **Each release that changes the format commits a real backup exported by that release** under `fixtures/` (today `backup-v0.3.2.json`). A test restores it into the current build, so a change that breaks old backups fails CI. Those fixtures are never regenerated from a newer build.
 
 ## Restoring a JSON backup
 

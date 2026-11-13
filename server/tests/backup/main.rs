@@ -8,6 +8,7 @@
 mod common;
 
 mod export;
+mod released;
 mod restore;
 mod survives;
 mod validate;

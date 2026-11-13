@@ -18,7 +18,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
 - Ember jug redesign (branch `ember-jug-redesign`): graphite and ember palette, Bricolage Grotesque and Instrument Sans, one motion scale (`--dur-*`, `#lib/motion`), the jug budget on Today, a designed desktop layout (top bar, two-column Today, grids on Activity and Trends, Settings section list), and one jug logo across app, favicon, PWA icons and README. The offline cache trims day reads to the 60 most recently used dates.
 - Next: v1.0. Release checklist: backup format version with a v0.3.2 restore test and upgrade notes, a security review, an axe accessibility check in Playwright, and the Brave camera note in the docs.
-- Known gaps: Brave may ignore camera focus hints.
+- Known gaps: Brave may ignore camera focus hints (documented in `docs/self-hosting.md`, Browser notes).
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout
