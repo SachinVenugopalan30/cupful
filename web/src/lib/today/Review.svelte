@@ -264,6 +264,9 @@
 		background: var(--surface);
 		overflow: hidden;
 	}
+	.items:empty {
+		display: none;
+	}
 	.actions {
 		display: flex;
 		gap: var(--space-2);

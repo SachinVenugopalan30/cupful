@@ -373,12 +373,21 @@
 		text-align: center;
 		font-weight: 600;
 	}
+	/* Narrow: the unit picker drops under the stepper, so nothing is squeezed. */
 	.unit {
+		order: 3;
 		inline-size: auto;
-		flex: 1 1 7rem;
+		flex: 1 1 100%;
 		min-inline-size: 0;
 	}
+	@media (min-width: 40rem) {
+		.unit {
+			order: 0;
+			flex: 1 1 8rem;
+		}
+	}
 	.grams {
+		order: 2;
 		margin-inline-start: auto;
 		display: inline-flex;
 		align-items: center;
