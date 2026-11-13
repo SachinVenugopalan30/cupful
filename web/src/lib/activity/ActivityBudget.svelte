@@ -6,7 +6,7 @@
   Props: date: string, refreshKey: number (refetch when it changes).
 -->
 <script lang="ts">
-	import { getBudget, type Budget } from '#lib/api.ts';
+	import { ApiError, errorMessage, getBudget, type Budget } from '#lib/api.ts';
 	import { formatKcal } from '#lib/format.ts';
 	import { today } from '#lib/session.svelte.ts';
 	import CountUp from '#lib/motion/CountUp.svelte';
@@ -17,14 +17,22 @@
 
 	let budget = $state<Budget | null>(null);
 	let missing = $state(false); // no profile yet (409)
+	let failed = $state(''); // any other failure: offline and uncached, a server error
+	let attempt = $state(0);
 	$effect(() => {
 		const d = date;
 		void refreshKey;
 		void dataVersion.n;
+		void attempt;
 		let stale = false;
 		getBudget(d).then(
-			(b) => !stale && ((budget = b), (missing = false)),
-			() => !stale && ((budget = null), (missing = true))
+			(b) => !stale && ((budget = b), (missing = false), (failed = '')),
+			(e) => {
+				if (stale) return;
+				budget = null;
+				missing = e instanceof ApiError && e.status === 409;
+				failed = missing ? '' : errorMessage(e);
+			}
 		);
 		return () => (stale = true);
 	});
@@ -35,7 +43,7 @@
 	);
 </script>
 
-<section class="card added" aria-label="Budget" aria-busy={budget === null && !missing} data-testid="activity-budget">
+<section class="card added" aria-label="Budget" aria-busy={budget === null && !missing && !failed} data-testid="activity-budget">
 	<div class="card-head"><h2>{parts ? heading : "Added to today's budget"}</h2></div>
 	{#if parts && budget}
 		<p class="fig"><CountUp value={parts.total} prefix="+" /><small> kcal</small></p>
@@ -52,6 +60,9 @@
 		</p>
 	{:else if missing}
 		<p class="note">Save your profile to see what activity adds. <a href="/profile">Open Profile</a></p>
+	{:else if failed}
+		<p class="note" role="alert">{failed}</p>
+		<button class="btn" onclick={() => attempt++}>Try again</button>
 	{:else}
 		<div class="skeleton skel" aria-hidden="true"></div>
 	{/if}

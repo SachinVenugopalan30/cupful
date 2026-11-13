@@ -64,7 +64,8 @@
 	const unit = $derived(session.profile?.weight_unit ?? 'kg');
 	$effect(() => {
 		budget = s.kind === 'ready' && s.budget.date === date ? s.budget : null;
-		eaten = s.kind === 'ready' ? s.eaten.kcal : 0;
+		// Same date guard as `budget`: while another day loads, the old day's total must not leak out.
+		eaten = s.kind === 'ready' && s.budget.date === date ? s.eaten.kcal : 0;
 	});
 </script>
 

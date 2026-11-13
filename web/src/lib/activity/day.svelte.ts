@@ -96,6 +96,8 @@ export class ActivityDay {
 				},
 				(e) => {
 					if (stale) return;
+					// Drop the previous day's figures: they must not stay editable under the new date.
+					this.data = null;
 					this.loadError = errorMessage(e);
 					this.loading = false;
 				}
