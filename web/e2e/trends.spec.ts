@@ -54,7 +54,7 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await expect(page.getByRole('status').filter({ hasText: 'Chest added.' })).toHaveCount(1);
 	await trainedMenu.getByRole('checkbox', { name: 'Legs' }).check();
 	await expect(page.getByRole('status').filter({ hasText: 'Legs added.' })).toHaveCount(1);
-	await expect(trainedMenu.locator('summary')).toHaveAttribute('aria-label', 'Trained body parts: Chest, Legs');
+	await expect(trainedMenu.locator('summary')).toHaveAccessibleName(/^Trained\s*Chest\s*Legs$/);
 	await expect(trainedMenu.locator('summary .chip')).toHaveText(['Chest', 'Legs']);
 	await page.keyboard.press('Escape');
 	await expect(trainedMenu).not.toHaveAttribute('open', '');
@@ -71,7 +71,7 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await expect(stepsField(page)).toHaveValue('8123');
 	await expect(stepsChip(page)).toHaveText('Manual');
 	await expect(page.getByLabel('Gym minutes')).toHaveValue('45');
-	await expect(page.locator('details.trained summary')).toHaveAttribute('aria-label', 'Trained body parts: Chest, Legs');
+	await expect(page.locator('details.trained summary')).toHaveAccessibleName(/^Trained\s*Chest\s*Legs$/);
 	await page.locator('details.trained summary').click();
 	await expect(page.getByRole('checkbox', { name: 'Chest' })).toBeChecked();
 	await expect(page.getByRole('checkbox', { name: 'Back' })).not.toBeChecked();
