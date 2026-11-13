@@ -88,7 +88,7 @@
 <SettingRow
 	headingId="sync-h"
 	title="Sync"
-	description={syncSummary(ops.length)}
+	description={syncSummary(ops)}
 	anchorId="sync"
 	focusable
 	testId="sync-section"

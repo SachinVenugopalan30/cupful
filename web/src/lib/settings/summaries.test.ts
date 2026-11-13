@@ -3,12 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { googleSummary, syncSummary } from './summaries';
 
 describe('syncSummary', () => {
+	const op = (status: string) => ({ status });
 	it('says everything is synced when the queue is empty', () => {
-		expect(syncSummary(0)).toBe('All changes synced.');
+		expect(syncSummary([])).toBe('All changes synced.');
 	});
-	it('counts waiting changes', () => {
-		expect(syncSummary(1)).toBe('1 change waiting.');
-		expect(syncSummary(3)).toBe('3 changes waiting.');
+	it('counts changes still on their way', () => {
+		expect(syncSummary([op('pending')])).toBe('1 change waiting.');
+		expect(syncSummary([op('pending'), op('sending'), op('pending')])).toBe('3 changes waiting.');
+	});
+	it('puts changes that need a decision first, like the top bar does', () => {
+		expect(syncSummary([op('rejected'), op('stale'), op('pending')])).toBe('2 changes need attention.');
+		expect(syncSummary([op('failed')])).toBe('1 change needs attention.');
 	});
 });
 

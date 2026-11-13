@@ -3,10 +3,13 @@
 
 import type { GoogleStatus } from '#lib/api.ts';
 
-/** The sync row: the queue's size, from state the shell already holds. */
-export function syncSummary(waiting: number): string {
-	if (waiting === 0) return 'All changes synced.';
-	return `${waiting} ${waiting === 1 ? 'change' : 'changes'} waiting.`;
+/** The sync row, from the queue the shell already holds. Changes that need a decision come first. */
+export function syncSummary(ops: readonly { status: string }[]): string {
+	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+	const attention = ops.filter((o) => o.status === 'stale' || o.status === 'rejected' || o.status === 'failed');
+	if (attention.length) return `${plural(attention.length, 'change needs', 'changes need')} attention.`;
+	if (ops.length) return `${plural(ops.length, 'change', 'changes')} waiting.`;
+	return 'All changes synced.';
 }
 
 /** The Google row; undefined keeps the row's static description (status not loaded, or unconfigured). */

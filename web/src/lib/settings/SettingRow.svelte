@@ -7,7 +7,7 @@
   move focus to it. The Settings page opens a row when the URL hash names it.
 -->
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 
 	let {
 		headingId,
@@ -31,6 +31,16 @@
 		testId?: string;
 		children: Snippet;
 	} = $props();
+
+	// A row that mounts after the page (Google Health waits for its status) misses the page's
+	// open-all and hash pass, so each row also opens itself on wide screens or when it is the target.
+	let details = $state<HTMLDetailsElement>();
+	onMount(() => {
+		if (!details) return;
+		if (matchMedia('(min-width: 60rem)').matches || (anchorId && location.hash === `#${anchorId}`)) {
+			details.open = true;
+		}
+	});
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -49,7 +59,7 @@
 		</div>
 		<div class="body">{@render children()}</div>
 	{:else}
-		<details {open}>
+		<details {open} bind:this={details}>
 			<summary>
 				<div class="copy">
 					<h2 id={headingId}>{title}</h2>
