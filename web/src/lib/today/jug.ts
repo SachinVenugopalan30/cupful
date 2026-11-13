@@ -16,7 +16,8 @@ export function jugMarks(budget: number): JugMark[] {
 	if (!Number.isFinite(budget) || budget <= 0) return [];
 	return [1, 0.75, 0.5, 0.25].map((at) => ({
 		at,
-		label: formatKcal(Math.round((budget * at) / 50) * 50)
+		// Printed like a real measuring jug's marks: no thousands separator.
+		label: String(Math.round((budget * at) / 50) * 50)
 	}));
 }
 

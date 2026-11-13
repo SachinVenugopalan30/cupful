@@ -4,10 +4,16 @@ import { formatGrams, formatHeight, formatKcal, formatWeight, heightToCm, round,
 
 describe('formatKcal', () => {
 	it('rounds half away from zero, like the server', () => {
-		expect(formatKcal(1234.5)).toBe('1235');
+		expect(formatKcal(1234.5)).toBe('1,235');
 		expect(formatKcal(-12.5)).toBe('-13');
 		expect(formatKcal(0.4)).toBe('0');
 		expect(formatKcal(-0.4)).toBe('0');
+	});
+
+	it('groups thousands like every other figure on screen', () => {
+		expect(formatKcal(2394)).toBe('2,394');
+		expect(formatKcal(-1500)).toBe('-1,500');
+		expect(formatKcal(999)).toBe('999');
 	});
 });
 

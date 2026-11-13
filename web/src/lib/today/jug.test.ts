@@ -33,10 +33,10 @@ describe('jugMarks', () => {
 
 describe('jugLabel', () => {
 	it('states eaten and plan', () => {
-		expect(jugLabel(1239, 2002, false)).toBe('1239 of 2002 kcal plan eaten');
-		expect(jugLabel(1239, 2002, true)).toBe('1239 of 2002 kcal goal eaten');
+		expect(jugLabel(1239, 2002, false)).toBe('1,239 of 2,002 kcal plan eaten');
+		expect(jugLabel(1239, 2002, true)).toBe('1,239 of 2,002 kcal goal eaten');
 	});
 	it('says over when over', () => {
-		expect(jugLabel(2300, 2000, false)).toBe('2300 of 2000 kcal plan eaten, over budget');
+		expect(jugLabel(2300, 2000, false)).toBe('2,300 of 2,000 kcal plan eaten, over budget');
 	});
 });

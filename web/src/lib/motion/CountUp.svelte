@@ -1,7 +1,7 @@
 <!--
   CountUp — a number that counts to its value over --dur-slow (520 ms): from 0 on mount, and from the
   number on screen to the new one whenever `value` changes. Reduced motion jumps straight to the
-  value. The width is reserved for the final text so the count never shifts the layout.
+  value. An invisible copy of the final text reserves its width so the count never shifts the layout.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -21,7 +21,6 @@
 
 	let shown = $state(0);
 	const finalText = $derived(prefix + format(value));
-	const width = $derived(`${finalText.length}ch`);
 
 	/** --dur-slow in ms, read from the token so the scale stays in one place; 0 under reduced motion. */
 	function duration(): number {
@@ -52,11 +51,24 @@
 	});
 </script>
 
-<span class="num count" style:min-width={width}>{prefix}{format(shown)}</span>
+<span class="num count" data-final={finalText}><span>{prefix}{format(shown)}</span></span>
 
 <style>
+	/*
+	 * The final text, drawn invisibly in the same grid cell, reserves exactly its width in whatever
+	 * font the figure uses, so counting never shifts the layout. A pseudo-element keeps it out of the
+	 * text content that assistive tech and tests read.
+	 */
 	.count {
-		display: inline-block;
-		text-align: left;
+		display: inline-grid;
+		justify-items: start;
+	}
+	.count > span,
+	.count::after {
+		grid-area: 1 / 1;
+	}
+	.count::after {
+		content: attr(data-final);
+		visibility: hidden;
 	}
 </style>

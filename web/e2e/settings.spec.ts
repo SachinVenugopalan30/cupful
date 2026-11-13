@@ -87,7 +87,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 
 	await page.getByRole('link', { name: 'Activity' }).click();
 	await expect(page.getByTestId('activity-budget')).toContainText('Burned beyond base');
-	await expect(page.getByTestId('activity-budget')).toContainText('Goal 1800 kcal');
+	await expect(page.getByTestId('activity-budget')).toContainText('Goal 1,800 kcal');
 	await expect(page.getByText('Used from this day until your next weigh-in.')).toBeVisible();
 
 	await page.goto('/profile');

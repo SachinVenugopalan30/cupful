@@ -17,7 +17,9 @@ export function round(x: number, digits = 0): number {
 
 /** Whole kcal: "1235". */
 export function formatKcal(kcal: number): string {
-	return String(round(kcal));
+	const r = round(kcal);
+	// `|| 0` turns -0 into 0, which toLocaleString would print as "-0".
+	return (r || 0).toLocaleString('en-US');
 }
 
 /** Grams to one decimal, without a trailing ".0": "12.3", "150". */
