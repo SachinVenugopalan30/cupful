@@ -10,6 +10,7 @@
 	import { page } from '$app/state';
 	import { loadSession, redirectFor, session } from '#lib/session.svelte.ts';
 	import { initConnectivity } from '#lib/offline/connectivity.ts';
+	import { connection } from '#lib/offline/state.svelte.ts';
 	import { initUpdatePrompt } from '#lib/offline/update.svelte.ts';
 	import SyncBar from '#lib/offline/SyncBar.svelte';
 	import UpdateBanner from '#lib/offline/UpdateBanner.svelte';
@@ -42,6 +43,16 @@
 	const path = $derived(page.url.pathname);
 	/** `aria-current` for a nav link pointing at `href`. */
 	const current = (href: string) => (path === href ? 'page' : undefined);
+	/** The top bar's sync state: a dot and a word. SyncBar carries the spoken, actionable version. */
+	const syncState = $derived(
+		connection.confirmedOffline
+			? { text: 'Offline', tone: 'warn' }
+			: connection.failed > 0
+				? { text: 'Needs attention', tone: 'warn' }
+				: connection.pending > 0
+					? { text: `${connection.pending} waiting`, tone: 'warn' }
+					: { text: 'All changes synced', tone: 'ok' }
+	);
 </script>
 
 <svelte:head>
@@ -85,14 +96,19 @@
 					<span>Settings</span>
 				</a>
 			</div>
-			<GitHubLink />
+			<span class="sync-state" data-tone={syncState.tone} aria-hidden="true"
+				><i></i>{syncState.text}</span
+			>
+			<span class="gh"><GitHubLink /></span>
 			<UserMenu />
 		</nav>
 	{/if}
 	<main class="page" class:with-tabs={!!session.user}>
 		<UpdateBanner />
 		{#if session.user}<SyncBar />{/if}
-		{@render children()}
+		{#key path}
+			<div class="view">{@render children()}</div>
+		{/key}
 	</main>
 {:else}
 	<main class="page" aria-busy="true"><span class="visually-hidden">Loading</span></main>
@@ -111,7 +127,14 @@
 	.with-tabs {
 		padding-bottom: calc(var(--touch) + var(--space-8) + env(safe-area-inset-bottom));
 	}
+	/* A short fade-and-rise when the route changes; without script or with reduced motion it is just there. */
+	@media (prefers-reduced-motion: no-preference) {
+		.view {
+			animation: rise var(--dur-med) var(--ease) both;
+		}
+	}
 
+	/* Phone: bottom tabs, icon over label. The current tab is --accent-text. */
 	.tabs {
 		position: fixed;
 		inset: auto 0 0;
@@ -122,7 +145,9 @@
 		background: var(--surface);
 		border-top: 1px solid var(--border);
 	}
-	.brand {
+	.brand,
+	.gh,
+	.sync-state {
 		display: none;
 	}
 	.nav-links {
@@ -146,16 +171,14 @@
 		font-weight: var(--weight-medium);
 		text-decoration: none;
 		transition:
-			background-color var(--dur-fast) var(--ease-state),
-			color var(--dur-fast) var(--ease-state);
+			background-color var(--dur-fast) var(--ease),
+			color var(--dur-fast) var(--ease);
 	}
 	.nav-links a:hover {
-		background: var(--surface-2);
 		color: var(--text);
 	}
 	.nav-links a[aria-current='page'] {
-		background: var(--surface-2);
-		color: var(--text);
+		color: var(--accent-text);
 		font-weight: var(--weight-bold);
 	}
 	.tabs svg {
@@ -168,7 +191,7 @@
 		stroke-linejoin: round;
 	}
 
-	/* Wide screens: a top bar with the wordmark. */
+	/* Wide screens: a 64px top bar on the page ground, centred on the same canvas as the content. */
 	@media (min-width: 48rem) {
 		.tabs {
 			position: sticky;
@@ -176,8 +199,10 @@
 			justify-content: flex-start;
 			align-items: center;
 			gap: var(--space-3);
-			padding: var(--space-2)
-				max(var(--gutter), calc((100vw - var(--page-max)) / 2 + var(--gutter)));
+			block-size: 4rem;
+			padding: 0 max(var(--gutter), calc((100vw - var(--page-max)) / 2 + var(--gutter)));
+			background: color-mix(in srgb, var(--bg) 88%, transparent);
+			backdrop-filter: blur(12px);
 			border-top: 0;
 			border-bottom: 1px solid var(--border);
 		}
@@ -185,10 +210,7 @@
 			display: inline-flex;
 			align-items: center;
 			min-height: var(--touch);
-			font-family: var(--font-sans);
-			font-size: var(--text-lg);
-			font-weight: var(--weight-bold);
-			letter-spacing: -0.02em;
+			margin-right: var(--space-3);
 			color: var(--text);
 			text-decoration: none;
 		}
@@ -202,11 +224,40 @@
 			gap: var(--space-2);
 			min-height: var(--touch);
 			padding: 0 var(--space-3);
+			border-radius: var(--radius-pill);
 			font-size: var(--text-sm);
+		}
+		.nav-links a:hover {
+			background: var(--surface-2);
+		}
+		/* The current page is a neutral pill, not an accent. */
+		.nav-links a[aria-current='page'] {
+			background: var(--surface-2);
+			color: var(--text);
 		}
 		.tabs svg {
 			width: 1.25rem;
 			height: 1.25rem;
+		}
+		.gh {
+			display: inline-flex;
+		}
+		.sync-state {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--space-2);
+			margin-left: auto;
+			font-size: var(--text-xs);
+			color: var(--text-muted);
+		}
+		.sync-state i {
+			inline-size: 0.5rem;
+			block-size: 0.5rem;
+			border-radius: 50%;
+			background: var(--under);
+		}
+		.sync-state[data-tone='warn'] i {
+			background: var(--warning);
 		}
 		.with-tabs {
 			padding-bottom: var(--space-8);

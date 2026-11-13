@@ -10,6 +10,8 @@
 	import { fromForm, setHeightUnit, setWeightUnit, toForm, type ProfileErrors, type ProfileForm } from './profile.ts';
 	import SettingRow from './SettingRow.svelte';
 
+	let { onSaved }: { onSaved?: () => void } = $props();
+
 	const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	const zones = Intl.supportedValuesOf('timeZone');
 	const thisYear = new Date().getFullYear();
@@ -47,6 +49,7 @@
 			await loadSession();
 			isNew = false;
 			status = 'Profile saved. Your budget uses it from today.';
+			onSaved?.();
 		} catch (err) {
 			saveError = errorMessage(err);
 		} finally {
@@ -61,6 +64,7 @@
 
 <SettingRow
 	headingId="profile-h"
+	flat
 	title="Profile and targets"
 	description="Targets and units. Saving creates a new profile version from today."
 >

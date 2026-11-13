@@ -99,6 +99,7 @@
 
 <SettingRow
 	headingId="data-h"
+	anchorId="data"
 	title="Data"
 	description="Export, import and restore your log."
 >

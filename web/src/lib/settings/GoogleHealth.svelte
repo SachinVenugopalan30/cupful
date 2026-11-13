@@ -8,12 +8,14 @@
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { googleResult } from './google.ts';
 	import SettingRow from './SettingRow.svelte';
+	import { googleSummary } from './summaries';
 
 	let status = $state<GoogleStatus | null>(null);
 	let loadError = $state('');
 	let message = $state('');
 	let messageOk = $state(true);
 	let busy = $state(false);
+	let returned = $state(false); // Google's redirect brought a result to show
 	let picked = $state<string[]>([]); // workout types ticked as "counts as gym"
 
 	async function load() {
@@ -28,6 +30,7 @@
 		const r = googleResult(location.search);
 		if (r) {
 			({ ok: messageOk, message } = r);
+			returned = true;
 			// Drop ?google= so a reload doesn't repeat the message.
 			history.replaceState(null, '', location.pathname);
 		}
@@ -72,11 +75,17 @@
 </script>
 
 {#if loadError}
-	<SettingRow headingId="google-h" title="Google Health" description="Reads your daily steps into this server.">
+	<SettingRow headingId="google-h" anchorId="google" title="Google Health" description="Reads your daily steps into this server.">
 		<p class="notice notice-error" role="alert">{loadError}</p>
 	</SettingRow>
 {:else if status?.configured}
-	<SettingRow headingId="google-h" title="Google Health" description="Reads your daily steps into this server.">
+	<SettingRow
+		headingId="google-h"
+		anchorId="google"
+		open={returned}
+		title="Google Health"
+		description={googleSummary(status) ?? 'Reads your daily steps into this server.'}
+	>
 		<p class="small muted">
 			Reads your daily steps from Google Health into this server. Steps you enter by hand are never
 			overwritten. Nothing is sent to Google except the sign-in and the steps request.

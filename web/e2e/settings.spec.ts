@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { expect, test, type Page } from '@playwright/test';
+import { openRow } from './helpers/settings.ts';
 
 async function signIn(page: Page) {
 	await page.goto('/');
@@ -97,7 +98,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 
 	// Providers: add one that can't be reached, test it, edit without touching the key, delete it.
 	await page.getByRole('link', { name: 'Settings' }).click();
-	const providers = page.getByRole('region', { name: 'AI providers' });
+	const providers = await openRow(page.getByRole('region', { name: 'AI providers' }));
 	await providers.getByRole('button', { name: 'Add provider' }).click();
 	await providers.getByLabel('Name', { exact: true }).fill('Nowhere');
 	await providers.getByLabel('Base URL').fill('http://127.0.0.1:9/v1');
@@ -126,7 +127,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(providers.getByRole('status').first()).toHaveText('Deleted Nowhere.');
 	await expect(row).toHaveCount(0);
 
-	const about = page.getByRole('region', { name: 'About' });
+	const about = await openRow(page.getByRole('region', { name: 'About' }));
 	await expect(about.getByText(/Cupful \d+\.\d+\.\d+/)).toBeVisible();
 	await expect(about.getByRole('link', { name: 'Source code' })).toHaveAttribute('href', /^https?:\/\//);
 	await expect(about.getByText('AGPL-3.0-or-later', { exact: false }).first()).toBeVisible();
@@ -148,4 +149,16 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await page.getByLabel('Account menu for admin').click();
 	await page.getByRole('group', { name: 'Account menu' }).getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
+});
+
+test('a settings row opens from the URL hash, and every row is open on a wide screen', async ({ page }) => {
+	await signIn(page);
+	const about = page.getByRole('region', { name: 'About' });
+	await page.goto('/settings#sync');
+	await expect(page.getByTestId('sync-section').getByRole('button', { name: 'Sync now' })).toBeVisible();
+	await expect(about.getByText(/App build/)).toBeHidden();
+
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await expect(about.getByText(/App build/)).toBeVisible();
+	await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 });

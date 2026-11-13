@@ -6,6 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { openRow } from './helpers/settings.ts';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -126,7 +127,7 @@ test.describe('Settings → Data', () => {
 		expect((await (await page.request.get(`/api/meals?date=${DATE}`)).json()).meals).toHaveLength(1);
 
 		await page.goto('/settings');
-		const data = page.getByRole('region', { name: 'Data' });
+		const data = await openRow(page.getByRole('region', { name: 'Data' }));
 		await expect(data).toBeVisible();
 
 		// CSV: header plus one row per meal item, with the day's activity on it.
