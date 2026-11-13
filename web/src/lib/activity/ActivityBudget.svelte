@@ -45,7 +45,7 @@
 		</ul>
 		<p class="note">
 			{#if budget.manual}
-				Your fixed goal is <span class="num">{formatKcal(budget.budget)}</span> kcal every day.
+				Goal <span class="num">{formatKcal(budget.budget)}</span> kcal every day.
 			{:else}
 				<span class="num">{formatKcal(budget.budget)}</span> kcal budget for the day.
 			{/if}

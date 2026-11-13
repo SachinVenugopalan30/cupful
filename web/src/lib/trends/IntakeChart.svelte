@@ -59,7 +59,7 @@
 	{summary}
 >
 	{#snippet figure()}
-		{#if avg.intake !== null}<CountUp value={avg.intake} /> <small>kcal</small>{/if}
+		{#if avg.intake !== null}<CountUp value={avg.intake} /> <small>kcal eaten</small>{/if}
 	{/snippet}
 	{#snippet note()}{averageNote(avg)}{/snippet}
 	{#snippet legend()}
