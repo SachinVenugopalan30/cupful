@@ -32,7 +32,6 @@
 	<details class="menu trained" use:dismiss>
 		<summary
 			class="btn trained-btn"
-			aria-label="Trained body parts: {ctl.trained.length ? ctl.trained.join(', ') : 'none'}"
 		>
 			<span class="trained-label">Trained</span>
 			{#each ctl.trained as part (part)}<span class="chip chip-accent pop">{part}</span>{:else}<span class="none">none</span>{/each}

@@ -17,8 +17,9 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - After v0.3.2: Review builds multi-product meals (optional name, appended products, inline scan or label entry, one save), Today offers the usual meal for the current slot as a one-tap chip, product rows use household units, and saved products are offered on exact AI item matches.
 - Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
 - Ember jug redesign (branch `ember-jug-redesign`): graphite and ember palette, Bricolage Grotesque and Instrument Sans, one motion scale (`--dur-*`, `#lib/motion`), the jug budget on Today, a designed desktop layout (top bar, two-column Today, grids on Activity and Trends, Settings section list), and one jug logo across app, favicon, PWA icons and README. The offline cache trims day reads to the 60 most recently used dates.
-- Next: v1.0. Release checklist: backup format version with a v0.3.2 restore test and upgrade notes, a security review, an axe accessibility check in Playwright, and the Brave camera note in the docs.
-- Known gaps: Brave may ignore camera focus hints.
+- v1.0 release checklist done (branch `v1-release-checklist`): a real v0.3.2 backup restores in CI with written upgrade rules, the release security review found no high-confidence issues, axe checks every main screen in Playwright, and the Brave camera note is in `docs/self-hosting.md`.
+- Next: tag v1.0 with a version-bump pull request once the redesign and checklist branches merge.
+- Known gaps: Brave may ignore camera focus hints (documented in `docs/self-hosting.md`, Browser notes).
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout

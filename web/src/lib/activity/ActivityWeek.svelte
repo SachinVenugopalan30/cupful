@@ -44,7 +44,13 @@
 	const dom = (d: string) => Number(d.slice(8));
 
 	type Row = { date: string; steps: number | null; gym_minutes: number | null; trained: string[]; workouts: string[] };
-	const label = (r: Row) => `${dayLabel(r.date, today())}: ${weekDayLines(r).join(', ')}`;
+	// The name starts with the button's visible text (weekday, date, workout count) so a voice
+	// command that says what it sees still reaches it (WCAG 2.5.3), then the full detail.
+	const label = (r: Row) => {
+		const n = r.workouts.length;
+		const seen = `${weekday(r.date)} ${dom(r.date)}${n ? ` ${n} ${n === 1 ? 'workout' : 'workouts'}` : ''}`;
+		return `${seen}. ${dayLabel(r.date, today())}: ${weekDayLines(r).join(', ')}`;
+	};
 
 	// The readout follows the focused day, and falls back to the selected one.
 	let focused = $state<string | null>(null);
@@ -87,9 +93,11 @@
 							{/if}
 						</span>
 						<span class="mark" aria-hidden="true">{#if r.gym}<i class="dot"></i>{/if}</span>
-						<span class="count num" class:zero={!r.workouts.length} aria-hidden="true">{r.workouts.length || ''}</span>
+						<!-- Weekday and date come first in the DOM so the visible text reads in the name's order;
+						     CSS `order` keeps the count above them. -->
 						<span class="dow" aria-hidden="true">{weekday(r.date)}</span>
 						<span class="dom num" aria-hidden="true">{dom(r.date)}</span>
+						<span class="count num" class:zero={!r.workouts.length} aria-hidden="true">{r.workouts.length || ''}</span>
 					</button>
 				</li>
 			{/each}
@@ -159,6 +167,7 @@
 		font-weight: var(--weight-bold);
 	}
 	.plot {
+		order: -3;
 		position: relative;
 		display: flex;
 		align-items: flex-end;
@@ -191,6 +200,7 @@
 	}
 	/* Two fixed rows under each bar, so dots and counts line up across days and never touch. */
 	.mark {
+		order: -2;
 		display: flex;
 		align-items: center;
 		height: 0.75rem;
@@ -204,6 +214,7 @@
 		background: var(--accent);
 	}
 	.count {
+		order: -1;
 		min-width: 1.5rem;
 		height: 1.25rem;
 		padding: 0 0.25rem;

@@ -93,25 +93,25 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	// Seven day buttons; gym shows on yesterday.
 	const cols = page.getByRole('region', { name: 'This week' }).getByRole('button');
 	await expect(cols).toHaveCount(7);
-	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, 40 min gym, Workout: Strength training/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /\. Yesterday: 9,100 steps, 40 min gym, Workout: Strength training/ })).toBeVisible();
 	// Focusing a bar reads its day in the aria-live line; the selected day is read when none is focused.
 	const readout = page.getByRole('region', { name: 'This week' }).locator('.readout');
 	await expect(readout).toContainText('Today: 6,640 steps');
-	await page.getByRole('button', { name: /^Yesterday:/ }).focus();
+	await page.getByRole('button', { name: /\. Yesterday:/ }).focus();
 	await expect(readout).toContainText('40 min gym');
 	await expect(readout).toContainText('Workout: Strength training');
-	await page.getByRole('button', { name: /^Today:/ }).focus();
+	await page.getByRole('button', { name: /\. Today:/ }).focus();
 	await expect(readout).toContainText('Workouts: Morning run, Evening walk');
 	await noSideScroll();
 
 	const weekBefore = await weekDates();
-	await page.getByRole('button', { name: /^Yesterday:/ }).click();
+	await page.getByRole('button', { name: /\. Yesterday:/ }).click();
 	await expect(page.locator('#day-picker')).toHaveValue(YESTERDAY);
 	expect(await weekDates()).toEqual(weekBefore);
 	await expect(panel.getByTestId('workout')).toHaveCount(1);
 	await expect(panel.getByText('Strength training').first()).toBeVisible();
 	await expect(panel.getByText('Counts as gym')).toBeVisible();
-	await expect(page.getByRole('button', { name: /^Yesterday:/ })).toHaveAttribute('aria-current', 'date');
+	await expect(page.getByRole('button', { name: /\. Yesterday:/ })).toHaveAttribute('aria-current', 'date');
 	const back = await page.getByRole('button', { name: 'Back to today' }).boundingBox();
 	const picker = await page.getByLabel('Date').boundingBox();
 	expect(back).not.toBeNull();
@@ -169,7 +169,7 @@ test('selecting a week date keeps the page in place', async () => {
 		await new Promise((resolve) => setTimeout(resolve, 500));
 		return route.continue();
 	});
-	await page.getByRole('button', { name: /^Yesterday:/ }).click();
+	await page.getByRole('button', { name: /\. Yesterday:/ }).click();
 	// The old window still contains yesterday, so the strip and cards stay on screen while the
 	// new day loads instead of collapsing into skeletons.
 	await expect(week.getByRole('button')).toHaveCount(7);
