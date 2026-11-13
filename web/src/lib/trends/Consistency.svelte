@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  Consistency — one cell per day in the range: within budget, over, or no log. The grid keeps
-  30 columns for the long ranges so 365 days stay a compact block.
+  Consistency — a calendar with one cell per day in the range: within budget, over, or no log. The
+  classification is `consistency()` in logic.ts. The cells pop in one after another, and again when
+  the range changes (the grid is keyed on the number of days).
 -->
 <script lang="ts">
 	import type { TrendDay } from '../api';
@@ -25,32 +26,25 @@
 </script>
 
 <section class="card consistency" aria-labelledby="consistency-h">
-	<div class="head">
+	<div class="card-head">
 		<h2 id="consistency-h">Consistency</h2>
-		<span class="muted small">{c.logged} of {days.length} days logged</span>
+		<span>
+			<span class="num">{c.in}</span> within · <span class="num">{c.over}</span> over · <span class="num">{c.none}</span> no log{#if c.unknown}
+				· <span class="num">{c.unknown}</span> no budget{/if}
+		</span>
 	</div>
-	<p class="counts small">
-		<strong class="num">{c.in}</strong> within budget ·
-		<strong class="num">{c.over}</strong> over ·
-		<strong class="num">{c.none}</strong> no log{#if c.unknown}
-			· <strong class="num">{c.unknown}</strong> no budget
-		{/if}
-	</p>
-	<div class="grid" role="img" aria-label={summary} style:--cols={columns}>
-		{#each c.cells as cell, i (cell.date)}
-			<i
-				class={cell.kind}
-				style:--i={Math.min(i, 13)}
-				title="{shortDate(cell.date)}: {word(cell.kind)}"
-				aria-hidden="true"
-			></i>
-		{/each}
-	</div>
-	<p class="legend small muted">
-		<span><i class="swatch in"></i>Within budget</span>
-		<span><i class="swatch over"></i>Over budget</span>
-		<span><i class="swatch none"></i>No log</span>
-		{#if c.unknown}<span><i class="swatch unknown"></i>No budget</span>{/if}
+	{#key days.length}
+		<div class="grid" role="img" aria-label={summary} style:--cols={columns}>
+			{#each c.cells as cell, i (cell.date)}
+				<i class="{cell.kind} pop" style:--n={Math.min(i, 30) * 0.5} title="{shortDate(cell.date)}: {word(cell.kind)}" aria-hidden="true"></i>
+			{/each}
+		</div>
+	{/key}
+	<p class="legend">
+		<span class="key"><i class="swatch in"></i>Within budget</span>
+		<span class="key"><i class="swatch over"></i>Over budget</span>
+		<span class="key"><i class="swatch none"></i>No log</span>
+		{#if c.unknown}<span class="key"><i class="swatch unknown"></i>No budget</span>{/if}
 	</p>
 </section>
 
@@ -58,89 +52,56 @@
 	.consistency {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
-	}
-	.head {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
 		gap: var(--space-3);
+		min-width: 0;
 	}
-	h2 {
-		margin: 0;
+	.card-head span {
+		text-align: right;
 	}
-	.counts {
-		margin: 0;
-	}
-	.counts strong {
+	.card-head .num {
 		font-weight: var(--weight-bold);
+		color: var(--text);
 	}
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-		gap: var(--space-1);
-		margin: var(--space-1) 0;
+		gap: 5px;
 	}
 	.grid i {
-		width: 100%;
-		max-width: 2.25rem;
 		aspect-ratio: 1;
-		border-radius: 0.1875rem;
-		background: var(--border);
-		animation: cell-in 360ms var(--ease) both;
-		animation-delay: calc(var(--i) * 18ms);
+		max-width: 2.5rem;
+		border-radius: 5px;
 	}
-	.grid i.in {
-		background: var(--accent);
+	.in {
+		background: var(--under);
 	}
-	.grid i.over {
-		background: var(--chart-over);
+	.over {
+		background: var(--over);
 	}
-	.grid i.unknown {
+	.unknown {
 		background: var(--border-strong);
+	}
+	.none {
+		background: transparent;
+		box-shadow: inset 0 0 0 1.5px var(--border-strong);
 	}
 	.legend {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1) var(--space-4);
 		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
 	}
-	.legend span {
+	.key {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
 	}
 	.swatch {
 		display: inline-block;
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 0.125rem;
-	}
-	.swatch.in {
-		background: var(--accent);
-	}
-	.swatch.over {
-		background: var(--chart-over);
-	}
-	.swatch.none {
-		background: var(--border);
-	}
-	.swatch.unknown {
-		background: var(--border-strong);
-	}
-	@keyframes cell-in {
-		from {
-			opacity: 0;
-			transform: scale(0.94);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.grid i {
-			animation: none;
-		}
+		width: 0.75rem;
+		height: 0.75rem;
+		border-radius: 3px;
 	}
 </style>

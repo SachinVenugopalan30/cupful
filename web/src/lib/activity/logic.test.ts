@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, Workout } from '../api';
 import {
+	addedToBudget,
+	weekBars,
 	formatClock,
 	formatDuration,
 	formatKm,
@@ -212,5 +214,32 @@ describe('workout formatting', () => {
 		expect(workoutKind('STRENGTH_TRAINING')).toBe('strength');
 		expect(workoutKind('BIKING')).toBe('bike');
 		expect(workoutKind('YOGA')).toBe('other');
+	});
+});
+
+describe('addedToBudget', () => {
+	it('adds the two server values for display', () => {
+		expect(addedToBudget({ steps_kcal: 84, gym_kcal: 100 })).toEqual({ steps: 84, gym: 100, total: 184 });
+		expect(addedToBudget({ steps_kcal: 0, gym_kcal: 0 }).total).toBe(0);
+	});
+});
+
+describe('weekBars', () => {
+	const rows = [
+		{ date: '2026-11-09', steps: 5000 },
+		{ date: '2026-11-10', steps: null },
+		{ date: '2026-11-11', steps: 10000 }
+	];
+	it('scales to the highest of the week and the typical day', () => {
+		const w = weekBars(rows, 8000);
+		expect(w.max).toBe(10000);
+		expect(w.bars.map((b) => b.h)).toEqual([0.5, null, 1]);
+		expect(w.typicalAt).toBe(0.8);
+	});
+	it('lets a high typical day set the scale, and skips the line without one', () => {
+		expect(weekBars(rows, 20000).typicalAt).toBe(1);
+		expect(weekBars(rows, 20000).bars[2].h).toBe(0.5);
+		expect(weekBars(rows, null).typicalAt).toBeNull();
+		expect(weekBars([{ date: 'd', steps: null }], null).max).toBe(1);
 	});
 });

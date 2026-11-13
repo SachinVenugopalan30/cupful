@@ -53,7 +53,8 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await expect(page.getByRole('status').filter({ hasText: 'Chest added.' })).toHaveCount(1);
 	await trainedMenu.getByRole('checkbox', { name: 'Legs' }).check();
 	await expect(page.getByRole('status').filter({ hasText: 'Legs added.' })).toHaveCount(1);
-	await expect(trainedMenu.locator('summary')).toContainText('Trained: Chest, Legs');
+	await expect(trainedMenu.locator('summary')).toHaveAttribute('aria-label', 'Trained body parts: Chest, Legs');
+	await expect(trainedMenu.locator('summary .chip')).toHaveText(['Chest', 'Legs']);
 	await page.keyboard.press('Escape');
 	await expect(trainedMenu).not.toHaveAttribute('open', '');
 	await expect(trainedMenu.locator('summary')).toBeFocused();
@@ -69,7 +70,7 @@ test('log steps, gym, trained and weight; saved with source Manual', async () =>
 	await expect(stepsField(page)).toHaveValue('8123');
 	await expect(stepsChip(page)).toHaveText('Manual');
 	await expect(page.getByLabel('Gym minutes')).toHaveValue('45');
-	await expect(page.locator('details.trained summary')).toContainText('Trained: Chest, Legs');
+	await expect(page.locator('details.trained summary')).toHaveAttribute('aria-label', 'Trained body parts: Chest, Legs');
 	await page.locator('details.trained summary').click();
 	await expect(page.getByRole('checkbox', { name: 'Chest' })).toBeChecked();
 	await expect(page.getByRole('checkbox', { name: 'Back' })).not.toBeChecked();
@@ -146,7 +147,7 @@ test('Trends: charts, range switch remembered, empty state, no side scroll', asy
 	await noSideScroll(page);
 
 	// Other spec files share the server, so meals may exist: a chart or its empty state, never neither.
-	const intake = page.getByRole('region', { name: 'Intake', exact: true });
+	const intake = page.getByRole('region', { name: 'Average intake against budget' });
 	await expect(
 		intake.locator('.plot svg').first().or(intake.getByText('No meals logged in this range'))
 	).toBeVisible();
@@ -230,16 +231,31 @@ test('Eaten most hides when top_meals is missing and shows the empty state for [
 	await page.unroute('**/api/trends?*');
 });
 
-test('Activity uses the desktop width: budget beside the stat cards', async () => {
+test('Activity uses the desktop width: budget, steps, gym, then the week beside weigh-in and workouts', async () => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.goto('/activity');
 	await expect(page.getByRole('heading', { name: 'Activity', level: 1 })).toBeVisible();
 	await expect(page.getByRole('region', { name: 'Activity' })).toBeVisible();
 
-	const steps = await page.locator('.stat-steps').boundingBox();
-	const budget = await page.getByRole('region', { name: 'Budget' }).boundingBox();
-	expect(steps).not.toBeNull();
-	expect(budget).not.toBeNull();
-	expect(budget!.x).toBeGreaterThan(steps!.x + steps!.width);
+	const box = async (name: string) => {
+		const b = await (name.startsWith('.') ? page.locator(name) : page.getByRole('region', { name })).boundingBox();
+		expect(b).not.toBeNull();
+		return b!;
+	};
+	const budget = await box('Budget');
+	const steps = await box('.stat-steps');
+	const gym = await box('.stat-gym');
+	const week = await box('This week');
+	const weigh = await box('.stat-weight');
+	const workouts = await box('Workouts');
+	// Row 1: budget, steps, gym side by side.
+	expect(steps.x).toBeGreaterThan(budget.x + budget.width - 1);
+	expect(gym.x).toBeGreaterThan(steps.x + steps.width - 1);
+	// Row 2: the week spans two columns, with weigh-in over workouts in the third.
+	expect(week.y).toBeGreaterThan(budget.y + budget.height - 1);
+	expect(week.width).toBeGreaterThan(budget.width * 1.8);
+	expect(weigh.x).toBeGreaterThan(week.x + week.width - 1);
+	expect(workouts.x).toBe(weigh.x);
+	expect(workouts.y).toBeGreaterThan(weigh.y);
 	await noSideScroll(page);
 });
