@@ -3,7 +3,7 @@
 // Every entry is user-scoped, and every function is safe to call during SSR (it no-ops).
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { dayReadDate, keysToEvict } from './evict.ts';
+import { dayReadDate, EVICT_AT, keysToEvict } from './evict.ts';
 import type { QueuedOp } from './types.ts';
 
 export type CacheEntry = {
@@ -108,12 +108,16 @@ export async function allQueueForUser(userId: number): Promise<QueuedOp[]> {
 
 // ---- API read cache ----
 
-/** Stores one body. A day read also drops this user's day reads beyond the 60 newest dates. */
+/**
+ * Stores one body. A day read that takes the user past EVICT_AT entries also trims their day reads
+ * to the 60 most recently used dates; below that a write costs one index count, not a scan.
+ */
 export async function putCacheEntry(entry: CacheEntry): Promise<void> {
 	if (!hasIndexedDB()) return;
 	const db = await getDb();
 	await db.put('cache', entry);
 	if (dayReadDate(entry.path) === null) return;
+	if ((await db.countFromIndex('cache', 'by_user', entry.user_id)) <= EVICT_AT) return;
 
 	const entries = await db.getAllFromIndex('cache', 'by_user', entry.user_id);
 	const queued = await allQueueForUser(entry.user_id);

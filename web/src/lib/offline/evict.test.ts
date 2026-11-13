@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { dayReadDate, keysToEvict } from './evict.ts';
 
 const day = (n: number) => `2026-01-${String(n).padStart(2, '0')}`;
-const entry = (path: string) => ({ key: `1:${path}`, path });
+const entry = (path: string, saved_at = 0) => ({ key: `1:${path}`, path, saved_at });
 const dayEntries = (n: number) =>
 	Array.from({ length: n }, (_, i) => day(i + 1)).flatMap((d) => [
 		entry(`/api/meals?date=${d}`),
@@ -45,6 +45,12 @@ describe('keysToEvict', () => {
 	it('never selects other entries', () => {
 		const rest = [entry('/api/profile'), entry('/api/trends?from=a&to=b'), entry('/api/products')];
 		expect(keysToEvict([...rest, ...dayEntries(4)], new Set(), 1)).not.toContain('1:/api/profile');
+	});
+
+	it('keeps the dates used most recently, not the newest on the calendar', () => {
+		// An old day opened just now must survive the write that stored it.
+		const recent = [entry(`/api/days/${day(1)}`, 50), entry(`/api/days/${day(9)}`, 10), entry(`/api/days/${day(8)}`, 5)];
+		expect(keysToEvict(recent, new Set(), 2)).toEqual([`1:/api/days/${day(8)}`]);
 	});
 
 	it('defaults to 60 dates', () => {
