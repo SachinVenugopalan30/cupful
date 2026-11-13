@@ -74,14 +74,23 @@ for (const [width, label] of [
 	}
 }
 
-test('Login passes axe in light and dark', async ({ browser }) => {
-	const context = await browser.newContext({ baseURL: `http://127.0.0.1:${port}`, reducedMotion: 'reduce' });
-	const page = await context.newPage();
-	await page.goto('/login');
-	for (const theme of ['light', 'dark'] as const) {
-		await setTheme(page, theme);
-		await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
-		await expectAccessible(page, `Login in ${theme}`);
-	}
-	await context.close();
-});
+for (const [width, label] of [
+	[360, 'phone'],
+	[1280, 'desktop']
+] as const) {
+	test(`Login passes axe on a ${label} in light and dark`, async ({ browser }) => {
+		const context = await browser.newContext({
+			baseURL: `http://127.0.0.1:${port}`,
+			reducedMotion: 'reduce',
+			viewport: { width, height: 900 }
+		});
+		const page = await context.newPage();
+		await page.goto('/login');
+		for (const theme of ['light', 'dark'] as const) {
+			await setTheme(page, theme);
+			await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
+			await expectAccessible(page, `Login on a ${label} in ${theme}`);
+		}
+		await context.close();
+	});
+}
