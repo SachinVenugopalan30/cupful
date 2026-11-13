@@ -2,6 +2,7 @@
 // Activity (manual logging, Shortcut ingest never overwriting manual values) and Trends.
 // The ingest and trends tests need the M4 backend endpoints; the manual-logging test does not.
 import { expect, request as pwRequest, test, type Page } from '@playwright/test';
+import { openRow } from './helpers/settings.ts';
 
 async function signIn(page: Page) {
 	await page.goto('/');
@@ -116,6 +117,7 @@ test('a Shortcut fills steps and never overwrites a manual value (needs ingest e
 test('ingest tokens: create shows the token once, revoke asks first (needs token endpoints)', async () => {
 	await page.getByRole('link', { name: 'Settings' }).click();
 	const tokens = page.getByRole('region', { name: 'Ingest tokens' });
+	await openRow(tokens);
 	await tokens.getByLabel('New token name').fill('Phone');
 	await tokens.getByRole('button', { name: 'Create token' }).click();
 	const shown = tokens.getByTestId('new-token');

@@ -4,6 +4,7 @@
 // parallel and Google is not configured on the e2e server); everything else is the real server.
 import { expect, test, type Page } from '@playwright/test';
 import { login, saveProfile, seedDay, startCupful, type CupfulServer } from './helpers/server.ts';
+import { openRow } from './helpers/settings.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -242,6 +243,7 @@ test('Settings: pick gym workout types and save (google mocked)', async () => {
 		return route.fulfill({ json: {} });
 	});
 	await page.goto('/settings');
+	await openRow(page.getByRole('region', { name: 'Google Health' }));
 	const strength = page.getByRole('checkbox', { name: 'Strength training' });
 	await expect(strength).toBeChecked();
 	await expect(page.getByText('Anything you enter by hand wins.')).toBeVisible();
