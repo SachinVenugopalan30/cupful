@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import type { TrendDay } from '../api';
-	import { formatWeight, type WeightUnit } from '../format';
+	import { formatWeight, kgToWeight, type WeightUnit } from '../format';
 	import CountUp from '#lib/motion/CountUp.svelte';
 	import ChartCard from './ChartCard.svelte';
 	import { axisLabels, goalRemaining, rollingAverage, signedWeightDelta, weightReadout, weightStats } from './logic.ts';
@@ -44,7 +44,7 @@
 	);
 	const goal = $derived(goalRemaining(w.latest, goalKg, unit));
 	const monthWord = $derived(days.length >= 30 ? 'this month' : 'this range');
-	const display = (kg: number) => (unit === 'kg' ? kg : kg / 0.45359237);
+	const display = (kg: number) => kgToWeight(kg, unit);
 
 	let selected = $state<{ d: TrendDay; i: number } | null>(null);
 	$effect(() => {

@@ -133,7 +133,7 @@ One logo, the measuring jug, everywhere: an open-top jug outline in ink with a p
 
 ## Charts
 
-Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so the line can stay continuous and the motion can be CSS. `ChartCard` frames every chart: title, headline figure, summary, readout and empty state.
+Trends draws its own small SVG charts (`IntakeChart`, `WeightChart` and `StepsChart` in `web/src/lib/trends/`) so the line can stay continuous and the motion can be CSS. `ChartCard` frames every chart: title, headline figure, summary, readout and empty state.
 
 - Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (brick). The budget line uses `--chart-budget` as a dashed path, broken on days without a budget.
 - Weight uses `--chart-weight` (berry) for the line and its 14% area fill; the readout still names the 7-day average. Steps use `--chart-steps` (teal). Grid lines use `--chart-grid` and axis text uses `--chart-axis`.

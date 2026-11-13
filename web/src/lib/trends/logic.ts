@@ -3,7 +3,7 @@
 
 import type { MealMix, TrendDay } from '../api';
 import { addDays, dayLabel } from '../date';
-import { formatWeight, round, type WeightUnit } from '../format';
+import { formatWeight, kgToWeight, round, type WeightUnit } from '../format';
 
 export const RANGES = [7, 30, 90, 365] as const;
 export type Range = (typeof RANGES)[number];
@@ -175,7 +175,7 @@ export function weightStats(days: TrendDay[]) {
 
 /** A signed change in the display unit, with the render's minus sign: "−1.4 kg". */
 export function signedWeightDelta(kg: number, unit: WeightUnit): string {
-	const v = round(kg / (unit === 'kg' ? 1 : 0.45359237), 1);
+	const v = round(kgToWeight(kg, unit), 1);
 	if (v === 0) return `0 ${unit}`;
 	return `${v < 0 ? '−' : '+'}${formatWeight(Math.abs(kg), unit)}`;
 }

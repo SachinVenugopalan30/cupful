@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
 import type { TrendDay } from '../api';
-import { stepsVsTypical, weekBars, weekRange } from './week.ts';
+import { stepsTile, weekBars, weekRange } from './week.ts';
 
 const day = (date: string, eaten: number | null, budget: number | null = 2000): TrendDay => ({
 	date,
@@ -53,8 +53,9 @@ describe('weekBars', () => {
 		const bars = weekBars(days, '2026-11-12', 700, 2000);
 		const top = Math.max(...bars.map((b) => b.height));
 		expect(top).toBeLessThanOrEqual(1);
-		expect(bars[1].height).toBeCloseTo(2300 / bars[1].scale, 5);
-		expect(bars[0].planAt).toBeCloseTo(2000 / bars[0].scale, 5);
+		const scale = Math.max(2000 * 1.25, ...bars.map((b) => b.kcal ?? 0));
+		expect(bars[1].height).toBeCloseTo(2300 / scale, 5);
+		expect(bars[0].planAt).toBeCloseTo(2000 / scale, 5);
 	});
 
 	it('judges an old day against its own budget when it has one', () => {
@@ -63,14 +64,14 @@ describe('weekBars', () => {
 	});
 });
 
-describe('stepsVsTypical', () => {
+describe('stepsTile', () => {
 	it('gives the fraction of typical and the words', () => {
-		expect(stepsVsTypical(6240, 8000)).toEqual({ value: 0.78, label: 'of 8,000 typical' });
+		expect(stepsTile(6240, 8000)).toEqual({ value: 0.78, label: 'of 8,000 typical' });
 	});
 	it('caps the meter at full but keeps the words', () => {
-		expect(stepsVsTypical(12000, 8000).value).toBe(1);
+		expect(stepsTile(12000, 8000).value).toBe(1);
 	});
 	it('has no meter without a typical figure', () => {
-		expect(stepsVsTypical(5000, 0)).toEqual({ value: 0, label: 'steps' });
+		expect(stepsTile(5000, 0)).toEqual({ value: 0, label: 'steps' });
 	});
 });

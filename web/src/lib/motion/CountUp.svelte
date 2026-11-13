@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
   CountUp — a number that counts to its value over --dur-slow (520 ms): from 0 on mount, and from the
   number on screen to the new one whenever `value` changes. Reduced motion jumps straight to the

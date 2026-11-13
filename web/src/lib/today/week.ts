@@ -22,8 +22,6 @@ export type WeekBar = {
 	height: number;
 	/** Where the plan line sits, 0 to 1. The same for every bar. */
 	planAt: number;
-	/** The scale (kcal at full height), kept so callers can read the numbers back. */
-	scale: number;
 	over: boolean;
 	today: boolean;
 };
@@ -61,7 +59,6 @@ export function weekBars(
 		kcal: r.kcal,
 		height: r.kcal === null ? 0 : r.kcal / scale,
 		planAt: plan / scale,
-		scale,
 		over: r.over,
 		today: r.isToday
 	}));
@@ -72,7 +69,7 @@ export const barText = (b: WeekBar) =>
 	`${b.today ? 'Today' : b.label} ${b.kcal === null ? 'nothing logged' : `${formatKcal(b.kcal)} kcal`}`;
 
 /** The steps tile: a meter against typical steps (there is no step goal) and its caption. */
-export function stepsVsTypical(steps: number, typical: number): { value: number; label: string } {
+export function stepsTile(steps: number, typical: number): { value: number; label: string } {
 	if (!(typical > 0)) return { value: 0, label: 'steps' };
 	return {
 		value: Math.min(steps / typical, 1),

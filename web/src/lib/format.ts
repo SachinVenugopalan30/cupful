@@ -35,6 +35,11 @@ export function weightToKg(value: number, unit: WeightUnit): number {
 	return unit === 'kg' ? value : value * KG_PER_LB;
 }
 
+/** kg in the user's unit: the inverse of weightToKg. */
+export function kgToWeight(kg: number, unit: WeightUnit): number {
+	return unit === 'kg' ? kg : kg / KG_PER_LB;
+}
+
 export function formatHeight(cm: number, unit: HeightUnit): string {
 	if (unit === 'cm') return `${round(cm)} cm`;
 	const inches = round(cm / CM_PER_IN);

@@ -13,7 +13,7 @@
 	import { session } from '#lib/session.svelte.ts';
 	import { dataVersion } from '../offline/state.svelte.ts';
 	import { capitalize } from './meal.ts';
-	import { stepsVsTypical } from './week.ts';
+	import { stepsTile } from './week.ts';
 
 	let { date, refreshKey }: { date: string; refreshKey: number } = $props();
 
@@ -36,7 +36,7 @@
 	const typical = $derived(session.profile?.version?.typical_steps ?? 0);
 	const steps = $derived(d?.steps ?? null);
 	const gym = $derived(d?.gym_minutes ?? null);
-	const vs = $derived(steps === null ? null : stepsVsTypical(steps, typical));
+	const vs = $derived(steps === null ? null : stepsTile(steps, typical));
 	const trained = $derived((d?.trained ?? []).map(capitalize).join(', '));
 </script>
 
