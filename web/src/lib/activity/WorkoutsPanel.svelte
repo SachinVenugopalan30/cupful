@@ -3,7 +3,7 @@
   WorkoutsPanel — the workouts synced for the selected day (from Google Health). Read-only.
   Props:
     date: string                 the selected day
-    win: ActivityWindow | null   from ActivitySection's `win`; null shows a skeleton
+    win: ActivityWindow | null   from the Activity page's ActivityDay controller (`ctl.win`); null shows a skeleton
   Distances are in km: Cupful has no distance unit setting.
 -->
 <script lang="ts">
