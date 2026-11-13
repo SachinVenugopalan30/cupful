@@ -154,17 +154,29 @@
 		style="--m: var(--meal-{slot}); --m-soft: var(--meal-{slot}-soft); --m-text: var(--meal-{slot}-text)"
 	>
 		{#if logged}
-			<div class="notice notice-info row" role="status">
+			<div class="undo pop" role="status">
+				<span class="ok" aria-hidden="true">
+					<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+				</span>
 				<p>{logged.queued ? 'Usual queued. Waiting to sync.' : 'Usual logged.'}</p>
 				<button class="btn btn-quiet" data-testid="usual-undo" disabled={undoBusy} onclick={undo}
 					>Undo</button
 				>
 			</div>
 		{:else if usual}
-			<div class="usual-chip">
+			<div class="usual-chip rise">
 				<button class="usual-body" onclick={() => openReview(usual)}>
-					<span class="usual-label">{usual.label}</span>
-					<span class="small muted num">{formatKcal(usual.totals.kcal)} kcal</span>
+					<span class="usual-ico" aria-hidden="true">
+						<svg viewBox="0 0 24 24"
+							><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 2-3 5-3 8h3v10" /></svg
+						>
+					</span>
+					<span class="usual-txt">
+						<span class="usual-label">{usual.label}</span>
+						<span class="small muted num"
+							>Your usual {slot} · {formatKcal(usual.totals.kcal)} kcal</span
+						>
+					</span>
 				</button>
 				<button class="btn btn-primary" disabled={saving} onclick={log}>
 					{saving ? 'Saving…' : 'Log'}
@@ -203,38 +215,97 @@
 {/if}
 
 <style>
-	.usual-chip {
+	.usual-chip,
+	.undo {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-1);
+		min-height: 4.5rem;
 		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-		background: var(--m-soft);
-		border: 1px solid color-mix(in srgb, var(--m) 30%, transparent);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
+	}
+	.usual-chip {
+		background: var(--surface);
 	}
 	.usual-body {
 		display: flex;
 		flex: 1;
-		flex-direction: column;
-		align-items: flex-start;
+		align-items: center;
+		gap: var(--space-3);
 		min-width: 0;
+		min-height: var(--touch);
 		padding: 0;
 		border: 0;
+		border-radius: var(--radius-md);
 		background: transparent;
-		color: var(--m-text);
+		color: inherit;
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+		transition: scale var(--dur-fast) var(--ease);
 	}
-	.usual-label {
+	.usual-body:active {
+		scale: 0.97;
+	}
+	.usual-body:focus-visible {
+		outline: 3px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+	.usual-ico {
+		display: grid;
+		place-items: center;
+		flex: none;
+		inline-size: 2.5rem;
+		block-size: 2.5rem;
+		border-radius: var(--radius-md);
+		background: var(--m-soft);
+		color: var(--m-text);
+	}
+	.usual-ico svg,
+	.ok svg {
+		inline-size: 1.25rem;
+		block-size: 1.25rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.usual-txt {
+		display: grid;
+		min-width: 0;
+	}
+	.usual-txt .small {
 		overflow: hidden;
-		max-width: 100%;
-		font-weight: var(--weight-medium);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.usual-body .small {
-		color: var(--text-muted);
+	.usual-label {
+		overflow: hidden;
+		font-weight: var(--weight-bold);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.undo {
+		background: var(--under-soft);
+		border-color: transparent;
+	}
+	.undo p {
+		flex: 1;
+		margin: 0;
+		padding-inline: var(--space-2);
+		font-weight: var(--weight-bold);
+	}
+	.ok {
+		display: grid;
+		place-items: center;
+		flex: none;
+		inline-size: 1.75rem;
+		block-size: 1.75rem;
+		border-radius: 50%;
+		background: var(--under);
+		color: var(--surface);
 	}
 	.menu > summary {
 		display: inline-flex;

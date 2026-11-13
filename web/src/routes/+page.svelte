@@ -4,14 +4,19 @@
 	import BudgetCard from '#lib/today/BudgetCard.svelte';
 	import Composer from '#lib/today/Composer.svelte';
 	import UsualMeal from '#lib/today/UsualMeal.svelte';
-	import ActivitySection from '#lib/activity/ActivitySection.svelte';
+	import TodayActivity from '#lib/today/TodayActivity.svelte';
+	import TodayWeek from '#lib/today/TodayWeek.svelte';
 	import MealList from '#lib/today/MealList.svelte';
 	import BarcodeEntry from '#lib/products/BarcodeEntry.svelte';
+	import type { Budget } from '#lib/api.ts';
 	import { day } from '#lib/session.svelte.ts';
 
 	// One key for the whole day: any write bumps it, and the budget and meal list refetch.
 	let refreshKey = $state(0);
 	const changed = () => refreshKey++;
+	// The budget card reports what it loaded; the week card follows it.
+	let budget = $state<Budget | null>(null);
+	let eaten = $state(0);
 </script>
 
 <svelte:head><title>Today · Cupful</title></svelte:head>
@@ -21,18 +26,21 @@
 		<h1>Today</h1>
 		<DayNav />
 	</header>
-	<div class="budget"><BudgetCard date={day.date} {refreshKey} /></div>
-	<div class="log">
-		{#key day.date}
-			<UsualMeal date={day.date} {refreshKey} onSaved={changed} />
-		{/key}
-		<Composer date={day.date} onSaved={changed} />
-		<BarcodeEntry date={day.date} onSaved={changed} />
+	<!-- Phones stack the two columns: jug and activity, then logging and meals. -->
+	<div class="col">
+		<BudgetCard date={day.date} {refreshKey} bind:budget bind:eaten />
+		<TodayActivity date={day.date} {refreshKey} />
+		<TodayWeek date={day.date} {refreshKey} plan={budget?.budget ?? null} {eaten} />
 	</div>
-	<div class="meals"><MealList date={day.date} {refreshKey} onChanged={changed} /></div>
-	<!-- Phones have the Activity tab instead. -->
-	<div class="activity">
-		<ActivitySection date={day.date} {refreshKey} onChanged={changed} syncSteps />
+	<div class="col">
+		<div class="log">
+			{#key day.date}
+				<UsualMeal date={day.date} {refreshKey} onSaved={changed} />
+			{/key}
+			<Composer date={day.date} onSaved={changed} />
+			<BarcodeEntry date={day.date} onSaved={changed} />
+		</div>
+		<MealList date={day.date} {refreshKey} onChanged={changed} />
 	</div>
 </div>
 
@@ -40,50 +48,36 @@
 	.today {
 		display: grid;
 		gap: var(--space-5);
-		grid-template-areas: 'nav' 'budget' 'log' 'meals';
 		grid-template-columns: minmax(0, 1fr);
 	}
 	.page-head {
-		grid-area: nav;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
 		flex-wrap: wrap;
 	}
-	.budget {
-		grid-area: budget;
+	.col {
+		display: grid;
+		gap: var(--space-5);
+		grid-template-columns: minmax(0, 1fr);
+		align-content: start;
+		min-width: 0;
 	}
 	.log {
-		grid-area: log;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
 	}
-	.meals {
-		grid-area: meals;
-	}
-	.activity {
-		grid-area: activity;
-		display: none;
-	}
-	/* Wide: the budget sits beside logging, then the meals and activity span the page. */
+	/* Wide: a 400px column for the jug, activity and week beside the flexible logging column. */
 	@media (min-width: 60rem) {
 		.today {
-			grid-template-areas: 'nav nav' 'budget log' 'meals meals' 'activity activity';
-			grid-template-columns: 22rem minmax(0, 1fr);
-			grid-template-rows: auto auto auto auto;
-			column-gap: var(--space-6);
+			grid-template-columns: 25rem minmax(0, 1fr);
+			column-gap: var(--space-5);
+			align-items: start;
 		}
-		.activity {
-			display: block;
-		}
-		/* The budget card is as tall as the logging column beside it. */
-		.budget {
-			display: flex;
-		}
-		.budget > :global(.card) {
-			flex: 1;
+		.page-head {
+			grid-column: 1 / -1;
 		}
 	}
 </style>
