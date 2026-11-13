@@ -74,7 +74,12 @@ describe('stepQuantity', () => {
 	it('steps by 1 from 2 upward', () => {
 		expect(stepQuantity(2, 1)).toBe(3);
 		expect(stepQuantity(5, -1)).toBe(4);
-		expect(stepQuantity(2, -1)).toBe(1);
+		expect(stepQuantity(3, -1)).toBe(2);
+	});
+
+	it('steps down from 2 by a quarter, so up and down retrace each other', () => {
+		expect(stepQuantity(2, -1)).toBe(1.75);
+		expect(stepQuantity(stepQuantity(1.75, 1), -1)).toBe(1.75);
 	});
 
 	it('steps by a quarter between a quarter and 2', () => {

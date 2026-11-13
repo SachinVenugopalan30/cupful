@@ -5,6 +5,7 @@
 	import ProfileSection from '#lib/settings/ProfileSection.svelte';
 	import SettingRow from '#lib/settings/SettingRow.svelte';
 	import { ApiError, errorMessage, getBudget } from '#lib/api.ts';
+	import { formatGrams } from '#lib/format.ts';
 	import { session, today } from '#lib/session.svelte.ts';
 
 	type Plan =
@@ -46,7 +47,7 @@
 		</div>
 		{#if plan.state === 'ready'}
 			<p class="fig"><CountUp value={plan.kcal} /><small> kcal a day</small></p>
-			<p class="note">{plan.protein} g protein. The server works this out from your profile and activity.</p>
+			<p class="note">{formatGrams(plan.protein)} g protein. The server works this out from your profile and activity.</p>
 		{:else if plan.state === 'none'}
 			<p class="note">Save your profile to see your daily plan.</p>
 		{:else if plan.state === 'error'}

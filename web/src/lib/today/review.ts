@@ -42,7 +42,8 @@ export function aliasFailure(phrases: string[]): string {
  * typed value first lands on the next step in the direction pressed. Never below a quarter.
  */
 export function stepQuantity(quantity: number, direction: 1 | -1): number {
-	const step = quantity >= 2 ? 1 : 0.25;
+	// Up from 2 moves by 1; down to 2 or below moves by a quarter, so 1.75 ↔ 2 retrace each other.
+	const step = (direction > 0 ? quantity >= 2 : quantity > 2) ? 1 : 0.25;
 	const at = quantity / step;
 	const next =
 		direction > 0 ? (Math.floor(at + 1e-9) + 1) * step : (Math.ceil(at - 1e-9) - 1) * step;
