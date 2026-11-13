@@ -76,6 +76,7 @@
 
 <SettingRow
 	headingId="tokens-h"
+	anchorId="tokens"
 	title="Ingest tokens"
 	description="Let an automation, such as an iOS Shortcut, post steps and gym minutes."
 >

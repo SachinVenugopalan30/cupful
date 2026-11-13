@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  Wordmark — the shipped Cupful logo (bowl plus outlined Manrope). The package ships one light and
+  Wordmark — the shipped Cupful logo (the jug mark plus "Cupful" outlined in Bricolage Grotesque). The package ships one light and
   one dark SVG; CSS picks the right one from `prefers-color-scheme` or `<html data-theme>`.
   Props:
     label?: string   accessible name; omit when the surrounding heading already says "Cupful"

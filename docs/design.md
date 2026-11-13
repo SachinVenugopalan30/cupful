@@ -5,15 +5,15 @@ People open Cupful many times a day, on a phone, for a few seconds. They check w
 
 ## Direction
 
-**Mineral.** Cool pale stone, cool off-white panels, one deep sea blue. The light theme sits on `#f2f5f6`, not a warm tint. The panels are `#f8fafa`, not pure white, so the light theme does not glare. The dark theme sits on `#0e1418`, a green-black rather than navy. The palette is quiet and slightly cool, like a kitchen scale and a glass of water.
+**Ember jug.** The budget is a measuring jug: you pour the day's food into it and see how much room is left. The palette is graphite and ember. The light theme sits on cool `#f1f3f6` with `#fafbfc` panels, so it does not glare. The dark theme sits on `#0a0d10` with `#12161b` panels. The accent is a burnt ember: `#c2410c` in light, and a softened `#d9824f` in dark, because the brighter `#fb8b3c` read harsh on graphite. A faint ember wash at the top left and blue wash at the top right sit behind the page (`body::before`, fixed, about 300 px, decorative).
 
-**Pantry layout.** Soft surfaces, generous spacing and large radii. Off-white cards sit on the pale ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and an account menu. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text, never an accent fill.
+**Pantry layout.** Soft surfaces, generous spacing and large radii. Cards sit on the ground with a hairline border and no shadow. Desktop gets a top bar with the wordmark, four plain links and an account menu. Phones get bottom tabs with an icon and a short label. The current route is neutral: `--surface-2` with normal text on desktop, and `--accent-text` on the phone tabs.
 
-Nothing shouts. Strong colors carry meaning. Teal means "left". Brick means "over". Amber means "check this". Data hues come from pantry food: blue protein, ochre carbs, brick fat, teal steps, berry weight, and orange, teal, blue and gold for the four meals.
+Nothing shouts. Strong colors carry meaning. Teal means "left". Rose means "over". Amber means "check this". Data hues: blue protein, ochre carbs, rose fat, teal steps, berry weight, and ember, teal, blue and gold for the four meals.
 
-**Numbers first.** Every number uses Manrope with tabular figures, so totals do not jitter as they change. The numbers people glance at are large: 28 px for a page title and 44 px for kcal left.
+**Numbers first.** Figures use Bricolage Grotesque (`.fig`, 800 weight) with tabular figures, so totals do not jitter as they change. The numbers people glance at are large: 28 px for a page title and a 56 px kcal-left figure on the Today jug card.
 
-**The measuring cup.** The one signature element is the `.meter`: a track with graduation marks every 10 percent, like the side of a measuring cup, filling as the day's food is logged. Budget and macro bars use it. Everything around it stays quiet.
+**The jug.** The signature element is the measuring jug: an open-top outline in `--text`, graduations, and a liquid (`--fill`, with a lighter `--fill-top` meniscus) whose height is the share of the plan eaten. The liquid is decorative: it measures 2.2:1 against `--surface` in light, so the jug outline (`--text`, over 16:1) carries the 3:1 for the shape and the figures carry the meaning in text. The jug is `role="img"` with an `aria-label`. `.meter` is the same idea in small: a track with graduations every 10 percent and a fill.
 
 **Sources are labeled.** Every estimated number says where it came from, in words. "Database" in blue means a matched food or product. "AI estimate" in berry means the model's guess. Color supports the label and is never the only signal.
 
@@ -27,60 +27,78 @@ Nothing shouts. Strong colors carry meaning. Teal means "left". Brick means "ove
 
 ## Palette
 
-| Role | Light | Dark |
-| --- | --- | --- |
-| Page `--bg` | `#f2f5f6` | `#0e1418` |
-| Card `--surface` | `#f8fafa` | `#151d22` |
-| Sunken `--surface-2` | `#e7edef` | `#1b262c` |
-| Hairline `--border` | `#dce5e8` | `#2a3740` |
-| Strong rule `--border-strong` | `#9aabb3` | `#60747f` |
-| Control outline `--control-border` | `#7e919b` | `#60747f` |
-| Text `--text` | `#172025` | `#e9f1f4` |
-| Muted `--text-muted` | `#59666d` | `#9fb0b8` |
-| Accent `--accent` | `#245f8a` | `#82c2e8` |
-| Accent hover `--accent-hover` | `#1c4d70` | `#9ad1ef` |
-| Accent soft `--accent-soft` | `#e1eef6` | `#173647` |
-| On accent `--on-accent` | `#ffffff` | `#071820` |
-| Under `--under` | `#2f7a6b` | `#8bd3c0` |
-| Over `--over` | `#a64a52` | `#e39aa8` |
-| Warning `--warning` | `#8a5a00` | `#e0b45a` |
-| Error `--error` | `#b3261e` | `#e39aa8` |
+Ratios are WCAG contrast, light / dark, measured with a script over the token values.
+
+| Role | Light | Dark | Pair and ratio |
+| --- | --- | --- | --- |
+| Page `--bg` | `#f1f3f6` | `#0a0d10` | |
+| Card `--surface` | `#fafbfc` | `#12161b` | |
+| Sunken `--surface-2` | `#e6e9ee` | `#1b2027` | |
+| Hairline `--border` | `#dde1e7` | `#232a32` | decorative |
+| Strong rule `--border-strong` | `#a9b1bb` | `#47515c` | separators |
+| Control outline `--control-border` | `#8a929c` | `#66717d` | on surface 3.04 / 3.65 |
+| Text `--text` | `#12161b` | `#edf1f5` | on bg 16.34 / 17.16, on surface 17.53 / 16.00, on surface-2 14.92 / 14.43 |
+| Muted `--text-muted` | `#59616b` | `#96a1ad` | on bg 5.64 / 7.42, on surface 6.06 / 6.92, on surface-2 5.16 / 6.24 |
+| Accent `--accent` | `#c2410c` | `#d9824f` | on bg 4.66 / 6.73, on surface 5.00 / 6.28 |
+| Accent hover `--accent-hover` | `#a8380a` | `#e39264` | |
+| On accent `--on-accent` | `#fff8f3` | `#1c0d05` | on accent 4.93 / 6.54, on hover 6.17 / 7.72 |
+| Accent soft `--accent-soft` | `#fbe7da` | `#2a1d15` | |
+| Accent text `--accent-text` | `#9a330a` | `#eba783` | on accent-soft 6.15 / 8.08, on surface 7.11 / 8.98 |
+| Under `--under` / `--under-soft` | `#0e7862` / `#d9f2ea` | `#4fd1b0` / `#0f2a24` | 4.60 / 8.05 |
+| Over `--over` / `--over-soft` | `#ba3858` / `#fbe3e9` | `#e48aa0` / `#2e1820` | 4.55 / 6.66 |
+| Warning `--warning` / `--warning-soft` | `#8a5a00` / `#f0eade` | `#e0b45a` / `#2f2a1b` | 4.95 / 7.39 |
+| Error `--error` / `--error-soft` | `#b3261e` / `#f5e3e2` | `#e48aa0` / `#381f21` | 5.28 / 6.82 |
+| Jug liquid `--fill`, `--fill-top` | `#f2955a`, `#f9bf98` | `#c9743f`, `#dd9a70` | decorative; `--fill` on surface 2.20 / 5.24 |
+| Empty jug `--glass` | `rgb(43 99 196 / 0.05)` | `rgb(127 176 255 / 0.05)` | |
+
+Two fixes against the first pass of the plan: light `--under` on `--under-soft` measured 4.48:1 and light `--over` on `--over-soft` 4.38:1, so the inks were darkened from `#0f7a63` to `#0e7862` and from `#be3a5a` to `#ba3858` (the fills stay). `--accent` on `--accent-soft` is 4.33:1 in light, so ember text on a soft fill uses `--accent-text`, never `--accent`.
 
 ### Data hues
 
-| Meaning | Light | Dark |
-| --- | --- | --- |
-| Protein `--protein` | `#2c6e9e` | `#8fc3e6` |
-| Carbs `--carbs` | `#9a651c` | `#e0b45a` |
-| Fat `--fat` | `#a64a52` | `#e39aa8` |
-| Steps `--steps` | `#2f7a6b` | `#8bd3c0` |
-| Weight `--weight` | `#8e4f6b` | `#d8a6c8` |
-| Breakfast `--breakfast` | `#c26a2a` | `#e8a06a` |
-| Lunch `--lunch` | `#2f7a6b` | `#8bd3c0` |
-| Dinner `--dinner` | `#3a5f8e` | `#8fb3e0` |
-| Snack `--snack` | `#8a6a1f` | `#e0c078` |
+| Meaning | Light | Dark | On `--surface` |
+| --- | --- | --- | --- |
+| Protein `--protein` | `#2b63c4` | `#7fb0ff` | 5.50 / 8.26 |
+| Carbs `--carbs` | `#a16207` | `#fcd34d` | 4.75 / 12.60 |
+| Fat `--fat` | `#be3a5a` | `#fb93ad` | 5.14 / 8.54 |
+| Steps `--steps` | `var(--under)` | `var(--under)` | 5.22 / 9.58 |
+| Weight `--weight` | `#8e4f6b` | `#d8a6c8` | 5.82 / 8.83 |
+| Breakfast `--breakfast` | `#c2410c` | `#d9824f` | 5.00 / 6.28 |
+| Lunch `--lunch` | `var(--under)` | `var(--under)` | 5.22 / 9.58 |
+| Dinner `--dinner` | `#2b63c4` | `#7fb0ff` | 5.50 / 8.26 |
+| Snack `--snack` | `#8a6a1f` | `#e7c76a` | 4.87 / 11.05 |
+| Source DB `--src-db` / soft | `#2b63c4` / `#e2eafa` | `#7fb0ff` / `#142338` | 4.72 / 7.20 on soft |
+| Source AI `--src-ai` / soft | `#8e4f6b` / `#f0e8ec` | `#d8a6c8` / `#302832` | 5.02 / 6.92 on soft |
 
-Macros use `--protein`, `--carbs` and `--fat`, with `--*-text` for labels. Meal types use `--meal-{breakfast,lunch,dinner,snack}` plus `-soft` and `-text`, taken from the meal hues above. The Meals group headers use them with a dot and label, and the selected state of the meal-type `.segmented` control uses them.
+Macros use `--protein`, `--carbs` and `--fat`, with `--*-text` for labels. Meal types use `--meal-{breakfast,lunch,dinner,snack}` plus `-soft` and `-text`. The Meals group headers use them with a dot and label, and the selected state of the meal-type `.segmented` control uses them.
 
-Charts use `--chart-1..4`: protein, fat, steps, carbs. Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (brick). Weight uses `--chart-weight` (berry). Steps and rolling averages use `--chart-steps` and `--chart-average` (teal).
+Charts use `--chart-1..4`: protein, fat, steps, carbs. Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (rose). Weight uses `--chart-weight` (berry). Steps and rolling averages use `--chart-steps` and `--chart-average` (teal).
 
 ### Aliases
 
-The old names keep working. `--coral` maps to fat, `--sage` to steps, `--gold` to snack, each with `-soft` and `-text`. `--sand` maps to `--surface-2` and `--sand-soft` to `--surface`. `.btn-coral` and `.sheet-coral` use the coral aliases, so the products area keeps its own tone. `--chart-*` map onto the data hues.
+The old names keep working. `--coral` maps to over, `--sage` to under, `--gold` to snack, each with `-soft` and `-text`. `--sand` maps to `--surface-2` and `--sand-soft` to `--surface`. `.btn-coral` and `.sheet-coral` use the coral aliases, so the products area keeps its own tone. `--chart-*` map onto the data hues.
 
-Meaning is separate from decoration. `--over` and `--error` are brick, distinct from the orange breakfast hue. `--under` is teal. `--warning` is amber. Meaning is always also in words.
-
-Sources: `--src-db` is blue with a pale blue fill. `--src-ai` is berry with a pale berry fill. Both meet AA in both themes.
+Meaning is separate from decoration. `--over` and `--error` are rose, distinct from the ember breakfast hue. `--under` is teal. `--warning` is amber. Meaning is always also in words.
 
 ## Type
 
-One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font License 1.1. The license is at `web/static/fonts/OFL.txt`.
+Two families, both variable, self-hosted as woff2 under the SIL Open Font License 1.1.
 
-- Files: `web/static/fonts/manrope-latin.woff2` and `manrope-latin-ext.woff2`. They are variable woff2 files covering weights 400 to 600.
-- `@font-face` lives in `global.css`, uses `font-display: swap`, and points at local `/fonts/` paths. There is no Google Fonts request at runtime and the font is available offline after the first load.
-- `--font-sans` and `--font-numeric` are both Manrope. Do not add a second typeface.
-- Numbers use tabular figures through `font-variant-numeric: tabular-nums` and `font-feature-settings: 'tnum' 1` on `.num`.
-- Sizes: h1 28 px (`--text-xl`), h2 20 px (`--text-lg`), body 16 px (`--text-md`), small 14 px (`--text-sm`), lead 44 px (`--text-hero`). `--text-2xl` is 32 px for the wordmark and large figures.
+- **Bricolage Grotesque** (display): figures, h1, h2, card titles and the wordmark. Axes kept: `opsz` 12 to 96 and `wght` 400 to 800 (`wdth` pinned to 100). Licence: `web/static/fonts/OFL-bricolage-grotesque.txt`.
+- **Instrument Sans** (everything else): `wght` 400 to 700 (`wdth` pinned to 100). Licence: `web/static/fonts/OFL-instrument-sans.txt`.
+- Files: `{bricolage-grotesque,instrument-sans}-{latin,latin-ext}.woff2` in `web/static/fonts/`, subset with `pyftsubset --flavor=woff2` from the upstream Google Fonts files. `@font-face` lives in `styles/fonts.css`, uses `font-display: swap` and local `/fonts/` paths. There is no font request to a third party, and the files are available offline after the first load. `app.html` preloads `instrument-sans-latin.woff2`.
+- `--font-display` is Bricolage, `--font-sans` and `--font-numeric` are Instrument Sans. Do not add a third typeface.
+- Numbers use tabular figures through `font-variant-numeric: tabular-nums` and `font-feature-settings: 'tnum' 1` on `.num`, and on `.fig`.
+- Sizes: h1 28 px (`--text-xl`), h2 20 px (`--text-lg`), body 16 px (`--text-md`), small 14 px (`--text-sm`), lead 44 px (`--text-hero`). `--text-2xl` is 32 px for large figures.
+
+## The mark
+
+One logo, the measuring jug, everywhere: an open-top jug outline in ink with a pour lip at the top left, and an ember liquid at about 40 percent with a lighter meniscus line. The outline is a 2.6 unit stroke on a 30 by 32 grid, so it holds at 16 px.
+
+- `web/src/lib/assets/mark.svg`: the mark alone, follows `prefers-color-scheme`.
+- `web/src/lib/assets/wordmark-light.svg` and `wordmark-dark.svg`: mark plus "Cupful" in Bricolage Grotesque 800, converted to outline paths with fontTools, so they render without the font (for example in the README on GitHub). `Wordmark.svelte` shows the pair and is the only way the app shows the logo.
+- `web/static/favicon.svg` (follows `prefers-color-scheme`), `favicon.ico` (16, 32 and 48 on the `#f1f3f6` ground), `icons/apple-touch-icon.png` (180).
+- PWA icons: `icon-192.png` and `icon-512.png` (`purpose: any`, rounded ground), `maskable-192.png` and `maskable-512.png` (`purpose: maskable`, the mark is half the canvas height on a solid `#f1f3f6` ground, well inside the central 80 percent safe zone; checked under a circle mask).
+- The manifest uses background `#f1f3f6` and theme `#c2410c`. `app.html` carries `theme-color` `#f1f3f6` for light and `#0a0d10` for dark.
 
 ## Shape and surface
 
@@ -90,31 +108,32 @@ One family: **Manrope**, by the Manrope Project Authors, under the SIL Open Font
 - Chips use `--radius-pill`. Segmented options use `--radius-sm`, 10 px.
 - Resting cards have a border and no shadow. `--shadow-card` is `none`.
 - Only sheets, dialogs, popovers and the preview bar may use `--shadow-sheet`.
-- There is no page gradient. The only gradient is the meter's graduation marks.
+- The only gradients are the meter's graduations and the faint page glow.
 
 ## Shell
 
 - From 48 rem the top bar is sticky. It holds the wordmark, four plain links (Today, Activity, Trends, Settings) and an avatar. The avatar opens a menu with **Profile** and **Log out**.
-- Brand: use the shipped logo set, not styled text. `web/src/lib/Wordmark.svelte` renders the light and dark wordmark SVGs and picks one from the active theme. Its colors match `--accent` and `--gold`. Favicons live in `web/static/favicon.svg`, `web/static/favicon.ico` and `web/static/icons/`.
+- Brand: use the shipped logo set, not styled text (see The mark). `web/src/lib/Wordmark.svelte` renders the light and dark wordmark SVGs and picks one from the active theme.
 - The date navigation is one right-aligned group: **Back to today** when needed, previous, date, next. The phone label shortens to **Today**. It never centers when the back button appears.
 - Profile and account live at `/profile`, reached from the avatar menu on wide screens and from Settings on phones. Settings itself keeps the instance and device controls and uses the full page width.
 - Below 48 rem the top bar becomes fixed bottom tabs with an icon and a short label per tab.
-- The current route uses `--surface-2` with `--text`. It is never an accent fill or accent text.
+- The current route uses `--surface-2` with `--text` in the top bar and `--accent-text` on the phone tabs. It is never an accent fill.
 - Every tab is at least 44 px tall. The bar adds `env(safe-area-inset-bottom)` on phones. The page reserves room for the bar.
 - The shell works at 360 px with no sideways scroll, and at desktop widths.
 
 ## Motion
 
-- Tokens: `--dur-fast` 160 ms for hover, press, focus and chips; `--dur-med` 240 ms for saved text and small state changes; `--dur-slow` 360 ms for meters, week bars and progress fills; `--dur-enter` 420 ms for sheets; `--dur-exit` 200 ms for a sheet closing and its backdrop fading.
-- Two curves: `--ease` `cubic-bezier(0.22, 1, 0.36, 1)` for movement, and `--ease-state` `cubic-bezier(0.4, 0, 0.2, 1)` for feedback such as background, border and colour.
-- Feedback answers an action. A pressed button scales to 0.98. Hover changes surface tone. Focus draws a 2 px accent ring with a 2 px offset.
-- Movement is slow and settles without overshoot. Meters fill, bars grow, and sheets slide up from the bottom edge and fade out on close.
-- Screens do not use entrance animations, except Trends and sheets. Trends bars, cells, the area fill and headline figures answer opening the screen and changing the range in one short pass. A sheet enters over `--dur-enter` and leaves over `--dur-exit`.
+- One scale, as tokens: `--dur-fast` 140 ms for press, hover and focus; `--dur-med` 260 ms for state swaps, chevrons, chips and the view fade; `--dur-slow` 520 ms for meters, count-ups and growing bars; `--dur-pour` 820 ms for the jug fill only; `--dur-enter` 420 ms for sheets in; `--dur-exit` 180 ms for sheets and swaps out.
+- Two curves: `--ease` `cubic-bezier(0.22, 1, 0.36, 1)` for anything entering or changing, and `--ease-in` `cubic-bezier(0.4, 0, 1, 1)` for exits. `--ease-state` is an alias of `--ease`.
+- Feedback answers an action. A pressed `.btn` scales to 0.97 (no-preference only). Hover changes surface tone. Focus draws a 2 px accent ring with a 2 px offset.
+- Movement settles without overshoot. Transform and opacity only; block-size via `interpolate-size` is the one exception.
+- Helpers in `styles/motion.css`: `.grow-y`, `.grow-x`, `.pop` and `.rise`, stagger with `--n` (40 ms steps). They exist only inside `@media (prefers-reduced-motion: no-preference)`, so reduced motion renders the final state at once and nothing waits on script at opacity 0.
+- `#lib/motion/CountUp.svelte` counts a number to its value over `--dur-slow`, from 0 on mount and from the number on screen whenever `value` changes. Under reduced motion it snaps.
 - A global `prefers-reduced-motion` rule sets every duration token to 0 and disables smooth scrolling. Sheets close at once and skeletons stop pulsing.
 
 ## Charts
 
-Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so the line can stay continuous and the motion can be CSS. `ChartCard` frames every chart: title, headline figure, summary, readout and empty state.
+Trends draws its own small SVG charts (`IntakeChart`, `WeightChart` and `StepsChart` in `web/src/lib/trends/`) so the line can stay continuous and the motion can be CSS. `ChartCard` frames every chart: title, headline figure, summary, readout and empty state.
 
 - Intake bars use `--chart-intake` (blue). Bars over budget use `--chart-over` (brick). The budget line uses `--chart-budget` as a dashed path, broken on days without a budget.
 - Weight uses `--chart-weight` (berry) for the line and its 14% area fill; the readout still names the 7-day average. Steps use `--chart-steps` (teal). Grid lines use `--chart-grid` and axis text uses `--chart-axis`.
@@ -123,7 +142,7 @@ Trends draws its own small SVG charts (`web/src/lib/trends/Charts.svelte`) so th
 - The plot is `role="img"` with an `aria-label` summary of range, counts and averages. Keyboard users get the summary only. There is no keyboard day-stepping yet.
 - Each chart has its own `.empty` sentence that says what to log to fill it. The average card does the same. Gaps, such as no meals or no weigh-in, are gaps, never zeros.
 - The range control (7d, 30d, 90d, 365d) is a `.segmented` control remembered per device. Bars thin to hairlines past 120 days.
-- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 760 ms bar growth with a 16 ms stagger capped at 15 bars, an area fade over 600 ms after 120 ms, consistency cells that fade over 360 ms in 18 ms steps instead of popping, and macro/mix bars growing over 760 ms in 80 ms steps. Headline numbers count up over 800 ms with a single rAF helper. Reduced motion removes all of it.
+- The weight line has a 14% area fill and no dash animation, so it reads as one continuous trend. Motion is 760 ms bar growth with a 16 ms stagger capped at 15 bars, an area fade over 600 ms after 120 ms, consistency cells that fade over 360 ms in 18 ms steps instead of popping, and macro/mix bars growing over 760 ms in 80 ms steps. Headline numbers count with `CountUp` over `--dur-slow`. Reduced motion removes all of it.
 - Consistency shows one cell per day, capped at 30 columns. Blue is within budget, brick is over, grey is no log.
 - "Eaten most" lists the five most-logged meals in the range: label, meal type, count, last date and average kcal, with a thin `--accent` bar scaled to the top count. It hides when the server omits `top_meals` and shows an empty sentence for an empty range. Only rows present when the range mounted animate.
 
@@ -143,28 +162,29 @@ Tokens live in `web/src/lib/styles/tokens.css`.
 | Group | Tokens |
 | --- | --- |
 | Surfaces, text | `--bg`, `--surface`, `--surface-2` (sunken), `--border` (decorative), `--border-strong` (separators), `--control-border` (input outlines, 3:1), `--text`, `--text-muted` |
-| Brand | `--accent`, `--accent-hover`, `--on-accent`, `--accent-soft`, `--focus-ring` |
+| Brand | `--accent`, `--accent-hover`, `--on-accent`, `--accent-soft`, `--accent-text`, `--focus-ring` |
+| Jug | `--fill`, `--fill-top`, `--glass` |
 | Meaning | `--under`/`--under-soft`, `--over`/`--over-soft`, `--warning`/`--warning-soft`, `--error`/`--error-soft` |
 | Data | `--protein`, `--carbs`, `--fat`, `--steps`, `--weight`, `--breakfast`, `--lunch`, `--dinner`, `--snack`, each with text or soft variants where used |
 | Aliases | `--coral`, `--sage`, `--gold` plus `-soft` and `-text`; `--sand`, `--sand-soft`; `--meal-*`; `--chart-1..4` |
 | Sources | `--src-db`/`--src-db-soft` ("Database"), `--src-ai`/`--src-ai-soft` ("AI estimate") |
 | Charts | `--chart-intake`, `--chart-budget`, `--chart-weight`, `--chart-average`, `--chart-steps`, `--chart-over`, `--chart-grid`, `--chart-axis` |
-| Type | `--font-sans`, `--font-numeric`; `--text-xs` 13, `--text-sm` 14, `--text-md` 16, `--text-lg` 20, `--text-xl` 28, `--text-2xl` 32, `--text-hero` 44 px; `--leading-tight`, `--leading`; `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600 |
+| Type | `--font-display`, `--font-sans`, `--font-numeric`; `--text-xs` 13, `--text-sm` 14, `--text-md` 16, `--text-lg` 20, `--text-xl` 28, `--text-2xl` 32, `--text-hero` 44 px; `--leading-tight`, `--leading`; `--weight-regular` 400, `--weight-medium` 500, `--weight-bold` 600 |
 | Space | `--space-1` through `--space-8` (4, 8, 12, 16, 24, 32, 40, 48 px), `--gutter`, `--content-max` (40 rem), `--page-max` (72 rem), `--touch` (44 px) |
 | Shape | `--radius-sm` (10 px), `--radius-md` (12 px controls), `--radius-lg` (20 px cards), `--radius-sheet` (24 px), `--radius-pill`, `--shadow-card` (none), `--shadow-sheet` |
-| Motion | `--dur-fast` 160, `--dur-med` 240, `--dur-slow` 360, `--dur-enter` 420, `--dur-exit` 200 ms; `--ease`, `--ease-state`. All durations are 0 under `prefers-reduced-motion` |
+| Motion | `--dur-fast` 140, `--dur-med` 260, `--dur-slow` 520, `--dur-pour` 820, `--dur-enter` 420, `--dur-exit` 180 ms; `--ease`, `--ease-in`, `--ease-state`. All durations are 0 under `prefers-reduced-motion` |
 
 ## Global classes
 
-Global classes live in `web/src/lib/styles/global.css`. Screens use them and add scoped styles only for layout. There is no CSS framework, UI kit or icon pack. Icons are a few inline SVG paths using `currentColor`.
+Global classes live in `web/src/lib/styles/`, split by behaviour (`base`, `buttons`, `forms`, `segmented`, `components`, `sheet`, `motion`) and imported from `global.css`. Screens use them and add scoped styles only for layout. There is no CSS framework, UI kit or icon pack. Icons are a few inline SVG paths using `currentColor`.
 
 - Layout: `.stack`, `.row`.
 - Text: `.num` (tabular numerals), `.muted`, `.small`, `.visually-hidden`.
-- Cards: `.card`.
-- Buttons: `.btn` with `.btn-primary`, `.btn-quiet` or `.btn-danger`, and `.btn-block`.
+- Cards: `.card`, `.card-head` (an `h2` and a muted right-hand note), `.tile` (a compact stat card, or a link with `a.tile`), `.fig` (big figure, with a muted `small` unit).
+- Buttons: `.btn` with `.btn-primary`, `.btn-soft`, `.btn-quiet` or `.btn-danger`, and `.btn-block`.
 - Forms: `.field` (label, control, `.hint`). Native inputs are styled globally. Checkboxes and radios are drawn from tokens, not `accent-color`, so they match both themes. Invalid fields use `[aria-invalid='true']`.
-- `.segmented` turns a radio group into a segmented control. The selected option gets a `--surface` fill, normal `--text` and bold text. Meal types replace that with their soft fill and text hue.
-- Lists and chips: `.list` (rows with dividers), `.chip` with `.chip-db`, `.chip-ai`, `.chip-warning`, `.chip-error` or `.chip-over`.
+- `.seg` is the same control built from buttons with `aria-pressed`. `.segmented` turns a radio group into a segmented control. The selected option gets a `--surface` fill, normal `--text` and bold text. Meal types replace that with their soft fill and text hue.
+- Lists and chips: `.list` (rows with dividers), `.chip` with `.chip-db`, `.chip-ai`, `.chip-warning`, `.chip-error`, `.chip-over`, `.chip-under` or `.chip-accent`. `.rows` is a divided list of label and value rows with `small` sublines.
 - Meters: `.meter` with `style="--value: 0.62; --fill: var(--protein)"`. Add `.is-over` past 1.
 - States: `.notice` with `.notice-error`, `.notice-warning` or `.notice-info`; `.empty`; `.skeleton`.
 - Sheets: `dialog.sheet` is a native `<dialog>` shown as a bottom sheet on phones and centered on wide screens. It scrolls itself. Its title row is a `<header class="sheet-head">` that stays in view while the sheet scrolls.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
 import {
+	allCacheForUser,
 	allQueueForUser,
 	clearUserData,
 	deleteMeta,
@@ -110,5 +111,35 @@ describe('offline db', () => {
 		expect(await getMeta('hello')).toEqual({ n: 1 });
 		await deleteMeta('hello');
 		expect(await getMeta('hello')).toBeUndefined();
+	});
+
+	it('trims to the 60 most recent dates once past the slack, keeping queued dates', async () => {
+		const user = 9008;
+		const date = (i: number) => new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10);
+		const put = (path: string, at: number) =>
+			putCacheEntry({ key: `${user}:${path}`, user_id: user, path, body: {}, saved_at: at });
+		await put('/api/profile', 0);
+		const held = queued(user);
+		held.op = { op_id: held.op_id, kind: 'day.patch', at: '2026-01-01T00:00:00.000Z', payload: { date: date(0) } };
+		await putQueueItem(held);
+		const days = (i: number) => [`/api/days/${date(i)}`, `/api/meals?date=${date(i)}`, `/api/budget/${date(i)}`];
+
+		// Under the slack nothing is scanned or dropped, even past 60 dates.
+		for (let i = 0; i < 65; i++) for (const p of days(i)) await put(p, i + 1);
+		const dayCount = async () => new Set((await allCacheForUser(user)).map((e) => e.path.slice(-10))).size;
+		expect(await dayCount()).toBe(66); // 65 dates plus the profile entry's tail
+
+		// Crossing it trims back to the 60 most recently used dates, plus the queued one.
+		for (let i = 65; i < 80; i++) for (const p of days(i)) await put(p, i + 1);
+		const left = (await allCacheForUser(user)).map((e) => e.path);
+		expect(left).toContain('/api/profile');
+		expect(left).toContain(`/api/days/${date(0)}`); // queued, so kept
+		expect(left).not.toContain(`/api/days/${date(1)}`);
+		expect(left).toContain(`/api/budget/${date(79)}`);
+		// 61 right after the trim, then the few dates written since, well under the 65 it started with.
+		const kept = new Set(left.filter((p) => p !== '/api/profile').map((p) => p.slice(-10))).size;
+		expect(kept).toBeGreaterThanOrEqual(61);
+		expect(kept).toBeLessThan(65);
+		await clearUserData(user);
 	});
 });

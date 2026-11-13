@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
-import { formatGrams, formatHeight, formatKcal, formatWeight, heightToCm, round, weightToKg } from './format';
+import { formatGrams, formatHeight, formatKcal, formatWeight, heightToCm, kgToWeight, round, weightToKg } from './format';
 
 describe('formatKcal', () => {
 	it('rounds half away from zero, like the server', () => {
-		expect(formatKcal(1234.5)).toBe('1235');
+		expect(formatKcal(1234.5)).toBe('1,235');
 		expect(formatKcal(-12.5)).toBe('-13');
 		expect(formatKcal(0.4)).toBe('0');
 		expect(formatKcal(-0.4)).toBe('0');
+	});
+
+	it('groups thousands like every other figure on screen', () => {
+		expect(formatKcal(2394)).toBe('2,394');
+		expect(formatKcal(-1500)).toBe('-1,500');
+		expect(formatKcal(999)).toBe('999');
 	});
 });
 
@@ -48,5 +54,12 @@ describe('round', () => {
 		expect(Object.is(round(-0.04, 1), 0)).toBe(true);
 		expect(round(2.25, 1)).toBe(2.3);
 		expect(round(-2.25, 1)).toBe(-2.3);
+	});
+});
+
+describe('kgToWeight', () => {
+	it('is the inverse of weightToKg', () => {
+		expect(kgToWeight(81.4, 'kg')).toBe(81.4);
+		expect(kgToWeight(weightToKg(176.4, 'lb'), 'lb')).toBeCloseTo(176.4, 10);
 	});
 });

@@ -80,7 +80,6 @@
 <style>
 	.user-menu {
 		display: none;
-		margin-left: auto;
 	}
 	.user-chip {
 		display: grid;
@@ -90,7 +89,7 @@
 		border: 0;
 		border-radius: 50%;
 		background: var(--accent-soft);
-		color: var(--accent);
+		color: var(--accent-text);
 		font: inherit;
 		font-size: var(--text-sm);
 		font-weight: var(--weight-bold);

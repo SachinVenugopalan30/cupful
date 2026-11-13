@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it, vi } from 'vitest';
 import type { DraftItem } from './meal';
-import { aliasFailure, MACROS, rememberAliases } from './review';
+import { aliasFailure, MACROS, rememberAliases, stepQuantity } from './review';
 
 const item = (over: Partial<DraftItem> = {}): DraftItem => ({
 	id: 'item',
@@ -67,5 +67,41 @@ describe('aliasFailure', () => {
 		expect(aliasFailure(['oats', 'muesli'])).toBe(
 			'The meal is saved, but I couldn\'t remember "oats", "muesli". Save again to retry, or close.'
 		);
+	});
+});
+
+describe('stepQuantity', () => {
+	it('steps by 1 from 2 upward', () => {
+		expect(stepQuantity(2, 1)).toBe(3);
+		expect(stepQuantity(5, -1)).toBe(4);
+		expect(stepQuantity(3, -1)).toBe(2);
+	});
+
+	it('steps down from 2 by a quarter, so up and down retrace each other', () => {
+		expect(stepQuantity(2, -1)).toBe(1.75);
+		expect(stepQuantity(stepQuantity(1.75, 1), -1)).toBe(1.75);
+	});
+
+	it('steps by a quarter between a quarter and 2', () => {
+		expect(stepQuantity(1, 1)).toBe(1.25);
+		expect(stepQuantity(0.5, 1)).toBe(0.75);
+		expect(stepQuantity(1.75, 1)).toBe(2);
+		expect(stepQuantity(1, -1)).toBe(0.75);
+		expect(stepQuantity(0.5, -1)).toBe(0.25);
+	});
+
+	it('snaps an odd typed value toward the press first', () => {
+		expect(stepQuantity(1.3, 1)).toBe(1.5);
+		expect(stepQuantity(1.3, -1)).toBe(1.25);
+		expect(stepQuantity(1.9, 1)).toBe(2);
+		expect(stepQuantity(2.5, 1)).toBe(3);
+		expect(stepQuantity(2.5, -1)).toBe(2);
+		expect(stepQuantity(0.1, 1)).toBe(0.25);
+	});
+
+	it('never goes below a quarter', () => {
+		expect(stepQuantity(0.25, -1)).toBe(0.25);
+		expect(stepQuantity(0.3, -1)).toBe(0.25);
+		expect(stepQuantity(0, -1)).toBe(0.25);
 	});
 });

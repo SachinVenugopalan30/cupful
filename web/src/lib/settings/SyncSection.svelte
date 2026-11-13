@@ -10,6 +10,7 @@
 	import { dayLabel } from '#lib/date.ts';
 	import { today } from '#lib/session.svelte.ts';
 	import SettingRow from './SettingRow.svelte';
+	import { syncSummary } from './summaries';
 
 	let syncing = $state(false);
 	let working = $state<Record<string, boolean>>({});
@@ -87,11 +88,15 @@
 <SettingRow
 	headingId="sync-h"
 	title="Sync"
-	description="Changes saved on this device are sent when you're online. A rejected change stays here until you retry or discard it."
+	description={syncSummary(ops)}
 	anchorId="sync"
 	focusable
 	testId="sync-section"
 >
+	<p class="small muted">
+		Changes saved on this device are sent when you're online. A rejected change stays here until you
+		retry or discard it.
+	</p>
 	<div class="row">
 		<button class="btn" onclick={sync} disabled={blocked}>
 			{syncing ? 'Syncing…' : 'Sync now'}

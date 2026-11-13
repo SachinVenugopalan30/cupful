@@ -1,0 +1,88 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Segmented choice (meal type, theme): radios styled as a row of buttons. `.seg` is the same control
+   made of buttons with aria-pressed. */
+.segmented,
+.seg {
+	display: flex;
+	padding: var(--space-1);
+	gap: var(--space-1);
+	background: var(--surface-2);
+	border-radius: var(--radius-md);
+	border: 0;
+	margin: 0;
+}
+.segmented label {
+	flex: 1;
+	display: grid;
+	place-items: center;
+	min-height: calc(var(--touch) - var(--space-2));
+	padding: 0 var(--space-2);
+	border-radius: var(--radius-sm);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	cursor: pointer;
+}
+.segmented input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+.segmented label {
+	transition: background var(--dur-fast) var(--ease);
+}
+.segmented label:hover {
+	background: var(--surface);
+}
+/* Selected: a raised surface and a heavier weight, so it reads in both themes. */
+.segmented label:has(input:checked) {
+	background: var(--surface);
+	color: var(--text);
+	font-weight: var(--weight-bold);
+	box-shadow: inset 0 0 0 1px var(--border);
+}
+/* Meal-type radios take their meal color (soft fill, colored text and outline). */
+.segmented label:has(input[value='breakfast']:checked) {
+	background: var(--meal-breakfast-soft);
+	color: var(--meal-breakfast-text);
+	box-shadow: inset 0 0 0 1px var(--meal-breakfast);
+}
+.segmented label:has(input[value='lunch']:checked) {
+	background: var(--meal-lunch-soft);
+	color: var(--meal-lunch-text);
+	box-shadow: inset 0 0 0 1px var(--meal-lunch);
+}
+.segmented label:has(input[value='snack']:checked) {
+	background: var(--meal-snack-soft);
+	color: var(--meal-snack-text);
+	box-shadow: inset 0 0 0 1px var(--meal-snack);
+}
+.segmented label:has(input:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+}
+.seg {
+	display: inline-flex;
+}
+.seg button {
+	min-height: calc(var(--touch) - var(--space-2));
+	padding: 0 var(--space-4);
+	border: 0;
+	border-radius: var(--radius-sm);
+	background: transparent;
+	color: var(--text-muted);
+	font: inherit;
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	cursor: pointer;
+	transition:
+		background var(--dur-fast) var(--ease),
+		color var(--dur-fast) var(--ease);
+}
+.seg button:hover {
+	background: var(--surface);
+}
+.seg button[aria-pressed='true'] {
+	background: var(--surface);
+	color: var(--text);
+	font-weight: var(--weight-bold);
+	box-shadow: inset 0 0 0 1px var(--border);
+}

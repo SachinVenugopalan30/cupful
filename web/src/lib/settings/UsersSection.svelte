@@ -83,7 +83,7 @@
 </script>
 
 {#if isAdmin}
-	<SettingRow headingId="users-h" title="Users" description="One-time links for new accounts.">
+	<SettingRow headingId="users-h" anchorId="users" title="Users" description="One-time links for new accounts.">
 		{#if identityMode}
 			<p class="muted">
 				This server signs people in with Tailscale. Anyone in your tailnet gets an account when

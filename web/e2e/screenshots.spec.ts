@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Documentation screenshots (PLAN.md §17, D9). Skipped unless SCREENSHOTS is set. It runs its own
-// server and data dir, seeds a profile with two weeks of history, and writes three PNGs under
+// server and data dir, seeds a profile with two weeks of history, and writes four PNGs under
 // docs/screenshots/. Never wired into CI: run it by hand with `SCREENSHOTS=1 npx playwright test`.
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -38,7 +38,7 @@ async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
 	await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 }
 
-test('capture Today in light and dark at 360, then Trends at 1280', async ({ page }) => {
+test('capture Today at 360 in light and dark and at 1280 in dark, then Trends at 1280', async ({ page }) => {
 	// The demo user has 90 days of meals, budgets, steps and weigh-ins.
 	const demo = seedDemoUser(server, 90);
 	await login(page, demo);
@@ -55,6 +55,12 @@ test('capture Today in light and dark at 360, then Trends at 1280', async ({ pag
 	await setTheme(page, 'dark');
 	await expect(page.getByTestId('meal').first()).toBeVisible();
 	await page.screenshot({ path: join(OUT, 'today-360-dark.png') });
+
+	// Today on desktop: the jug column beside logging and meals.
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/');
+	await expect(page.getByTestId('meal').first()).toBeVisible();
+	await page.screenshot({ path: join(OUT, 'today-1280-dark.png') });
 
 	// Trends is a wide screen in the docs.
 	await page.setViewportSize({ width: 1280, height: 1400 });

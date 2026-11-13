@@ -16,8 +16,9 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - v0.3.2 softened the light theme panels to `#f8fafa` and kept input outlines at 3:1 contrast.
 - After v0.3.2: Review builds multi-product meals (optional name, appended products, inline scan or label entry, one save), Today offers the usual meal for the current slot as a one-tap chip, product rows use household units, and saved products are offered on exact AI item matches.
 - Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
-- Next: v0.4. Start with the known gaps below.
-- Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
+- Ember jug redesign (branch `ember-jug-redesign`): graphite and ember palette, Bricolage Grotesque and Instrument Sans, one motion scale (`--dur-*`, `#lib/motion`), the jug budget on Today, a designed desktop layout (top bar, two-column Today, grids on Activity and Trends, Settings section list), and one jug logo across app, favicon, PWA icons and README. The offline cache trims day reads to the 60 most recently used dates.
+- Next: v1.0. Release checklist: backup format version with a v0.3.2 restore test and upgrade notes, a security review, an axe accessibility check in Playwright, and the Brave camera note in the docs.
+- Known gaps: Brave may ignore camera focus hints.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout
@@ -49,9 +50,14 @@ web/                    SvelteKit app: /, /activity, /trends, /settings, /profil
   src/lib/today/UsualMeal.svelte     one-tap usual chip and its alternatives
   src/lib/today/usual.ts             usuals selection, dismissal, payload
   src/lib/today/productMatch.ts      exact saved-product match for AI items
+  src/lib/today/{Jug,TodayActivity,TodayWeek}.svelte   jug budget, steps and gym tiles, desktop week card
+  src/lib/activity/day.svelte.ts     Activity page controller (day, window, saves)
+  src/lib/settings/summaries.ts      one-line Settings row summaries from loaded state
+  src/lib/motion/                    CountUp and its tween; durations come from --dur-* tokens
+  src/lib/styles/                    tokens.css, then global.css importing base, buttons, forms, segmented, components, sheet, motion
   src/lib/trends/FrequentMeals.svelte  "Eaten most" card
   src/lib/sheet.ts      dialog exit lifecycle shared by the sheets
-  static/fonts/         self-hosted Manrope woff2 and its OFL licence
+  static/fonts/         self-hosted Bricolage Grotesque and Instrument Sans woff2 and their OFL licences
   src/service-worker.ts PWA shell cache, navigation fallback, update prompt
   e2e/                  Playwright against the real server
 docs/                   design, offline, import-export, backups, providers, google-health, shortcuts, decisions

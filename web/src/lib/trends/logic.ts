@@ -3,7 +3,7 @@
 
 import type { MealMix, TrendDay } from '../api';
 import { addDays, dayLabel } from '../date';
-import { formatWeight, round, type WeightUnit } from '../format';
+import { formatWeight, kgToWeight, round, type WeightUnit } from '../format';
 
 export const RANGES = [7, 30, 90, 365] as const;
 export type Range = (typeof RANGES)[number];
@@ -134,8 +134,23 @@ export function consistency(days: TrendDay[]) {
 	};
 }
 
-/** Columns for the consistency grid: one per visible day, capped at 30 so 365 days stay compact. */
-export const consistencyColumns = (n: number) => Math.min(Math.max(n, 1), 30);
+/** Columns for the consistency calendar: a week wide for 7 days, then 10, 15 and 30 across. */
+export const consistencyColumns = (n: number) => (n <= 7 ? Math.max(n, 1) : n <= 30 ? 10 : n <= 90 ? 15 : 30);
+
+/** Axis labels for a chart: start, middle and end, with the last day called "Today". */
+export function axisLabels(dates: string[], today: string): string[] {
+	return tickDates(dates, 3).map((d) => (d === today ? 'Today' : shortDate(d)));
+}
+
+/** The line under the average: how far it sits from the average budget. Empty when unknown. */
+export function averageNote(a: { intake: number | null; budget: number | null }): string {
+	if (a.intake === null || a.budget === null) return '';
+	const left = Math.round(a.budget - a.intake);
+	const budget = formatNumber(a.budget);
+	return left >= 0
+		? `${formatNumber(left)} kcal under your ${budget} kcal budget on average`
+		: `${formatNumber(-left)} kcal over your ${budget} kcal budget on average`;
+}
 
 // ---- weight ----
 
@@ -160,7 +175,7 @@ export function weightStats(days: TrendDay[]) {
 
 /** A signed change in the display unit, with the render's minus sign: "−1.4 kg". */
 export function signedWeightDelta(kg: number, unit: WeightUnit): string {
-	const v = round(kg / (unit === 'kg' ? 1 : 0.45359237), 1);
+	const v = round(kgToWeight(kg, unit), 1);
 	if (v === 0) return `0 ${unit}`;
 	return `${v < 0 ? '−' : '+'}${formatWeight(Math.abs(kg), unit)}`;
 }

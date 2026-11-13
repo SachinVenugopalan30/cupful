@@ -4,6 +4,7 @@
 // parallel and Google is not configured on the e2e server); everything else is the real server.
 import { expect, test, type Page } from '@playwright/test';
 import { login, saveProfile, seedDay, startCupful, type CupfulServer } from './helpers/server.ts';
+import { openRow } from './helpers/settings.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -77,7 +78,11 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	await expect(github).toBeVisible();
 	await expect(github).toHaveAttribute('href', 'https://github.com/SachinVenugopalan30/cupful');
 	// Steps card: 6,640 of a typical 8,000 is 83%.
-	await expect(page.locator('.fact', { hasText: 'of your typical day' })).toContainText('83%');
+	await expect(page.getByText('of 8,000 typical')).toBeVisible();
+	await expect(page.getByRole('meter', { name: 'Steps against your typical day' })).toHaveAttribute(
+		'aria-valuetext',
+		'83% of your typical day'
+	);
 	// Today's workouts, one with the name and one with a fallback.
 	const panel = page.getByRole('region', { name: 'Workouts' });
 	await expect(panel.getByTestId('workout')).toHaveCount(2);
@@ -89,14 +94,14 @@ test('cards, week strip and workouts panel; tapping a day selects it (workouts m
 	const cols = page.getByRole('region', { name: 'This week' }).getByRole('button');
 	await expect(cols).toHaveCount(7);
 	await expect(page.getByRole('button', { name: /^Yesterday: 9,100 steps, 40 min gym, Workout: Strength training/ })).toBeVisible();
-	const yesterday = page.getByRole('button', { name: /^Yesterday:/ });
-	await yesterday.hover();
-	await expect(yesterday.locator('.tip')).toBeVisible();
-	await expect(yesterday.locator('.tip')).toContainText('40 min gym');
-	await expect(yesterday.locator('.tip')).toContainText('Workout: Strength training');
-	const today = page.getByRole('button', { name: /^Today:/ });
-	await today.hover();
-	await expect(today.locator('.tip')).toContainText('Workouts: Morning run, Evening walk');
+	// Focusing a bar reads its day in the aria-live line; the selected day is read when none is focused.
+	const readout = page.getByRole('region', { name: 'This week' }).locator('.readout');
+	await expect(readout).toContainText('Today: 6,640 steps');
+	await page.getByRole('button', { name: /^Yesterday:/ }).focus();
+	await expect(readout).toContainText('40 min gym');
+	await expect(readout).toContainText('Workout: Strength training');
+	await page.getByRole('button', { name: /^Today:/ }).focus();
+	await expect(readout).toContainText('Workouts: Morning run, Evening walk');
 	await noSideScroll();
 
 	const weekBefore = await weekDates();
@@ -179,7 +184,7 @@ test('Activity carries the last weigh-in forward', async () => {
 	await expect(page.getByText(/Carried from Yesterday\./)).toBeVisible();
 });
 
-test('Today syncs steps when Google Health is connected', async () => {
+test('Activity syncs steps when Google Health is connected', async () => {
 	let syncs = 0;
 	await page.route(/\/api\/google$/, (route) =>
 		route.request().method() === 'GET'
@@ -202,7 +207,7 @@ test('Today syncs steps when Google Health is connected', async () => {
 	});
 
 	await page.setViewportSize({ width: 1280, height: 900 });
-	await page.goto('/');
+	await page.goto('/activity');
 	await page.getByRole('button', { name: 'Sync steps' }).click();
 	await expect(page.getByText('Steps synced.')).toBeVisible();
 	expect(syncs).toBe(1);
@@ -238,6 +243,7 @@ test('Settings: pick gym workout types and save (google mocked)', async () => {
 		return route.fulfill({ json: {} });
 	});
 	await page.goto('/settings');
+	await openRow(page.getByRole('region', { name: 'Google Health' }));
 	const strength = page.getByRole('checkbox', { name: 'Strength training' });
 	await expect(strength).toBeChecked();
 	await expect(page.getByText('Anything you enter by hand wins.')).toBeVisible();

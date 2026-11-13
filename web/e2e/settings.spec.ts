@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { expect, test, type Page } from '@playwright/test';
+import { openRow } from './helpers/settings.ts';
 
 async function signIn(page: Page) {
 	await page.goto('/');
@@ -31,7 +32,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	// Another spec may have saved a profile first; the set-up card shows only before that.
 	const { version } = await (await page.request.get('/api/profile')).json();
 	if (version === null) {
-		await expect(budget.getByText('Set up your profile to see your daily budget')).toBeVisible();
+		await expect(budget.getByText('Save your profile to see your daily plan')).toBeVisible();
 		await budget.getByRole('link', { name: 'Set up your profile' }).click();
 	} else {
 		await page.goto('/profile');
@@ -77,7 +78,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(profilePage.getByRole('status')).toHaveText('Profile saved. Your budget uses it from today.');
 
 	await page.getByRole('link', { name: 'Today' }).click();
-	await expect(budget.getByText('1800 kcal goal')).toBeVisible();
+	await expect(budget.getByText('1,800 kcal goal')).toBeVisible();
 	await budget.getByText("How it's worked out").click();
 	await expect(budget.getByText('Your goal', { exact: true })).toBeVisible();
 	await expect(budget.getByText('Gap to maintenance')).toBeVisible();
@@ -86,7 +87,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 
 	await page.getByRole('link', { name: 'Activity' }).click();
 	await expect(page.getByTestId('activity-budget')).toContainText('Burned beyond base');
-	await expect(page.getByTestId('activity-budget')).toContainText('Goal 1800 kcal');
+	await expect(page.getByTestId('activity-budget')).toContainText('Goal 1,800 kcal');
 	await expect(page.getByText('Used from this day until your next weigh-in.')).toBeVisible();
 
 	await page.goto('/profile');
@@ -97,7 +98,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 
 	// Providers: add one that can't be reached, test it, edit without touching the key, delete it.
 	await page.getByRole('link', { name: 'Settings' }).click();
-	const providers = page.getByRole('region', { name: 'AI providers' });
+	const providers = await openRow(page.getByRole('region', { name: 'AI providers' }));
 	await providers.getByRole('button', { name: 'Add provider' }).click();
 	await providers.getByLabel('Name', { exact: true }).fill('Nowhere');
 	await providers.getByLabel('Base URL').fill('http://127.0.0.1:9/v1');
@@ -126,7 +127,7 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await expect(providers.getByRole('status').first()).toHaveText('Deleted Nowhere.');
 	await expect(row).toHaveCount(0);
 
-	const about = page.getByRole('region', { name: 'About' });
+	const about = await openRow(page.getByRole('region', { name: 'About' }));
 	await expect(about.getByText(/Cupful \d+\.\d+\.\d+/)).toBeVisible();
 	await expect(about.getByRole('link', { name: 'Source code' })).toHaveAttribute('href', /^https?:\/\//);
 	await expect(about.getByText('AGPL-3.0-or-later', { exact: false }).first()).toBeVisible();
@@ -148,4 +149,16 @@ test('profile in lb/ft-in gives a budget; providers; about; no Google client', a
 	await page.getByLabel('Account menu for admin').click();
 	await page.getByRole('group', { name: 'Account menu' }).getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/login$/);
+});
+
+test('a settings row opens from the URL hash, and every row is open on a wide screen', async ({ page }) => {
+	await signIn(page);
+	const about = page.getByRole('region', { name: 'About' });
+	await page.goto('/settings#sync');
+	await expect(page.getByTestId('sync-section').getByRole('button', { name: 'Sync now' })).toBeVisible();
+	await expect(about.getByText(/App build/)).toBeHidden();
+
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await expect(about.getByText(/App build/)).toBeVisible();
+	await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 });

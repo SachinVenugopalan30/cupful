@@ -82,6 +82,7 @@
 
 <SettingRow
 	headingId="providers-h"
+	anchorId="providers"
 	title="AI providers"
 	description="Estimates use this provider. Keys stay on this server."
 >

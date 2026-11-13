@@ -58,9 +58,14 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 	};
 	expect(body.name).toBe('Cupful');
 	expect(body.display).toBe('standalone');
-	expect(body.background_color).toBe('#f2f5f6');
+	expect(body.background_color).toBe('#f1f3f6');
 
-	const pwaIcons = ['/icons/icon-192.png', '/icons/icon-512.png'];
+	const pwaIcons = [
+		'/icons/icon-192.png',
+		'/icons/icon-512.png',
+		'/icons/maskable-192.png',
+		'/icons/maskable-512.png'
+	];
 	for (const icon of [
 		...pwaIcons,
 		'/icons/apple-touch-icon.png',
@@ -72,8 +77,10 @@ test('manifest, icons, service worker and offline shell incl. a deep link', asyn
 		expect(res.headers()['content-type'], icon).toMatch(/image\/(png|svg\+xml|x-icon)/);
 	}
 	expect(body.icons).toEqual([
-		expect.objectContaining({ src: '/icons/icon-192.png', purpose: 'any maskable' }),
-		expect.objectContaining({ src: '/icons/icon-512.png', purpose: 'any maskable' })
+		expect.objectContaining({ src: '/icons/icon-192.png', purpose: 'any' }),
+		expect.objectContaining({ src: '/icons/icon-512.png', purpose: 'any' }),
+		expect.objectContaining({ src: '/icons/maskable-192.png', purpose: 'maskable' }),
+		expect.objectContaining({ src: '/icons/maskable-512.png', purpose: 'maskable' })
 	]);
 
 	await page.context().setOffline(true);

@@ -17,7 +17,9 @@ export function round(x: number, digits = 0): number {
 
 /** Whole kcal: "1235". */
 export function formatKcal(kcal: number): string {
-	return String(round(kcal));
+	const r = round(kcal);
+	// `|| 0` turns -0 into 0, which toLocaleString would print as "-0".
+	return (r || 0).toLocaleString('en-US');
 }
 
 /** Grams to one decimal, without a trailing ".0": "12.3", "150". */
@@ -31,6 +33,11 @@ export function formatWeight(kg: number, unit: WeightUnit): string {
 
 export function weightToKg(value: number, unit: WeightUnit): number {
 	return unit === 'kg' ? value : value * KG_PER_LB;
+}
+
+/** kg in the user's unit: the inverse of weightToKg. */
+export function kgToWeight(kg: number, unit: WeightUnit): number {
+	return unit === 'kg' ? kg : kg / KG_PER_LB;
 }
 
 export function formatHeight(cm: number, unit: HeightUnit): string {

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 32">
   <title>Cupful favicon, follows light/dark setting</title>
-  <style>.w{fill:#245f8a}.f{fill:#8a6a1f}@media (prefers-color-scheme:dark){.w{fill:#82c2e8}.f{fill:#e0c078}}</style>
-  <path class="w" d="M1.23 12.78A15 7 0 0 1 30.77 12.78Q31 14 30.5 15.09L27.24 22.27Q26 25 23 25H9Q6 25 4.76 22.27L1.5 15.09Q1 14 1.23 12.78ZM4 14A12 5 0 0 0 28 14A12 5 0 0 0 4 14Z" fill-rule="evenodd"/>
-  <path class="f" d="M7 14A9 3 0 0 0 25 14A9 3 0 0 0 7 14Z"/>
+  <style>.o{stroke:#12161b}.l{fill:#f2955a}.t{stroke:#f9bf98}@media (prefers-color-scheme:dark){.o{stroke:#edf1f5}.l{fill:#d9824f}.t{stroke:#e8a47c}}</style>
+  <path class="l" d="M6.5 18.2h17v5a3.7 3.7 0 0 1-3.7 3.7h-9.6a3.7 3.7 0 0 1-3.7-3.7z"/><path class="t" d="M6.5 19h17" stroke-width="1.6" fill="none"/>
+  <path class="o" d="M2 2.2Q5.2 4.4 5.2 8V23.2a5 5 0 0 0 5 5h9.6a5 5 0 0 0 5-5V3" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

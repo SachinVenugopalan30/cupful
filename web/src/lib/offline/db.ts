@@ -3,6 +3,7 @@
 // Every entry is user-scoped, and every function is safe to call during SSR (it no-ops).
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { dayReadDate, EVICT_AT, keysToEvict } from './evict.ts';
 import type { QueuedOp } from './types.ts';
 
 export type CacheEntry = {
@@ -107,11 +108,42 @@ export async function allQueueForUser(userId: number): Promise<QueuedOp[]> {
 
 // ---- API read cache ----
 
-// ponytail: no eviction or byte budget, logout is the only cleanup; add a per-user LRU or a quota
-// check when long-lived accounts fill a phone's storage.
+/**
+ * Stores one body. A day read that takes the user past EVICT_AT entries also trims their day reads
+ * to the 60 most recently used dates; below that a write costs one index count, not a scan.
+ */
 export async function putCacheEntry(entry: CacheEntry): Promise<void> {
 	if (!hasIndexedDB()) return;
-	await (await getDb()).put('cache', entry);
+	const db = await getDb();
+	await db.put('cache', entry);
+	if (dayReadDate(entry.path) === null) return;
+	if ((await db.countFromIndex('cache', 'by_user', entry.user_id)) <= EVICT_AT) return;
+
+	const entries = await db.getAllFromIndex('cache', 'by_user', entry.user_id);
+	const queued = await allQueueForUser(entry.user_id);
+	const keys = keysToEvict(entries, queuedDates(queued, entries));
+	if (!keys.length) return;
+	const tx = db.transaction('cache', 'readwrite');
+	for (const key of keys) tx.store.delete(key);
+	await tx.done;
+}
+
+/**
+ * Dates the write queue still touches: upserts and day patches name theirs; a delete names only
+ * an id, so every date whose cached meals mention that id is kept.
+ */
+function queuedDates(queued: QueuedOp[], entries: CacheEntry[]): Set<string> {
+	const dates = new Set<string>();
+	for (const { op } of queued) {
+		if (op.kind === 'meal.upsert' || op.kind === 'day.patch') dates.add(op.payload.date);
+		else {
+			for (const e of entries) {
+				const d = dayReadDate(e.path);
+				if (d && JSON.stringify(e.body).includes(op.payload.id)) dates.add(d);
+			}
+		}
+	}
+	return dates;
 }
 
 export async function getCacheEntry(

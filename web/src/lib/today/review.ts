@@ -36,3 +36,16 @@ export function aliasFailure(phrases: string[]): string {
 	const named = phrases.map((p) => `"${p}"`).join(', ');
 	return `The meal is saved, but I couldn't remember ${named}. Save again to retry, or close.`;
 }
+
+/**
+ * The quantity after a stepper press. 2 and up moves by 1, a quarter to 2 by a quarter; an off-grid
+ * typed value first lands on the next step in the direction pressed. Never below a quarter.
+ */
+export function stepQuantity(quantity: number, direction: 1 | -1): number {
+	// Up from 2 moves by 1; down to 2 or below moves by a quarter, so 1.75 ↔ 2 retrace each other.
+	const step = (direction > 0 ? quantity >= 2 : quantity > 2) ? 1 : 0.25;
+	const at = quantity / step;
+	const next =
+		direction > 0 ? (Math.floor(at + 1e-9) + 1) * step : (Math.ceil(at - 1e-9) - 1) * step;
+	return Math.max(0.25, Math.round(next * 100) / 100);
+}

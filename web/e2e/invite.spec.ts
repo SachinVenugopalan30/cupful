@@ -4,6 +4,7 @@
 // section stays hidden from a non-admin. This file runs its own server and data dir.
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { USER_A, randomPort, startCupful, type CupfulServer } from './helpers/server.ts';
+import { openRow } from './helpers/settings.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -34,7 +35,7 @@ async function signInAdmin(page: Page): Promise<void> {
 
 async function openUsers(page: Page) {
 	await page.getByRole('link', { name: 'Settings' }).click();
-	const users = page.getByRole('region', { name: 'Users' });
+	const users = await openRow(page.getByRole('region', { name: 'Users' }));
 	await expect(users).toBeVisible();
 	return users;
 }

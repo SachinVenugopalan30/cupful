@@ -57,8 +57,8 @@
 		font-size: var(--text-xs);
 		text-decoration: none;
 		transition:
-			background-color var(--dur-fast) var(--ease-state),
-			color var(--dur-fast) var(--ease-state);
+			background-color var(--dur-fast) var(--ease),
+			color var(--dur-fast) var(--ease);
 	}
 	.github:hover {
 		background: var(--surface-2);

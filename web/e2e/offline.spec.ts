@@ -3,6 +3,7 @@
 // Each test runs against this spec's own `cupful` binary + data dir so the shared Playwright
 // server and its database stay untouched.
 import { expect, test } from '@playwright/test';
+import { openRow } from './helpers/settings.ts';
 import {
 	USER_A,
 	USER_B,
@@ -197,7 +198,8 @@ test('another tab logging in as a different account does not flush this tab queu
 	await page.evaluate(() => window.dispatchEvent(new Event('online')));
 	await page.getByRole('link', { name: 'Settings' }).click();
 	await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-	await page.getByTestId('sync-section').getByRole('button', { name: 'Sync now' }).click();
+	const syncSection = await openRow(page.getByTestId('sync-section'));
+	await syncSection.getByRole('button', { name: 'Sync now' }).click();
 	await expect(page.getByTestId('sync-bar')).toContainText(
 		'Changes on this device belong to another account.',
 		{ timeout: 30_000 }

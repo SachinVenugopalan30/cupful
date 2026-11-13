@@ -5,7 +5,7 @@
 	import type { Product, SavedProduct } from '#lib/api.ts';
 	import { matchProduct } from './productMatch';
 	import ReviewProductPicker from './ReviewProductPicker.svelte';
-	import { MACROS } from './review';
+	import { MACROS, stepQuantity } from './review';
 	import {
 		choose,
 		itemReady,
@@ -78,6 +78,10 @@
 	function setQuantity(e: Event) {
 		item = withQuantity(item, num(e));
 	}
+
+	function bump(direction: 1 | -1) {
+		item = withQuantity(item, stepQuantity(item.quantity ?? 1, direction));
+	}
 </script>
 
 <li class="item" class:needs={!ready}>
@@ -110,6 +114,7 @@
 			{/if}
 		{/if}
 		{#if !ready}<span class="chip chip-warning">Needs your numbers</span>{/if}
+		<span class="num row-kcal">{formatKcal(item.kcal ?? 0)} <small>kcal</small></span>
 	</p>
 
 	{#if suggested}
@@ -141,32 +146,35 @@
 		</fieldset>
 	{/if}
 
-	<div class="nums">
+	<div class="qty">
 		{#if item.portions?.length && item.portion}
-			<div class="field">
-				<label for="unit-{item.id}">Unit</label>
-				<select id="unit-{item.id}" value={item.portion.unit} onchange={pickUnit}>
-					{#each item.portions as p (p.unit)}
-						<option value={p.unit}>{p.unit} ({formatGrams(p.grams)} {amountUnit})</option>
-					{/each}
-				</select>
-			</div>
-			<div class="field">
-				<label for="quantity-{item.id}">Quantity</label>
-				<input
-					id="quantity-{item.id}"
-					type="number"
-					inputmode="decimal"
-					min="0"
-					step="any"
-					value={item.quantity ?? 1}
-					oninput={setQuantity}
-					onblur={(e) => restoreAmount(e, item.quantity ?? 1)}
-				/>
-			</div>
+			<button type="button" class="step" aria-label="Less {item.name || 'item'}" onclick={() => bump(-1)}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
+			</button>
+			<label class="visually-hidden" for="quantity-{item.id}">Quantity</label>
+			<input
+				id="quantity-{item.id}"
+				class="qty-input"
+				type="number"
+				inputmode="decimal"
+				min="0"
+				step="any"
+				value={item.quantity ?? 1}
+				oninput={setQuantity}
+				onblur={(e) => restoreAmount(e, item.quantity ?? 1)}
+			/>
+			<button type="button" class="step" aria-label="More {item.name || 'item'}" onclick={() => bump(1)}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" /></svg>
+			</button>
+			<label class="visually-hidden" for="unit-{item.id}">Unit</label>
+			<select id="unit-{item.id}" class="unit" value={item.portion.unit} onchange={pickUnit}>
+				{#each item.portions as p (p.unit)}
+					<option value={p.unit}>{p.unit} ({formatGrams(p.grams)} {amountUnit})</option>
+				{/each}
+			</select>
 		{/if}
-		<div class="field">
-			<label for="grams-{item.id}">Grams</label>
+		<span class="grams">
+			<label class="visually-hidden" for="grams-{item.id}">Grams</label>
 			<input
 				id="grams-{item.id}"
 				type="number"
@@ -177,8 +185,11 @@
 				oninput={setGrams}
 				onblur={(e) => restoreAmount(e, item.grams === null ? '' : Number(formatGrams(item.grams)))}
 			/>
-		</div>
-		{#if item.editable || open}
+			<span aria-hidden="true">{amountUnit}</span>
+		</span>
+	</div>
+	{#if item.editable || open}
+		<div class="nums">
 			{#each MACROS as [k, l] (k)}
 				<div class="field">
 					<label for="{k}-{item.id}">{l}</label>
@@ -194,17 +205,14 @@
 					/>
 				</div>
 			{/each}
-		{:else}
-			<p class="values small">
-				<span class="num kcal">{formatKcal(item.kcal ?? 0)} kcal</span>
-				<span class="muted num"
-					>P {formatGrams(item.protein_g ?? 0)} · C {formatGrams(item.carbs_g ?? 0)} · F {formatGrams(
-						item.fat_g ?? 0
-					)} g</span
-				>
-			</p>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<p class="values small muted num">
+			P {formatGrams(item.protein_g ?? 0)} · C {formatGrams(item.carbs_g ?? 0)} · F {formatGrams(
+				item.fat_g ?? 0
+			)} g
+		</p>
+	{/if}
 
 	<div class="row actions">
 		{#if !item.editable}
@@ -245,14 +253,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-lg);
-		background: var(--surface);
+		padding: var(--space-3);
+		border-top: 1px solid var(--border);
+	}
+	.item:first-child {
+		border-top: 0;
 	}
 	.item.needs {
-		border-color: var(--warning);
-		box-shadow: inset 0 0 0 1px var(--warning);
+		box-shadow: inset 3px 0 0 var(--warning);
 	}
 	.item-head {
 		display: flex;
@@ -286,6 +294,19 @@
 	}
 	.meta {
 		gap: var(--space-2);
+		align-items: center;
+	}
+	.row-kcal {
+		margin-left: auto;
+		font-family: var(--font-display);
+		font-size: var(--text-md);
+		font-weight: 700;
+	}
+	.row-kcal small {
+		font-family: var(--font-sans);
+		font-weight: var(--weight-regular, 400);
+		color: var(--text-muted);
+		font-size: var(--text-xs);
 	}
 	.suggest {
 		gap: var(--space-2);
@@ -310,6 +331,73 @@
 		min-height: var(--touch);
 		flex-wrap: nowrap;
 	}
+	/* The amount row: - qty + unit on the left, grams on the right. */
+	.qty {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.step {
+		display: grid;
+		place-items: center;
+		flex: none;
+		inline-size: var(--touch);
+		block-size: var(--touch);
+		padding: 0;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-2);
+		color: var(--text);
+		cursor: pointer;
+		transition:
+			scale var(--dur-fast) var(--ease),
+			background var(--dur-fast) var(--ease);
+	}
+	.step:hover {
+		background: var(--surface);
+	}
+	.step:active {
+		scale: 0.94;
+	}
+	.step svg {
+		inline-size: 1.125rem;
+		block-size: 1.125rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+	}
+	.qty-input {
+		inline-size: 4.5rem;
+		text-align: center;
+		font-weight: 600;
+	}
+	/* Narrow: the unit picker drops under the stepper, so nothing is squeezed. */
+	.unit {
+		order: 3;
+		inline-size: auto;
+		flex: 1 1 100%;
+		min-inline-size: 0;
+	}
+	@media (min-width: 40rem) {
+		.unit {
+			order: 0;
+			flex: 1 1 8rem;
+		}
+	}
+	.grams {
+		order: 2;
+		margin-inline-start: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		color: var(--text-muted);
+	}
+	.grams input {
+		inline-size: 5rem;
+		text-align: end;
+	}
 	.nums {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
@@ -317,16 +405,14 @@
 		align-items: end;
 	}
 	.values {
-		grid-column: 1 / -1;
-		display: flex;
-		flex-direction: column;
-		padding-bottom: var(--space-1);
-	}
-	.kcal {
-		font-size: var(--text-md);
-		font-weight: var(--weight-bold);
+		margin: 0;
 	}
 	.actions {
 		gap: var(--space-1);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.step:active {
+			scale: 1;
+		}
 	}
 </style>

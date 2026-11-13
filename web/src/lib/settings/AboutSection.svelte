@@ -34,7 +34,7 @@
 	});
 </script>
 
-<SettingRow headingId="about-h" title="About" description="Free software under AGPL-3.0-or-later.">
+<SettingRow headingId="about-h" anchorId="about" title="About" description="Free software under AGPL-3.0-or-later.">
 	<p>App build <span class="num">{version}</span></p>
 	{#if server}
 		<p>

@@ -1,0 +1,92 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Dialogs: a bottom sheet on phones, centered on wide screens. Exit lifecycle lives in sheet.ts. */
+
+/* ---- dialog: a bottom sheet on phones, centered on wide screens ---- */
+
+dialog.sheet {
+	width: 100%;
+	max-width: var(--content-max);
+	max-height: 92dvh;
+	margin: auto auto 0;
+	padding: var(--space-5) var(--gutter) calc(var(--space-5) + env(safe-area-inset-bottom));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	/* Focused fields scroll clear of the sticky header. */
+	scroll-padding-block: 5rem var(--space-5);
+	border: 1px solid var(--border);
+	border-bottom: 0;
+	border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: var(--shadow-sheet);
+}
+dialog.sheet {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity var(--dur-exit) var(--ease-in),
+		transform var(--dur-exit) var(--ease-in);
+}
+dialog.sheet[open] {
+	transition-duration: var(--dur-enter);
+	transition-timing-function: var(--ease);
+}
+@starting-style {
+	dialog.sheet[open] {
+		opacity: 0;
+		transform: translateY(16px) scale(0.985);
+	}
+}
+dialog.sheet[data-closing] {
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(16px) scale(0.985);
+	transition-duration: var(--dur-exit);
+}
+dialog.sheet::backdrop {
+	opacity: 0;
+	transition: opacity var(--dur-exit) var(--ease-in);
+}
+dialog.sheet[open]::backdrop {
+	opacity: 1;
+	transition-duration: var(--dur-enter);
+	transition-timing-function: var(--ease);
+}
+@starting-style {
+	dialog.sheet[open]::backdrop {
+		opacity: 0;
+	}
+}
+dialog.sheet[data-closing]::backdrop {
+	opacity: 0;
+	transition-duration: var(--dur-exit);
+}
+dialog.sheet::backdrop {
+	background: rgb(5 8 12 / 0.55);
+}
+@media (min-width: 48rem) {
+	dialog.sheet {
+		margin: auto;
+		border-bottom: 1px solid var(--border);
+		border-radius: var(--radius-sheet);
+	}
+}
+/* The sheet's title row (title + Cancel/Close) stays in view while the sheet scrolls. */
+.sheet-head {
+	position: sticky;
+	top: calc(-1 * var(--space-5));
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	margin: calc(-1 * var(--space-5)) calc(-1 * var(--gutter)) 0;
+	padding: var(--space-5) var(--gutter) var(--space-2);
+	background: var(--surface);
+}
+.sheet-coral .sheet-head h2 {
+	color: var(--coral-text);
+}
+.sheet-head h2 {
+	overflow-wrap: anywhere;
+}
