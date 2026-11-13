@@ -100,7 +100,7 @@ Everything else is online-only. That includes auth, `/api/ai/providers`, ingest 
 
 Cache keys are `<user_id>:<path and query>`. Logging out clears that user's queue, cache and cached session, and warns first if unsynced changes would be lost. Another account's rows are untouched.
 
-Cache growth is bounded only by logging out. There is no size cap or eviction yet.
+Day reads (budget, meals, day) are kept for the 60 newest dates per user. Writing one drops older ones, except dates a queued op still touches. Other entries (profile, products, trends) are not evicted; logging out clears everything.
 
 ## Write-through
 

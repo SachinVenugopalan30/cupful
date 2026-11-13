@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it } from 'vitest';
 import {
+	allCacheForUser,
 	allQueueForUser,
 	clearUserData,
 	deleteMeta,
@@ -110,5 +111,26 @@ describe('offline db', () => {
 		expect(await getMeta('hello')).toEqual({ n: 1 });
 		await deleteMeta('hello');
 		expect(await getMeta('hello')).toBeUndefined();
+	});
+
+	it('keeps the 60 newest dates and every date the queue references', async () => {
+		const user = 9008;
+		const date = (i: number) => new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10);
+		const put = (path: string) =>
+			putCacheEntry({ key: `${user}:${path}`, user_id: user, path, body: {}, saved_at: 1 });
+		await put('/api/profile');
+		const held = queued(user);
+		held.op = { op_id: held.op_id, kind: 'day.patch', at: '2026-01-01T00:00:00.000Z', payload: { date: date(0) } };
+		await putQueueItem(held);
+		for (let i = 0; i < 63; i++) await put(`/api/days/${date(i)}`);
+
+		const left = (await allCacheForUser(user)).map((e) => e.path);
+		expect(left).toContain('/api/profile');
+		expect(left).toContain(`/api/days/${date(0)}`); // queued, so kept
+		expect(left).not.toContain(`/api/days/${date(1)}`);
+		expect(left).not.toContain(`/api/days/${date(2)}`);
+		expect(left).toContain(`/api/days/${date(3)}`);
+		expect(left.filter((p) => p.startsWith('/api/days/'))).toHaveLength(61);
+		await clearUserData(user);
 	});
 });

@@ -17,7 +17,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - After v0.3.2: Review builds multi-product meals (optional name, appended products, inline scan or label entry, one save), Today offers the usual meal for the current slot as a one-tap chip, product rows use household units, and saved products are offered on exact AI item matches.
 - Releases use an explicit version-bump pull request; `main` is protected, and `release.yml` publishes both architectures, tags, and creates the GitHub release after merge.
 - Next: v0.4. Start with the known gaps below.
-- Known gaps: the offline cache has no eviction. Brave may ignore camera focus hints.
+- Known gaps: Brave may ignore camera focus hints.
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
 
 ## Layout
