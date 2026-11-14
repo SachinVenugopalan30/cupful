@@ -99,6 +99,27 @@ describe('write-through', () => {
 		expect((await getCachedBody<{ meals: Meal[] }>(userId, path))?.meals).toEqual([]);
 	});
 
+	it('takes a moved meal off its old day and puts it on the new one', async () => {
+		const userId = newUser();
+		const from = '2026-10-29';
+		const to = '2026-10-30';
+		const fromPath = `/api/meals?date=${from}`;
+		const toPath = `/api/meals?date=${to}`;
+		await boot(userId);
+		await putCachedBody(userId, fromPath, { meals: [meal('m1', from, [item('old', 100)])] });
+		await putCachedBody(userId, toPath, { meals: [] });
+
+		// An edit with a new date moves the meal, so both cached days change.
+		await enqueue([mealUpsert(mealIn('m1', to, [item('i1', 300)]))], userId);
+		serving(userId, applied);
+		await flush(userId);
+
+		expect((await getCachedBody<{ meals: Meal[] }>(userId, fromPath))?.meals).toEqual([]);
+		expect(
+			(await getCachedBody<{ meals: Meal[] }>(userId, toPath))?.meals.map((m) => m.id)
+		).toEqual(['m1']);
+	});
+
 	it('invalidates cached history and trends on a meal write', async () => {
 		const userId = newUser();
 		const date = '2026-10-29';

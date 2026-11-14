@@ -206,7 +206,8 @@ function listFrom<T>(body: unknown, field: string): T[] | null {
 }
 
 async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
-	// A delete doesn't care about the date; the overlay removes by id for every cached day.
+	// Neither kind cares which day a cached body holds: an upsert adds or replaces its own date
+	// and removes the meal from any other date (an edit can move it), and a delete removes it.
 	const upsertDate = item.op.kind === 'meal.upsert' ? item.op.payload.date : '';
 	// The row may be `failed` when it is retried; the overlay only applies live rows.
 	const pending = { ...item, status: 'pending' as const };
@@ -217,7 +218,6 @@ async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
 		if (list === null) continue;
 
 		const day = new URL(entry.path, 'http://cupful.invalid').searchParams.get('date') ?? upsertDate;
-		if (item.op.kind === 'meal.upsert' && day !== item.op.payload.date) continue;
 		const next = overlayMeals(list, [pending], day);
 		await putCachedBody(userId, entry.path, { ...(entry.body as object), meals: next });
 	}
