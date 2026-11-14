@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, expect, it, vi } from 'vitest';
 import type { DraftItem } from './meal';
-import { aliasFailure, MACROS, rememberAliases, stepQuantity } from './review';
+import { aliasFailure, logDateError, MACROS, rememberAliases, savedNotice, stepQuantity } from './review';
 
 const item = (over: Partial<DraftItem> = {}): DraftItem => ({
 	id: 'item',
@@ -103,5 +103,35 @@ describe('stepQuantity', () => {
 		expect(stepQuantity(0.25, -1)).toBe(0.25);
 		expect(stepQuantity(0.3, -1)).toBe(0.25);
 		expect(stepQuantity(0, -1)).toBe(0.25);
+	});
+});
+
+describe('logDateError', () => {
+	it('accepts today and earlier days', () => {
+		expect(logDateError('2026-11-13', '2026-11-13')).toBe('');
+		expect(logDateError('2025-01-02', '2026-11-13')).toBe('');
+	});
+	it('rejects a blank or future day', () => {
+		expect(logDateError('', '2026-11-13')).toBe('Pick the day you ate this.');
+		expect(logDateError('2026-11-14', '2026-11-13')).toBe('Pick today or an earlier day.');
+	});
+	it('rejects days that do not exist and accepts a leap day', () => {
+		expect(logDateError('2026-02-30', '2026-11-13')).toBe('Pick the day you ate this.');
+		expect(logDateError('2026-00-10', '2026-11-13')).toBe('Pick the day you ate this.');
+		expect(logDateError('2024-02-29', '2026-11-13')).toBe('');
+	});
+});
+
+describe('savedNotice', () => {
+	const today = '2026-11-13';
+	it('stays quiet about the date when the meal lands on the day shown', () => {
+		expect(savedNotice('new', today, today, today)).toEqual({ status: 'Meal logged.', elsewhere: null });
+		expect(savedNotice('repeat', today, today, today)).toEqual({ status: 'Meal logged.', elsewhere: null });
+		expect(savedNotice('edit', today, today, today)).toEqual({ status: 'Meal updated.', elsewhere: null });
+	});
+	it('names the other day a meal was logged, copied or moved to', () => {
+		expect(savedNotice('new', '2026-11-11', today, today)).toEqual({ status: 'Logged on Wed 11 Nov.', elsewhere: '2026-11-11' });
+		expect(savedNotice('repeat', today, '2026-11-12', today)).toEqual({ status: 'Copied to today.', elsewhere: today });
+		expect(savedNotice('edit', '2026-11-12', today, today)).toEqual({ status: 'Moved to yesterday.', elsewhere: '2026-11-12' });
 	});
 });

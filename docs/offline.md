@@ -106,7 +106,7 @@ Day reads (budget, meals, day) are trimmed to the 60 most recently used dates pe
 
 When the server answers `applied` or `duplicate`, the queue updates the cached read bodies for that user before deleting the queue row.
 
-- A meal upsert or delete patches the cached meals body for the affected date and invalidates cached history and trends bodies, because both group meals across days.
+- A meal upsert or delete patches the cached meal bodies and invalidates cached history and trends bodies, because both group meals across days. An upsert also takes the meal off any other cached date, because an edit can move it.
 - A day patch patches the cached day body for that date.
 - Cached budget and trends bodies that cover the affected date are invalidated. The next read fetches fresh server math.
 

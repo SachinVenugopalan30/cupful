@@ -22,7 +22,7 @@ function totals(items: Meal['items']): Macros {
 	return sum;
 }
 
-/** Applies queued meal upserts and deletes for `date`; other dates are left alone. */
+/** Applies queued meal upserts and deletes for `date`; an upsert for another date only removes that meal here. */
 export function overlayMeals(meals: Meal[], ops: QueuedOp[], date: string): Meal[] {
 	let result = meals.map((meal) => ({ ...meal, items: [...meal.items], totals: { ...meal.totals } }));
 
@@ -36,7 +36,11 @@ export function overlayMeals(meals: Meal[], ops: QueuedOp[], date: string): Meal
 		if (op.kind !== 'meal.upsert') continue;
 
 		const payload = op.payload;
-		if (payload.date !== date) continue;
+		// A meal moved to another date leaves this one.
+		if (payload.date !== date) {
+			result = result.filter((meal) => meal.id !== payload.id);
+			continue;
+		}
 
 		const at = Date.parse(op.at);
 		const updated_at = Number.isNaN(at) ? Date.now() : at;

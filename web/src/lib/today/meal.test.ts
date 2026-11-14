@@ -12,8 +12,6 @@ import {
 	itemReady,
 	mealFromDraft,
 	repeatDraft,
-	repeatOutcome,
-	repeatTitle,
 	sumItems,
 	withGrams,
 	withValue
@@ -276,22 +274,6 @@ describe('repeatDraft', () => {
 		const totals = sumItems(out.items, 1);
 		expect(totals).toMatchObject({ kcal: 560, protein_g: 34, carbs_g: 86 });
 		expect(totals.fat_g).toBeCloseTo(7.8);
-	});
-});
-
-describe('repeatTitle', () => {
-	it('names the target day', () => {
-		expect(repeatTitle('2026-10-28', '2026-10-28')).toBe('Repeat meal for Today');
-		expect(repeatTitle('2026-10-27', '2026-10-28')).toBe('Repeat meal for Yesterday');
-	});
-});
-
-describe('repeatOutcome', () => {
-	it('logs a repeat on the day being viewed', () => {
-		expect(repeatOutcome('2026-10-28', '2026-10-28')).toEqual({ copied: false, status: 'Meal logged.' });
-	});
-	it('copies when the target differs from the shown day', () => {
-		expect(repeatOutcome('2026-10-28', '2026-10-27')).toEqual({ copied: true, status: 'Meal copied.' });
 	});
 });
 

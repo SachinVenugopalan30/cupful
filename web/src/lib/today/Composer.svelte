@@ -14,7 +14,8 @@
 	import { ApiError, errorMessage, estimate, type HistoryMeal } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
 	import { defaultMealType } from '#lib/products/logic.ts';
-	import { today } from '#lib/session.svelte.ts';
+	import { day, today } from '#lib/session.svelte.ts';
+	import { dayLabel } from '#lib/date.ts';
 	import Review from './Review.svelte';
 	import RepeatSheet from './RepeatSheet.svelte';
 	import {
@@ -25,9 +26,9 @@
 		manualDraft,
 		reencodePhoto,
 		repeatDraft,
-		repeatTitle,
 		type Draft
 	} from './meal';
+	import { savedNotice } from './review';
 
 	let { date, onSaved }: { date: string; onSaved: () => void } = $props();
 
@@ -117,7 +118,7 @@
 		repeatSaved = false;
 		review = {
 			draft: repeatDraft(meal, date),
-			title: repeatTitle(date, today())
+			title: 'Repeat meal'
 		};
 	}
 
@@ -133,14 +134,28 @@
 		repeatSaved = false;
 	}
 
-	function onRepeatSaved() {
+	// A meal saved to another day isn't in this day's list, so the composer says where it went.
+	let elsewhere = $state<{ status: string; date: string } | null>(null);
+	const noteFor = (kind: 'new' | 'repeat', savedOn: string) => {
+		const n = savedNotice(kind, savedOn, date, today());
+		return n.elsewhere ? { status: n.status, date: n.elsewhere } : null;
+	};
+	// The note is about the day it was shown on; moving to another day drops it.
+	$effect(() => {
+		void date;
+		elsewhere = null;
+	});
+
+	function onRepeatSaved(_queued: boolean, savedOn: string) {
 		repeatSaved = true;
+		elsewhere = noteFor('repeat', savedOn);
 		onSaved();
 	}
 
-	function saved() {
+	function saved(_queued: boolean, savedOn: string) {
 		description = '';
 		setPhoto(null);
+		elsewhere = noteFor('new', savedOn);
 		onSaved();
 	}
 
@@ -233,6 +248,14 @@
 			</p>
 		</div>
 	</form>
+	{#if elsewhere}
+		{@const to = elsewhere.date}
+		<div class="notice notice-info row elsewhere">
+			<p role="status">{elsewhere.status}</p>
+			<button class="btn" onclick={() => (day.date = to)}>View {to === today() ? 'today' : dayLabel(to, today())}</button>
+			<button class="btn btn-quiet" onclick={() => (elsewhere = null)}>Dismiss</button>
+		</div>
+	{/if}
 </section>
 
 {#if review}
@@ -305,6 +328,9 @@
 	}
 	.estimate {
 		margin-left: auto;
+	}
+	.elsewhere {
+		margin-top: var(--space-3);
 	}
 	.foot {
 		display: flex;

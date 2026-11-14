@@ -5,8 +5,9 @@
     draft: Draft            the meal to review (copied on open; the caller's object isn't changed)
     title: string           sheet heading
     onClose: () => void     the sheet closed (saved or not); unmount it
-    onSaved?: (queued: boolean) => void  the meal was saved; queued is true when it went to the
-                            offline queue instead of the server
+    onSaved?: (queued: boolean, date: string) => void  the meal was saved on `date` (the
+                            "Log on" field, which may differ from the draft's); queued is true when
+                            it went to the offline queue instead of the server
     onStale?: () => void    a newer write already won; refetch (nothing was saved)
   Saves the full meal with mealUpsert + sendOps, multiplier applied first (mealFromDraft). A write
   that lands in the offline queue counts as saved; then the "always use this" aliases (REST) run
@@ -16,6 +17,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { errorMessage, foods, products, type SavedProduct } from '#lib/api.ts';
 	import { connection } from '#lib/offline/state.svelte.ts';
+	import { today } from '#lib/session.svelte.ts';
 	import { formatGrams, formatKcal } from '#lib/format.ts';
 	import { mealUpsert, sendOps } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
@@ -33,7 +35,7 @@
 		useProduct,
 		type Draft
 	} from './meal';
-	import { aliasFailure, rememberAliases } from './review';
+	import { aliasFailure, logDateError, rememberAliases } from './review';
 	import ReviewItem from './ReviewItem.svelte';
 	import ReviewProductPicker from './ReviewProductPicker.svelte';
 
@@ -47,7 +49,7 @@
 		draft: Draft;
 		title: string;
 		onClose: () => void;
-		onSaved?: (queued: boolean) => void;
+		onSaved?: (queued: boolean, date: string) => void;
 		onStale?: () => void;
 	} =
 		$props();
@@ -112,6 +114,10 @@
 		// The parent may swap onSaved while this sheet is open; the save started under the old prop.
 		const done = onSaved;
 		error = '';
+		// The date field stays editable while saving; report the date the meal was sent with.
+		const logDate = d.date;
+		const dateError = logDateError(logDate, today());
+		if (dateError) return void (error = dateError);
 		if (!d.items.length) return void (error = 'Add at least one item.');
 		if (missing) return void (error = 'Fill in the highlighted items first.');
 		saving = true;
@@ -129,13 +135,13 @@
 			}
 			// Queued is saved. Aliases are online-only configuration, so close without writing them.
 			if (r.status === 'queued' || !connection.online) {
-				done?.(queued);
+				done?.(queued, logDate);
 				close(true);
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
 			const failed = await rememberAliases(d.items, foods.alias);
-			done?.(queued);
+			done?.(queued, logDate);
 			if (failed.length) {
 				error = aliasFailure(failed);
 				return;
@@ -168,6 +174,8 @@
 				<label><input type="radio" name="review-type-{uid}" value={t} bind:group={d.meal_type} />{capitalize(t)}</label>
 			{/each}
 		</fieldset>
+
+		<div class="field"><label for="review-date-{uid}">Log on</label><input id="review-date-{uid}" type="date" required max={today()} bind:value={d.date} /></div>
 
 		<div class="field"><label for="review-name-{uid}">Name <span class="muted">(optional)</span></label><input id="review-name-{uid}" maxlength={MAX_DESCRIPTION} bind:value={d.description} /></div>
 

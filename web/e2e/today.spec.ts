@@ -64,7 +64,7 @@ test.describe('without an AI provider', () => {
 		// Depends on the previous edit test: the meal is 332 kcal.
 		await page.getByTestId('meal').locator('summary').click();
 		await page.getByTestId('meal').getByRole('button', { name: 'Repeat', exact: true }).click();
-		const sheet = page.getByRole('dialog', { name: /Repeat meal for/ });
+		const sheet = page.getByRole('dialog', { name: 'Repeat meal' });
 		await expect(sheet).toBeVisible();
 		await expect(sheet.locator('.totals')).toContainText('332 kcal');
 		await sheet.getByRole('button', { name: 'Save meal' }).click();
@@ -100,14 +100,14 @@ test.describe('without an AI provider', () => {
 		await picker.getByRole('button', { name: 'Clear search' }).click();
 		await picker.getByLabel('Search recent meals').fill('yesterday');
 		await picker.getByRole('button', { name: /yesterday oats/ }).click();
-		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		const review = page.getByRole('dialog', { name: 'Repeat meal' });
 		await expect(review.locator('.totals')).toContainText('380 kcal');
 		await review.getByRole('button', { name: 'Cancel' }).click();
 		await expect(review).toBeHidden();
 		await expect(picker).toBeVisible();
 		await expect(picker.getByLabel('Search recent meals')).toHaveValue('yesterday');
 		await picker.getByRole('button', { name: /yesterday oats/ }).click();
-		const reviewAgain = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		const reviewAgain = page.getByRole('dialog', { name: 'Repeat meal' });
 		await expect(reviewAgain.locator('.totals')).toContainText('380 kcal');
 		await reviewAgain.getByRole('button', { name: 'Save meal' }).click();
 		await expect(reviewAgain).toBeHidden();
@@ -125,8 +125,8 @@ test.describe('without an AI provider', () => {
 
 		const meal = page.getByTestId('meal').filter({ hasText: 'copy seed' });
 		await meal.locator('summary').click();
-		await meal.getByRole('button', { name: 'Copy to today' }).click();
-		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		await meal.getByRole('button', { name: 'Repeat' }).click();
+		const review = page.getByRole('dialog', { name: 'Repeat meal' });
 		await expect(review).toBeVisible();
 		await review.getByRole('button', { name: 'Save meal' }).click();
 		await expect(review).toBeHidden();
@@ -135,12 +135,43 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByTestId('meal').filter({ hasText: 'copy seed' })).toHaveCount(1);
 	});
 
+	test('Log a meal on another day, then move it back', async ({ page }) => {
+		await page.getByLabel('What did you eat?').fill('move seed');
+		await page.getByRole('button', { name: 'Enter by hand' }).click();
+		const entry = page.getByRole('dialog', { name: 'Enter by hand' });
+		await fillItem(page, 0, ['Move seed', '100', '250', '10', '30', '8']);
+		const yesterday = await page.evaluate(() => {
+			const d = new Date();
+			d.setDate(d.getDate() - 1);
+			return d.toLocaleDateString('en-CA');
+		});
+		await entry.getByLabel('Log on').fill(yesterday);
+		await entry.getByRole('button', { name: 'Save meal' }).click();
+		await expect(entry).toBeHidden();
+		await expect(page.getByText('Logged on yesterday.')).toBeVisible();
+		await expect(page.getByTestId('meal').filter({ hasText: 'move seed' })).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'View Yesterday' }).click();
+		await expect(page.getByText('Logged on yesterday.')).toBeHidden();
+		const meal = page.getByTestId('meal').filter({ hasText: 'move seed' });
+		await meal.locator('summary').click();
+		await meal.getByRole('button', { name: 'Edit' }).click();
+		const edit = page.getByRole('dialog', { name: 'Edit meal' });
+		await edit.getByLabel('Log on').fill(await page.evaluate(() => new Date().toLocaleDateString('en-CA')));
+		await edit.getByRole('button', { name: 'Save meal' }).click();
+		await expect(edit).toBeHidden();
+		await expect(page.getByText('Moved to today.')).toBeVisible();
+		await expect(meal).toHaveCount(0);
+		await page.getByRole('button', { name: 'View today' }).click();
+		await expect(page.getByTestId('meal').filter({ hasText: 'move seed' })).toHaveCount(1);
+	});
+
 	test('Repeat does not clear the composer draft', async ({ page }) => {
 		await page.getByLabel('What did you eat?').fill('keep this description');
 		await page.getByRole('button', { name: 'Repeat a meal' }).click();
 		const picker = page.getByRole('dialog', { name: /Repeat onto Today/ });
 		await picker.locator('ul.list button').first().click();
-		const review = page.getByRole('dialog', { name: 'Repeat meal for Today' });
+		const review = page.getByRole('dialog', { name: 'Repeat meal' });
 		await review.getByRole('button', { name: 'Save meal' }).click();
 		await expect(review).toBeHidden();
 		await expect(page.getByLabel('What did you eat?')).toHaveValue('keep this description');

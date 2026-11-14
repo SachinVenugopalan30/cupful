@@ -18,7 +18,7 @@
 	import { sendOps } from '#lib/sync/index.ts';
 	import { staleNotice } from '#lib/sync/stale.ts';
 	import Review from './Review.svelte';
-	import { repeatDraft, repeatTitle, type Draft } from './meal';
+	import { repeatDraft, type Draft } from './meal';
 	import {
 		USUAL_DAYS,
 		USUAL_LIMIT,
@@ -87,7 +87,7 @@
 
 	function openReview(meal: HistoryMeal) {
 		error = '';
-		review = { draft: repeatDraft(meal, date), title: repeatTitle(date, today()) };
+		review = { draft: repeatDraft(meal, date), title: 'Repeat meal' };
 	}
 
 	async function log() {

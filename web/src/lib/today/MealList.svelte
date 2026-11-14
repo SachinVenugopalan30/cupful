@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!--
-  MealList — logged meals grouped by meal type, edit, delete, repeat or copy to today.
+  MealList — logged meals grouped by meal type, edit, delete or repeat. Review's date moves or copies them.
   Props (fixed contract; Today page passes these):
     date: string             YYYY-MM-DD, the selected day
     refreshKey: number       bumped after any write to the day; refetch when it changes
@@ -24,10 +24,10 @@
 		itemSourceLabel,
 		mealSourceLabel,
 		repeatDraft,
-		repeatOutcome,
-		repeatTitle,
 		type Draft
 	} from './meal';
+	import { savedNotice } from './review';
+	import { dayLabel } from '#lib/date.ts';
 
 	let { date, refreshKey, onChanged }: { date: string; refreshKey: number; onChanged: () => void } = $props();
 
@@ -38,7 +38,8 @@
 	let confirming = $state<string | null>(null);
 	type ReviewState = { draft: Draft; title: string; kind: 'edit' | 'repeat' };
 	let review = $state<ReviewState | null>(null);
-	let copiedToToday = $state(false);
+	// A save that landed on another day: the meal left this list, so say where it went.
+	let elsewhere = $state<{ status: string; date: string } | null>(null);
 	let busy = $state(false);
 	let heading: HTMLHeadingElement;
 
@@ -53,7 +54,7 @@
 		if (!d) return;
 		if (d !== shown) {
 			meals = null; // a new day shows the skeleton; a refresh keeps the list
-			copiedToToday = false;
+			elsewhere = null;
 		}
 		shown = d;
 		let stale = false;
@@ -75,16 +76,12 @@
 	);
 	const total = $derived(dayTotals(meals ?? []));
 
-	function reviewSaved(queued = false) {
+	function reviewSaved(queued: boolean, saved: string) {
 		if (!review) return;
-		if (review.kind === 'repeat') {
-			const outcome = repeatOutcome(review.draft.date, date);
-			copiedToToday = outcome.copied;
-			// The notice announces a copy; the sr-only status would repeat it. Queued still needs a word.
-			status = copiedToToday ? '' : outcome.status;
-		} else {
-			status = 'Meal updated.';
-		}
+		const notice = savedNotice(review.kind, saved, date, today());
+		elsewhere = notice.elsewhere ? { status: notice.status, date: notice.elsewhere } : null;
+		// The notice announces the move or copy; the sr-only status would repeat it. Queued still needs a word.
+		status = elsewhere ? '' : notice.status;
 		if (queued) status = status ? `${status} Waiting to sync.` : 'Waiting to sync.';
 		onChanged();
 	}
@@ -93,14 +90,14 @@
 		review = null;
 	}
 
-	/** The copy notice unmounts after the date changes, so move focus to the list heading first. */
-	function viewToday() {
-		day.date = today();
+	/** The notice unmounts after the date changes, so move focus to the list heading first. */
+	function viewElsewhere(d: string) {
+		day.date = d;
 		heading?.focus();
 	}
 
-	function dismissCopy() {
-		copiedToToday = false;
+	function dismissElsewhere() {
+		elsewhere = null;
 		heading?.focus();
 	}
 
@@ -146,11 +143,12 @@
 		{/if}
 	</header>
 	<p class="visually-hidden" role="status">{status}</p>
-	{#if copiedToToday}
+	{#if elsewhere}
+		{@const to = elsewhere.date}
 		<div class="notice notice-info row">
-			<p role="status">Copied to today.</p>
-			<button class="btn" onclick={viewToday}>View today</button>
-			<button class="btn btn-quiet" onclick={dismissCopy}>Dismiss</button>
+			<p role="status">{elsewhere.status}</p>
+			<button class="btn" onclick={() => viewElsewhere(to)}>View {to === today() ? 'today' : dayLabel(to, today())}</button>
+			<button class="btn btn-quiet" onclick={dismissElsewhere}>Dismiss</button>
 		</div>
 	{/if}
 
@@ -226,15 +224,15 @@
 								<button
 									class="btn"
 									onclick={() => {
-										const target = date === today() ? date : today();
 										review = {
-											draft: repeatDraft(m, target),
-											title: repeatTitle(target, today()),
+											// A repeat defaults to today, even from a past day; Review's date can change it.
+											draft: repeatDraft(m, today()),
+											title: 'Repeat meal',
 											kind: 'repeat'
 										};
 									}}
 								>
-									{date === today() ? 'Repeat' : 'Copy to today'}
+									Repeat
 								</button>
 								<button
 									class="btn btn-quiet"

@@ -46,7 +46,7 @@ async function repeatMeal(page: import('@playwright/test').Page, description: st
 	const meal = page.getByTestId('meal').filter({ hasText: description });
 	await meal.locator('summary').click();
 	await meal.getByRole('button', { name: 'Repeat', exact: true }).click();
-	const review = page.getByRole('dialog', { name: /Repeat meal for/ });
+	const review = page.getByRole('dialog', { name: 'Repeat meal' });
 	await review.getByRole('button', { name: 'Save meal' }).click();
 	await expect(review).toBeHidden();
 }
