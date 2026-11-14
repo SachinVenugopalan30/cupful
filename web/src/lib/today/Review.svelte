@@ -114,7 +114,9 @@
 		// The parent may swap onSaved while this sheet is open; the save started under the old prop.
 		const done = onSaved;
 		error = '';
-		const dateError = logDateError(d.date, today());
+		// The date field stays editable while saving; report the date the meal was sent with.
+		const logDate = d.date;
+		const dateError = logDateError(logDate, today());
 		if (dateError) return void (error = dateError);
 		if (!d.items.length) return void (error = 'Add at least one item.');
 		if (missing) return void (error = 'Fill in the highlighted items first.');
@@ -133,13 +135,13 @@
 			}
 			// Queued is saved. Aliases are online-only configuration, so close without writing them.
 			if (r.status === 'queued' || !connection.online) {
-				done?.(queued, d.date);
+				done?.(queued, logDate);
 				close(true);
 				return;
 			}
 			// Saved. Remember the phrases the user asked for; a failure keeps the sheet open to say so.
 			const failed = await rememberAliases(d.items, foods.alias);
-			done?.(queued, d.date);
+			done?.(queued, logDate);
 			if (failed.length) {
 				error = aliasFailure(failed);
 				return;

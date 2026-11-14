@@ -219,6 +219,8 @@ async function updateMeals(userId: number, item: QueuedOp): Promise<void> {
 
 		const day = new URL(entry.path, 'http://cupful.invalid').searchParams.get('date') ?? upsertDate;
 		const next = overlayMeals(list, [pending], day);
+		// A rewrite bumps saved_at, which eviction reads as "recently used"; skip days left as they were.
+		if (JSON.stringify(next) === JSON.stringify(list)) continue;
 		await putCachedBody(userId, entry.path, { ...(entry.body as object), meals: next });
 	}
 }

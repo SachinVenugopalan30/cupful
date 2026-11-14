@@ -115,6 +115,11 @@ describe('logDateError', () => {
 		expect(logDateError('', '2026-11-13')).toBe('Pick the day you ate this.');
 		expect(logDateError('2026-11-14', '2026-11-13')).toBe('Pick today or an earlier day.');
 	});
+	it('rejects days that do not exist and accepts a leap day', () => {
+		expect(logDateError('2026-02-30', '2026-11-13')).toBe('Pick the day you ate this.');
+		expect(logDateError('2026-00-10', '2026-11-13')).toBe('Pick the day you ate this.');
+		expect(logDateError('2024-02-29', '2026-11-13')).toBe('');
+	});
 });
 
 describe('savedNotice', () => {

@@ -53,7 +53,10 @@ export function stepQuantity(quantity: number, direction: 1 | -1): number {
 
 /** Why Review's "Log on" date can't be saved, or '' when it can. Dates compare as YYYY-MM-DD. */
 export function logDateError(date: string, today: string): string {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'Pick the day you ate this.';
+	// The round trip rejects days that don't exist, like 2026-02-30.
+	const ms = /^\d{4}-\d{2}-\d{2}$/.test(date) ? Date.parse(`${date}T00:00:00Z`) : NaN;
+	const real = !Number.isNaN(ms) && new Date(ms).toISOString().startsWith(date);
+	if (!real) return 'Pick the day you ate this.';
 	return date > today ? 'Pick today or an earlier day.' : '';
 }
 

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Day, Meal } from '../api.ts';
 import { dayPatch, mealDelete, mealUpsert, sendOps, type Op } from '../sync/index.ts';
 import { getCachedBody, putCachedBody } from './cache.ts';
+import { getCacheEntry } from './db.ts';
 import { countFor, enqueue, flush, start, stop } from './queue.ts';
 import {
 	applied,
@@ -118,6 +119,21 @@ describe('write-through', () => {
 		expect(
 			(await getCachedBody<{ meals: Meal[] }>(userId, toPath))?.meals.map((m) => m.id)
 		).toEqual(['m1']);
+	});
+
+	it('leaves a cached day the write does not change untouched, so eviction still sees it as old', async () => {
+		const userId = newUser();
+		const other = '/api/meals?date=2026-10-01';
+		await boot(userId);
+		const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
+		await putCachedBody(userId, other, { meals: [meal('m9', '2026-10-01', [item('x', 100)])] });
+		now.mockRestore();
+
+		await enqueue([mealUpsert(mealIn('m1', '2026-10-29', [item('i1', 300)]))], userId);
+		serving(userId, applied);
+		await flush(userId);
+
+		expect((await getCacheEntry(userId, other))?.saved_at).toBe(1_000);
 	});
 
 	it('invalidates cached history and trends on a meal write', async () => {
