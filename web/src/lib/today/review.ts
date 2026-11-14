@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Review-sheet logic: the per-item number inputs and the "always use this" aliases saved after a meal.
 
+import { dayLabel } from '#lib/date.ts';
 import type { DraftItem, NumKey } from './meal';
 
 /** The number inputs behind "Edit numbers", in display order. */
@@ -48,4 +49,27 @@ export function stepQuantity(quantity: number, direction: 1 | -1): number {
 	const next =
 		direction > 0 ? (Math.floor(at + 1e-9) + 1) * step : (Math.ceil(at - 1e-9) - 1) * step;
 	return Math.max(0.25, Math.round(next * 100) / 100);
+}
+
+/** Why Review's "Log on" date can't be saved, or '' when it can. Dates compare as YYYY-MM-DD. */
+export function logDateError(date: string, today: string): string {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'Pick the day you ate this.';
+	return date > today ? 'Pick today or an earlier day.' : '';
+}
+
+/**
+ * What the list says after Review saves. `elsewhere` is the saved date when it isn't the day shown,
+ * so the notice can offer to go there; the meal is no longer in the list in front of the user.
+ */
+export function savedNotice(
+	kind: 'new' | 'repeat' | 'edit',
+	saved: string,
+	view: string,
+	today: string
+): { status: string; elsewhere: string | null } {
+	if (saved === view) return { status: kind === 'edit' ? 'Meal updated.' : 'Meal logged.', elsewhere: null };
+	const label = dayLabel(saved, today);
+	const day = label === 'Today' || label === 'Yesterday' ? label.toLowerCase() : label;
+	const verb = { new: 'Logged on', repeat: 'Copied to', edit: 'Moved to' }[kind];
+	return { status: `${verb} ${day}.`, elsewhere: saved };
 }

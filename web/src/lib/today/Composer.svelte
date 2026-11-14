@@ -25,9 +25,9 @@
 		manualDraft,
 		reencodePhoto,
 		repeatDraft,
-		repeatTitle,
 		type Draft
 	} from './meal';
+	import { savedNotice } from './review';
 
 	let { date, onSaved }: { date: string; onSaved: () => void } = $props();
 
@@ -117,7 +117,7 @@
 		repeatSaved = false;
 		review = {
 			draft: repeatDraft(meal, date),
-			title: repeatTitle(date, today())
+			title: 'Repeat meal'
 		};
 	}
 
@@ -133,14 +133,23 @@
 		repeatSaved = false;
 	}
 
-	function onRepeatSaved() {
+	// A meal saved to another day isn't in Today's list, so the composer says where it went.
+	let note = $state('');
+	const noteFor = (kind: 'new' | 'repeat', savedOn: string) => {
+		const n = savedNotice(kind, savedOn, date, today());
+		return n.elsewhere ? n.status : '';
+	};
+
+	function onRepeatSaved(_queued: boolean, savedOn: string) {
 		repeatSaved = true;
+		note = noteFor('repeat', savedOn);
 		onSaved();
 	}
 
-	function saved() {
+	function saved(_queued: boolean, savedOn: string) {
 		description = '';
 		setPhoto(null);
+		note = noteFor('new', savedOn);
 		onSaved();
 	}
 
@@ -229,7 +238,7 @@
 				<button type="button" class="btn btn-quiet" onclick={byHand}>Enter by hand</button>
 			{/if}
 			<p id="composer-status" class="small muted" role="status">
-				{#if busy}Estimating. Local models can take up to a minute.{/if}
+				{#if busy}Estimating. Local models can take up to a minute.{:else}{note}{/if}
 			</p>
 		</div>
 	</form>

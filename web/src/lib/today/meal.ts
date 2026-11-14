@@ -15,7 +15,6 @@ import type {
 	Product,
 	ProductPortion
 } from '#lib/api.ts';
-import { dayLabel } from '#lib/date.ts';
 import { round } from '#lib/format.ts';
 import { portionText } from '#lib/products/logic.ts';
 import {
@@ -384,17 +383,6 @@ export function repeatDraft(m: Meal, date: string): Draft {
 		confidence: null,
 		items: d.items.map((i) => ({ ...i, id: uuidv7() }))
 	};
-}
-
-/** Sheet heading for a repeat, naming the target day. */
-export function repeatTitle(date: string, today: string): string {
-	return `Repeat meal for ${dayLabel(date, today)}`;
-}
-
-/** Repeating onto the shown day logs there; repeating onto another day is a copy. */
-export function repeatOutcome(target: string, viewDate: string): { copied: boolean; status: string } {
-	const copied = target !== viewDate;
-	return { copied, status: copied ? 'Meal copied.' : 'Meal logged.' };
 }
 
 /** Recent meals whose label or any item name contains `query`; blank returns all. */

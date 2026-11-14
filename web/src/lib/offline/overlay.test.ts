@@ -125,6 +125,12 @@ describe('overlayMeals', () => {
 		const result = overlayMeals([], [queued(upsert('m1', [item('i1', 100)], '2026-10-28'))], '2026-10-29');
 		expect(result).toEqual([]);
 	});
+
+	it('takes a meal moved to another date off this one', () => {
+		const base = [meal('m1', [item('i1', 100)]), meal('m2', [item('i2', 200)])];
+		const result = overlayMeals(base, [queued(upsert('m1', [item('i1', 100)], '2026-10-28'))], '2026-10-29');
+		expect(result.map((m) => m.id)).toEqual(['m2']);
+	});
 });
 
 describe('overlayDay', () => {
