@@ -151,7 +151,8 @@ test.describe('without an AI provider', () => {
 		await expect(page.getByText('Logged on yesterday.')).toBeVisible();
 		await expect(page.getByTestId('meal').filter({ hasText: 'move seed' })).toHaveCount(0);
 
-		await page.getByRole('button', { name: 'Previous day' }).click();
+		await page.getByRole('button', { name: 'View Yesterday' }).click();
+		await expect(page.getByText('Logged on yesterday.')).toBeHidden();
 		const meal = page.getByTestId('meal').filter({ hasText: 'move seed' });
 		await meal.locator('summary').click();
 		await meal.getByRole('button', { name: 'Edit' }).click();
