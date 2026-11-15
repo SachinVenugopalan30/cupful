@@ -18,7 +18,7 @@ Self-hosted food, exercise and steps tracker. Rust Axum + SQLx/SQLite API. Embed
 - v1.0.0 shipped the meal builder: Review builds multi-product meals (optional name, appended products, inline scan or label entry, one save), Today offers the usual meal for the current slot as a one-tap chip, product rows use household units, and saved products are offered on exact AI item matches.
 - v1.0.0 shipped the Ember jug redesign: graphite and ember palette, Bricolage Grotesque and Instrument Sans, one motion scale (`--dur-*`, `#lib/motion`), the jug budget on Today, a designed desktop layout (top bar, two-column Today, grids on Activity and Trends, Settings section list), and one jug logo across app, favicon, PWA icons and README. The offline cache trims day reads to the 60 most recently used dates.
 - v1.0.0 passed the release checklist: a real v0.3.2 backup restores in CI with written upgrade rules, the release security review found no high-confidence issues, axe checks every main screen in Playwright, and the Brave camera note is in `docs/self-hosting.md`.
-- After v1.0.0: Review picks the day a meal is logged on, so an edited meal moves and a repeated one copies. The offline overlay and write-through take a moved meal off its old day.
+- v1.0.1: Review picks the day a meal is logged on, so an edited meal moves and a repeated one copies; "Copy to today" became "Repeat". The offline overlay and write-through take a moved meal off its old day.
 - Next: no milestone planned.
 - Known gaps: Brave may ignore camera focus hints (documented in `docs/self-hosting.md`, Browser notes).
 - Shortcuts: `grep -rn "ponytail:" server web/src`. Decisions: `docs/decisions.md`.
