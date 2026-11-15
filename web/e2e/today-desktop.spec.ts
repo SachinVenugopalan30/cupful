@@ -2,7 +2,7 @@
 // Wide Today: the jug column holds activity tiles and the "This week" bars; phones get no week card.
 // "Sync steps" lives on /activity only. Own server with a demo user's 14 days of data.
 import { expect, test } from '@playwright/test';
-import { login, randomPort, seedDemoUser, startCupful, type CupfulServer } from './helpers/server';
+import { login, randomPort, seedDay, seedDemoUser, startCupful, type CupfulServer } from './helpers/server';
 
 const port = randomPort();
 let server: CupfulServer;
@@ -19,6 +19,18 @@ test('wide Today shows the week card and activity tiles, phones do not show the 
 }) => {
 	const demo = seedDemoUser(server, 14);
 	await login(page, demo);
+	// The demo data is random per weekday and can leave today with no steps or gym, which hides the
+	// tiles. Only then give today steps: a demo row is stamped at noon UTC, so before noon a patch
+	// would lose to it as stale. The demo user is on UTC.
+	const date = new Date().toISOString().slice(0, 10);
+	const today = (await (await page.request.get(`/api/days/${date}`)).json()) as {
+		steps: number | null;
+		gym_minutes: number | null;
+	};
+	if (today.steps === null && today.gym_minutes === null) {
+		await seedDay(page, date, { steps: 6000 });
+		await page.reload();
+	}
 
 	const jug = page.getByRole('img', { name: /kcal (plan|goal) eaten/ });
 	await expect(jug).toBeVisible();
